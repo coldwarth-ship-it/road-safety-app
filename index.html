@@ -846,7 +846,12 @@ function apiPost(payload) {
     } else {
       const url = localStorage.getItem('gsUrl') || '';
       if (!url) return reject(new Error('No API URL set'));
-      fetch(url, { method: 'POST', body: JSON.stringify(payload) })
+      fetch(url, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      })
         .then(r => r.json()).then(resolve).catch(reject);
     }
   });
