@@ -1,0 +1,2654 @@
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --primary: #D84315;
+    --primary-dark: #B71C1C;
+    --primary-light: #FF7043;
+    --accent: #F57C00;
+    --accent-light: #FFB74D;
+    --bg: #0D1117;
+    --bg2: #161B22;
+    --bg3: #1C2128;
+    --bg4: #21262D;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #E6EDF3;
+    --text2: #8B949E;
+    --text3: #6E7681;
+    --success: #2EA043;
+    --warning: #D29922;
+    --danger: #DA3633;
+    --info: #1F6FEB;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 260px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+
+  .logo-area {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .logo-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .nav-section {
+    padding: 12px 12px 4px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+
+  .nav-item.active {
+    background: rgba(216, 67, 21, 0.15);
+    color: var(--primary-light);
+    font-weight: 500;
+  }
+
+  .nav-item .nav-icon { font-size: 16px; min-width: 20px; text-align: center; }
+
+  .nav-badge {
+    margin-left: auto;
+    background: var(--primary);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .gs-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .gs-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+  }
+  .gs-dot.connected { background: var(--success); box-shadow: 0 0 6px rgba(46,160,67,0.5); }
+  .gs-dot.error { background: var(--danger); }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    margin-left: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    position: sticky; top: 0;
+    background: rgba(13,17,23,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 50;
+  }
+
+  .page-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .topbar-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .btn-secondary:hover { background: var(--bg4); }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+  }
+  .btn-success:hover { background: #238636; }
+
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  .content {
+    flex: 1;
+    padding: 24px;
+  }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .card-sub {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* ===== STAT CARDS ===== */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-change {
+    font-size: 12px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  .stat-change.up { color: var(--danger); }
+  .stat-change.down { color: var(--success); }
+
+  /* ===== TABLES ===== */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    border-bottom: 1px solid var(--border2);
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 12px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ===== BADGES ===== */
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-danger { background: rgba(218,54,51,0.15); color: #F85149; }
+  .badge-warning { background: rgba(210,153,34,0.15); color: #E3B341; }
+  .badge-success { background: rgba(46,160,67,0.15); color: #56D364; }
+  .badge-info { background: rgba(31,111,235,0.15); color: #58A6FF; }
+  .badge-gray { background: rgba(255,255,255,0.08); color: var(--text2); }
+
+  /* ===== FORMS ===== */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+
+  input, select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 9px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-light);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--text3); }
+
+  select option { background: var(--bg3); }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ===== MAP LINK ===== */
+  .map-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: var(--info);
+    font-size: 12px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .map-link:hover { text-decoration: underline; }
+
+  /* ===== TABS ===== */
+  .tabs {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    border: none;
+    background: none;
+    font-family: inherit;
+    margin-bottom: -1px;
+  }
+
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--primary-light); border-bottom-color: var(--primary-light); }
+
+  /* ===== PAGE SECTIONS ===== */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ===== WEATHER WIDGET ===== */
+  .weather-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .weather-main {
+    background: linear-gradient(135deg, #1a3a6b 0%, #0d2340 100%);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  .weather-province {
+    font-size: 12px;
+    color: #58A6FF;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .weather-temp {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .weather-desc {
+    font-size: 14px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+
+  .weather-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .weather-detail-item {
+    background: rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .wdi-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .wdi-val { font-size: 16px; font-weight: 600; color: var(--text); }
+
+  .forecast-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .forecast-title {
+    font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px;
+  }
+
+  .forecast-row {
+    display: flex; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 12px;
+  }
+  .forecast-row:last-child { border-bottom: none; }
+  .forecast-day { width: 60px; color: var(--text2); font-weight: 500; }
+  .forecast-icon { font-size: 18px; }
+  .forecast-desc { flex: 1; color: var(--text3); font-size: 12px; }
+  .forecast-temps { margin-left: auto; font-weight: 600; font-size: 13px; }
+  .forecast-lo { color: var(--text3); font-weight: 400; margin-left: 6px; }
+
+  /* ===== RISK LEVEL BARS ===== */
+  .risk-bar-container {
+    display: flex; align-items: center; gap: 12px;
+    margin: 6px 0;
+  }
+  .risk-bar-label { font-size: 12px; color: var(--text2); min-width: 80px; }
+  .risk-bar-track {
+    flex: 1; height: 6px;
+    background: var(--bg4);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .risk-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .risk-bar-val { font-size: 12px; font-weight: 600; color: var(--text2); min-width: 30px; text-align: right; }
+
+  /* ===== PROVINCE FILTER ===== */
+  .filter-row {
+    display: flex; gap: 10px; align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-row select, .filter-row input {
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 28px;
+    width: 90%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-title {
+    font-size: 16px; font-weight: 600; color: var(--text);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== SETUP ===== */
+  .setup-card {
+    max-width: 560px; margin: 60px auto;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+  }
+
+  .setup-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .setup-sub { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
+
+  .setup-step {
+    display: flex; gap: 12px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .setup-step-num {
+    min-width: 24px; height: 24px;
+    background: var(--primary);
+    border-radius: 50%;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ===== GRID LAYOUT ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* ===== SEASON CARDS ===== */
+  .season-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+
+  .season-card {
+    border-radius: var(--radius);
+    padding: 20px;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .season-card::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    opacity: 0.12;
+  }
+
+  .season-card.hot { border-color: rgba(255,87,34,0.3); background: rgba(255,87,34,0.05); }
+  .season-card.hot::before { background: #FF5722; }
+
+  .season-card.rain { border-color: rgba(33,150,243,0.3); background: rgba(33,150,243,0.05); }
+  .season-card.rain::before { background: #2196F3; }
+
+  .season-card.cold { border-color: rgba(158,198,255,0.3); background: rgba(158,198,255,0.05); }
+  .season-card.cold::before { background: #90CAF9; }
+
+  .season-icon { font-size: 28px; margin-bottom: 10px; }
+  .season-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .season-months { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+  .season-tips { list-style: none; }
+  .season-tips li {
+    font-size: 13px; color: var(--text2);
+    padding: 4px 0;
+    display: flex; align-items: flex-start; gap: 6px;
+  }
+  .season-tips li::before { content: '›'; color: var(--accent-light); flex-shrink: 0; font-weight: 700; }
+
+  /* ===== DISEASE CARDS ===== */
+  .disease-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .disease-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+
+  .disease-icon {
+    font-size: 24px;
+    min-width: 36px;
+    text-align: center;
+  }
+
+  .disease-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .disease-desc { font-size: 12px; color: var(--text3); line-height: 1.5; margin-bottom: 8px; }
+  .disease-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .disease-pill {
+    font-size: 11px;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .dp-prevent { background: rgba(46,160,67,0.12); color: #56D364; }
+  .dp-treat { background: rgba(31,111,235,0.12); color: #58A6FF; }
+
+  /* ===== PREVENTION ===== */
+  .prevention-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  }
+
+  .prevention-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+
+  .prev-icon { font-size: 28px; margin-bottom: 10px; }
+  .prev-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+  .prev-list { list-style: none; }
+  .prev-list li {
+    font-size: 13px; color: var(--text2); padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .prev-list li:last-child { border-bottom: none; }
+  .prev-list li span { flex: 1; }
+
+  /* ===== LOADING / TOAST ===== */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    z-index: 9999;
+    display: flex; align-items: center; gap: 8px;
+    animation: toastIn 0.3s ease;
+    max-width: 320px;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .config-area {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .config-area code {
+    background: var(--bg4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--accent-light);
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); }
+    .season-grid { grid-template-columns: 1fr; }
+    .prevention-grid { grid-template-columns: 1fr; }
+    .weather-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .content { padding: 16px; }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+  }
+  .empty-state .ei { font-size: 32px; margin-bottom: 8px; }
+  .empty-state .et { font-size: 14px; }
+
+  .risk-high { color: #F85149; }
+  .risk-med { color: #E3B341; }
+  .risk-low { color: #56D364; }
+
+  .img-placeholder {
+    width: 100%; height: 120px;
+    background: var(--bg4);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    font-size: 12px;
+    border: 1px dashed var(--border2);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .img-placeholder:hover { background: var(--bg3); }
+
+  .api-note {
+    background: rgba(31,111,235,0.08);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #58A6FF;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* ===== LEAFLET OVERRIDES ===== */
+  .leaflet-container { background: #1a2332 !important; font-family: 'Sarabun', sans-serif !important; }
+  .leaflet-control-zoom a { background: var(--bg2) !important; color: var(--text2) !important; border-color: var(--border2) !important; }
+  .leaflet-control-zoom a:hover { background: var(--bg3) !important; color: var(--text) !important; }
+  .leaflet-control-attribution { background: rgba(13,17,23,0.7) !important; color: var(--text3) !important; font-size: 10px !important; }
+  .leaflet-popup-content-wrapper { background: var(--bg2) !important; border: 1px solid var(--border2) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; color: var(--text2) !important; }
+  .leaflet-popup-tip-container { display: none; }
+
+  @keyframes rptSpin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) { .hamburger { display: flex; } }
+</style>
+
+<script>
+window.IS_GAS = (typeof google !== 'undefined' && !!google.script);
+
+function apiGet(sheetName) {
+  return new Promise((resolve, reject) => {
+    if (window.IS_GAS) {
+      google.script.run
+        .withSuccessHandler(r => {
+          try { resolve(typeof r === 'string' ? JSON.parse(r) : r); }
+          catch(e) { reject(e); }
+        })
+        .withFailureHandler(err => reject(err))
+        .apiGetData(sheetName || 'zones');
+    } else {
+      const url = localStorage.getItem('gsUrl') || '';
+      if (!url) return reject(new Error('No API URL set'));
+      fetch(url + '?sheet=' + (sheetName || 'zones'))
+        .then(r => r.json()).then(resolve).catch(reject);
+    }
+  });
+}
+
+function apiPost(payload) {
+  return new Promise((resolve, reject) => {
+    if (window.IS_GAS) {
+      google.script.run
+        .withSuccessHandler(r => {
+          try { resolve(typeof r === 'string' ? JSON.parse(r) : r); }
+          catch(e) { reject(e); }
+        })
+        .withFailureHandler(err => reject(err))
+        .apiPostReport(JSON.stringify(payload));
+    } else {
+      const url = localStorage.getItem('gsUrl') || '';
+      if (!url) return reject(new Error('No API URL set'));
+      fetch(url, { method: 'POST', body: JSON.stringify(payload) })
+        .then(r => r.json()).then(resolve).catch(reject);
+    }
+  });
+}
+</script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo-area">
+    <div class="logo-icon">🛡️</div>
+    <div class="logo-title">ระบบความปลอดภัยบนท้องถนน</div>
+    <div class="logo-sub">ภาคตะวันออก • Eastern Road Safety</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">เมนูหลัก</div>
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span> ภาพรวม Dashboard
+    </button>
+    <button class="nav-item" onclick="showPage('report')">
+      <span class="nav-icon">📍</span> แจ้งพื้นที่เสี่ยง
+      <span class="nav-badge" id="pendingBadge">0</span>
+    </button>
+    <button class="nav-item" onclick="showPage('zones')">
+      <span class="nav-icon">🗺️</span> จุดเสี่ยงทั้งหมด
+    </button>
+    <button class="nav-item" onclick="showPage('accidents')">
+      <span class="nav-icon">🚨</span> สถิติอุบัติเหตุ
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">ข้อมูลสภาพอากาศ</div>
+    <button class="nav-item" onclick="showPage('weather')">
+      <span class="nav-icon">🌤️</span> พยากรณ์อากาศ
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">ข้อมูลความปลอดภัย</div>
+    <button class="nav-item" onclick="showPage('prevention')">
+      <span class="nav-icon">🪖</span> ป้องกันอุบัติเหตุ (ไรเดอร์)
+    </button>
+    <button class="nav-item" onclick="showPage('seasons')">
+      <span class="nav-icon">🌦️</span> รับมือแต่ละฤดู
+    </button>
+    <button class="nav-item" onclick="showPage('disease')">
+      <span class="nav-icon">💊</span> โรคประจำฤดู
+    </button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">ผู้ดูแลระบบ</div>
+    <button class="nav-item" onclick="showPage('settings')">
+      <span class="nav-icon">⚙️</span> ตั้งค่า Google Sheet
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="gs-status">
+      <div class="gs-dot" id="gsDot"></div>
+      <span id="gsStatusText">ยังไม่ได้เชื่อมต่อ Google Sheet</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="hamburger" onclick="toggleSidebar()">☰</button>
+      <span class="page-title" id="pageTitle">ภาพรวม Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" onclick="syncData()">🔄 ซิงค์ข้อมูล</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('report')">+ แจ้งจุดเสี่ยง</button>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="section active" id="page-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">จุดเสี่ยงทั้งหมด</div>
+          <div class="stat-value" id="totalZones">—</div>
+          <div class="stat-change up" id="statZonesChange">ดึงข้อมูลจาก Google Sheet</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">อุบัติเหตุปีนี้ (ภาคตะวันออก)</div>
+          <div class="stat-value" id="totalAccidents">—</div>
+          <div class="stat-change up">↑ อัปเดตจากกรมทางหลวง</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">รายงานรอตรวจสอบ</div>
+          <div class="stat-value" id="pendingCount">—</div>
+          <div class="stat-change">รายการใหม่วันนี้</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">จังหวัดที่มีข้อมูล</div>
+          <div class="stat-value">8</div>
+          <div class="stat-change down">จังหวัดในภาคตะวันออก</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:24px">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">จุดเสี่ยงล่าสุด</div>
+              <div class="card-sub">จาก Google Sheet</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="showPage('zones')">ดูทั้งหมด</button>
+          </div>
+          <div id="recentZonesList">
+            <div class="empty-state">
+              <div class="ei">📋</div>
+              <div class="et">กำลังโหลดข้อมูล...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">ระดับความเสี่ยงแต่ละจังหวัด</div>
+              <div class="card-sub">อิงตามจำนวนจุดเสี่ยง</div>
+            </div>
+          </div>
+          <div id="riskBars">
+            <div id="riskBarsContent"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📌 แผนที่จุดเสี่ยงในภาคตะวันออก</div>
+          <button class="btn btn-secondary btn-sm" onclick="openAllMaps()">เปิดใน Google Maps</button>
+        </div>
+        <div id="mapPlaceholder" style="background:var(--bg3);border-radius:var(--radius-sm);padding:40px;text-align:center;color:var(--text3);font-size:13px;border:1px dashed var(--border2)">
+          🗺️ แผนที่จะแสดงจุดเสี่ยงทั้งหมดในภาคตะวันออก<br>
+          <span style="font-size:12px">เชื่อมต่อ Google Sheet แล้วข้อมูลจะแสดงผลอัตโนมัติ</span><br><br>
+          <button class="btn btn-secondary btn-sm" onclick="window.open('https://www.google.com/maps/search/ภาคตะวันออก+ประเทศไทย','_blank')">เปิด Google Maps ภาคตะวันออก</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REPORT FORM ===== -->
+    <div class="section" id="page-report">
+      <div style="max-width:700px">
+
+        <!-- DRAFT RESTORE BANNER -->
+        <div id="draftBanner" style="display:none;background:rgba(245,124,0,0.1);border:1px solid rgba(245,124,0,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#FFB74D;display:none;align-items:center;gap:10px">
+          <span>📝</span>
+          <span style="flex:1">พบข้อมูลที่กรอกค้างไว้ก่อนหน้า — ต้องการกู้คืนไหม?</span>
+          <button onclick="restoreDraft()" style="background:rgba(245,124,0,0.2);border:1px solid rgba(245,124,0,0.4);color:#FFB74D;padding:4px 12px;border-radius:5px;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500">กู้คืน</button>
+          <button onclick="discardDraft()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px">×</button>
+        </div>
+
+        <!-- STEP INDICATOR -->
+        <div style="display:flex;align-items:center;gap:0;margin-bottom:18px">
+          <div class="step-item" id="step1" style="display:flex;align-items:center;gap:8px;flex:1">
+            <div id="step1Dot" style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;transition:all 0.2s">1</div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text)">เลือกตำแหน่ง</div>
+              <div id="step1Sub" style="font-size:11px;color:var(--text3)">ยังไม่เลือก</div>
+            </div>
+          </div>
+          <div style="flex:1;height:1px;background:var(--border2);margin:0 8px;max-width:40px"></div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <div id="step2Dot" style="width:28px;height:28px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text3);flex-shrink:0;transition:all 0.2s">2</div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2)">รายละเอียด</div>
+              <div id="step2Sub" style="font-size:11px;color:var(--text3)">กรอกข้อมูล</div>
+            </div>
+          </div>
+          <div style="flex:1;height:1px;background:var(--border2);margin:0 8px;max-width:40px"></div>
+          <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <div id="step3Dot" style="width:28px;height:28px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text3);flex-shrink:0;transition:all 0.2s">3</div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text2)">รูปภาพ</div>
+              <div id="step3Sub" style="font-size:11px;color:var(--text3)">ไม่บังคับ</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="api-note" style="margin-bottom:16px">
+          💡 กด <strong>ตำแหน่งของฉัน</strong> เพื่อใช้ GPS อัตโนมัติ หรือ <strong>คลิกบนแผนที่</strong> เพื่อเลือกจุด — ระบบดึงที่อยู่ให้อัตโนมัติ
+        </div>
+
+        <!-- MAP LOCATION PICKER -->
+        <div class="card" style="padding:0;margin-bottom:16px;overflow:hidden">
+          <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px">
+              <span style="width:6px;height:6px;background:var(--primary-light);border-radius:50%;display:inline-block"></span>
+              ตำแหน่งจุดเสี่ยง <span style="font-size:11px;color:var(--text3);font-weight:400">(จำเป็น)</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm" style="background:rgba(216,67,21,0.13);color:var(--primary-light);border:1px solid rgba(216,67,21,0.3)" onclick="rptGetMyLocation()" id="rptLocateBtn">
+                🎯 ตำแหน่งของฉัน
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="rptResetLocation()" id="rptResetBtn" style="display:none">↺ รีเซ็ต</button>
+            </div>
+          </div>
+
+          <!-- MAP -->
+          <div style="position:relative;height:320px;background:var(--bg3)">
+            <div id="rptMap" style="width:100%;height:100%"></div>
+            <div id="rptMapHint" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(13,17,23,0.88);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--text2);pointer-events:none;z-index:1000;white-space:nowrap;transition:opacity 0.3s">คลิกบนแผนที่เพื่อปักหมุดตำแหน่ง</div>
+            <button onclick="rptGetMyLocation()" style="position:absolute;bottom:12px;right:12px;z-index:1000;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;font-weight:500;display:flex;align-items:center;gap:5px;transition:all 0.15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text2)'">⊕ ตำแหน่งปัจจุบัน</button>
+          </div>
+
+          <!-- COORD ROW -->
+          <div style="padding:12px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg3);border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+              <div id="rptCoordDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background 0.3s"></div>
+              <span id="rptCoordText" style="font-size:13px;color:var(--text3)">ยังไม่ได้เลือกตำแหน่ง</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <span id="rptLatChip" style="background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;font-family:monospace;color:var(--text3)">Lat —</span>
+              <span id="rptLngChip" style="background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;font-family:monospace;color:var(--text3)">Lng —</span>
+            </div>
+            <a id="rptOpenMaps" href="#" target="_blank" style="display:none;align-items:center;gap:4px;font-size:12px;color:#58A6FF;background:rgba(31,111,235,0.1);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius-sm);padding:4px 10px;text-decoration:none;font-weight:500">🗺️ เปิด Google Maps</a>
+          </div>
+
+          <!-- ADDRESS -->
+          <div id="rptAddressBox" style="display:none;padding:10px 18px;border-top:1px solid var(--border);align-items:flex-start;gap:10px">
+            <span style="font-size:15px;flex-shrink:0">📬</span>
+            <div style="flex:1">
+              <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px">ที่อยู่โดยประมาณ</div>
+              <div id="rptAddressText" style="font-size:13px;color:var(--text2);line-height:1.5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAIL FORM -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">รายละเอียดจุดเสี่ยง</div>
+          <div class="form-grid">
+
+            <div class="form-group">
+              <label>จังหวัด *</label>
+              <select id="rptProvince" onchange="updateAmphoe()">
+                <option value="">-- เลือกจังหวัด --</option>
+                <option>ชลบุรี</option><option>ระยอง</option><option>จันทบุรี</option>
+                <option>ตราด</option><option>ฉะเชิงเทรา</option><option>ปราจีนบุรี</option>
+                <option>สระแก้ว</option><option>นครนายก</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>อำเภอ *</label>
+              <select id="rptAmphoe"><option value="">-- เลือกอำเภอ --</option></select>
+            </div>
+            <div class="form-group full">
+              <label>ชื่อจุดเสี่ยง / สถานที่ *</label>
+              <input type="text" id="rptName" placeholder="เช่น สี่แยกบ้านบึง, ถนนสุขุมวิท กม.12, ทางโค้งเขาคิชฌกูฏ">
+            </div>
+            <div class="form-group">
+              <label>ประเภทอันตราย *</label>
+              <select id="rptType">
+                <option value="">-- เลือกประเภท --</option>
+                <option>ถนนลื่น / ขรุขระ</option><option>ทางโค้งอันตราย</option>
+                <option>ทางแยกอันตราย</option><option>ไฟส่องสว่างไม่เพียงพอ</option>
+                <option>ขาดป้ายเตือน</option><option>น้ำท่วมขัง</option>
+                <option>หมอกลงหนัก</option><option>อื่นๆ</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ผู้แจ้ง</label>
+              <input type="text" id="rptReporter" placeholder="ชื่อ-นามสกุล (ไม่บังคับ)">
+            </div>
+
+            <!-- read-only lat/lng -->
+            <div class="form-group">
+              <label>ละติจูด (auto)</label>
+              <input type="text" id="rptLat" placeholder="เลือกตำแหน่งบนแผนที่" readonly style="color:#58A6FF;background:rgba(31,111,235,0.06);border-color:rgba(88,166,255,0.2);cursor:default">
+            </div>
+            <div class="form-group">
+              <label>ลองจิจูด (auto)</label>
+              <input type="text" id="rptLng" placeholder="เลือกตำแหน่งบนแผนที่" readonly style="color:#58A6FF;background:rgba(31,111,235,0.06);border-color:rgba(88,166,255,0.2);cursor:default">
+            </div>
+
+            <!-- RISK SELECTOR -->
+            <div class="form-group full">
+              <label>ระดับความเสี่ยง *</label>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+                <div><input type="radio" name="rptRisk" id="rRiskHigh" value="สูง" style="display:none">
+                  <label for="rRiskHigh" id="lRiskHigh" class="risk-opt" onclick="selectRisk('สูง')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;font-weight:500;color:var(--text3);transition:all 0.15s">
+                    <span style="font-size:18px">🔴</span><span>สูง</span><span style="font-size:10px;font-weight:400">อันตรายมาก</span>
+                  </label></div>
+                <div><input type="radio" name="rptRisk" id="rRiskMed" value="ปานกลาง" style="display:none">
+                  <label for="rRiskMed" id="lRiskMed" class="risk-opt" onclick="selectRisk('ปานกลาง')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;font-weight:500;color:var(--text3);transition:all 0.15s">
+                    <span style="font-size:18px">🟡</span><span>ปานกลาง</span><span style="font-size:10px;font-weight:400">ควรระวัง</span>
+                  </label></div>
+                <div><input type="radio" name="rptRisk" id="rRiskLow" value="ต่ำ" style="display:none">
+                  <label for="rRiskLow" id="lRiskLow" class="risk-opt" onclick="selectRisk('ต่ำ')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;font-size:12px;font-weight:500;color:var(--text3);transition:all 0.15s">
+                    <span style="font-size:18px">🟢</span><span>ต่ำ</span><span style="font-size:10px;font-weight:400">แจ้งเพื่อทราบ</span>
+                  </label></div>
+              </div>
+            </div>
+
+            <div class="form-group full">
+              <label>รายละเอียด / หมายเหตุ</label>
+              <textarea id="rptDetail" placeholder="อธิบายลักษณะอันตราย ช่วงเวลา หรือสภาพแวดล้อมเพิ่มเติม..."></textarea>
+            </div>
+
+            <!-- IMAGE PICKER -->
+            <div class="form-group full">
+              <label>รูปภาพประกอบ</label>
+              <input type="file" id="rptInputGallery" accept="image/*" style="display:none" onchange="rptHandleImage(this)">
+              <input type="file" id="rptInputCamera" accept="image/*" capture="environment" style="display:none" onchange="rptHandleImage(this)">
+              <input type="hidden" id="rptImgData">
+              <input type="hidden" id="rptImgName">
+
+              <div id="rptImgPicker" style="border:1.5px dashed var(--border2);border-radius:var(--radius);overflow:hidden;background:var(--bg3);transition:border-color 0.2s">
+                <!-- empty -->
+                <div id="rptImgEmpty" style="padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center">
+                  <span style="font-size:26px;margin-bottom:6px">🖼️</span>
+                  <div style="font-size:13px;font-weight:600;color:var(--text2)">เพิ่มรูปภาพ</div>
+                  <div style="font-size:12px;color:var(--text3);margin-bottom:14px">ช่วยให้ทีมงานตรวจสอบได้เร็วขึ้น</div>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+                    <button type="button" onclick="document.getElementById('rptInputGallery').click()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 22px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg4);cursor:pointer;font-family:inherit;transition:all 0.15s;min-width:120px" onmouseover="this.style.background='rgba(88,166,255,0.08)';this.style.borderColor='rgba(88,166,255,0.35)'" onmouseout="this.style.background='var(--bg4)';this.style.borderColor='var(--border2)'">
+                      <span style="font-size:22px">🗂️</span>
+                      <span style="font-size:12px;font-weight:500;color:#58A6FF">เลือกจากเครื่อง</span>
+                    </button>
+                    <button type="button" onclick="document.getElementById('rptInputCamera').click()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 22px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg4);cursor:pointer;font-family:inherit;transition:all 0.15s;min-width:120px" onmouseover="this.style.background='rgba(216,67,21,0.08)';this.style.borderColor='rgba(255,112,67,0.35)'" onmouseout="this.style.background='var(--bg4)';this.style.borderColor='var(--border2)'">
+                      <span style="font-size:22px">📷</span>
+                      <span style="font-size:12px;font-weight:500;color:var(--primary-light)">ถ่ายรูปใหม่</span>
+                    </button>
+                  </div>
+                </div>
+                <!-- preview -->
+                <div id="rptImgPreviewWrap" style="display:none">
+                  <div style="position:relative;width:100%;aspect-ratio:16/9;max-height:240px;overflow:hidden">
+                    <img id="rptImgPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 55%);display:flex;flex-direction:column;justify-content:flex-end;padding:12px 14px;opacity:0;transition:opacity 0.2s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                      <div id="rptImgFileInfo" style="font-size:11px;color:rgba(255,255,255,0.65);margin-bottom:8px;font-family:monospace"></div>
+                      <div style="display:flex;gap:6px">
+                        <button type="button" onclick="document.getElementById('rptInputGallery').click()" style="padding:4px 10px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.12);color:white;font-size:11px;cursor:pointer;font-family:inherit;backdrop-filter:blur(4px)">🗂️ เปลี่ยน</button>
+                        <button type="button" onclick="document.getElementById('rptInputCamera').click()" style="padding:4px 10px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.12);color:white;font-size:11px;cursor:pointer;font-family:inherit;backdrop-filter:blur(4px)">📷 ถ่ายใหม่</button>
+                        <button type="button" onclick="rptClearImage()" style="padding:4px 10px;border-radius:5px;border:1px solid rgba(248,81,73,0.35);background:rgba(248,81,73,0.12);color:#F85149;font-size:11px;cursor:pointer;font-family:inherit">✕ ลบ</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="rptImgStrip" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg4);border-top:1px solid var(--border)">
+                    <span id="rptImgStripName" style="font-size:12px;color:var(--text2);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px"></span>
+                    <div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+                      <button type="button" onclick="document.getElementById('rptInputGallery').click()" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">🗂️ เปลี่ยน</button>
+                      <button type="button" onclick="document.getElementById('rptInputCamera').click()" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap">📷 ถ่ายใหม่</button>
+                      <button type="button" onclick="rptClearImage()" style="padding:4px 10px;border-radius:5px;border:1px solid rgba(248,81,73,0.25);background:var(--bg3);color:#F85149;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit">✕ ลบ</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="submitReport()" id="rptSubmitBtn" disabled>📤 ส่งรายงาน</button>
+            <button class="btn btn-secondary" onclick="clearForm()">ล้างฟอร์ม</button>
+            <span id="rptSubmitHint" style="font-size:12px;color:var(--text3);margin-left:auto">กรุณาเลือกตำแหน่งบนแผนที่ก่อน</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== RISK ZONES ===== -->
+    <div class="section" id="page-zones">
+      <div class="filter-row">
+        <select id="filterProvince" style="min-width:150px" onchange="filterZones()">
+          <option value="">ทุกจังหวัด</option>
+          <option>ชลบุรี</option><option>ระยอง</option><option>จันทบุรี</option>
+          <option>ตราด</option><option>ฉะเชิงเทรา</option><option>ปราจีนบุรี</option>
+          <option>สระแก้ว</option><option>นครนายก</option>
+        </select>
+        <select id="filterRisk" style="min-width:140px" onchange="filterZones()">
+          <option value="">ทุกระดับความเสี่ยง</option>
+          <option value="สูง">🔴 สูง</option>
+          <option value="ปานกลาง">🟡 ปานกลาง</option>
+          <option value="ต่ำ">🟢 ต่ำ</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="🔍 ค้นหาชื่อจุด..." style="min-width:200px" oninput="filterZones()">
+        <button class="btn btn-secondary btn-sm" onclick="loadZones()">🔄 โหลดใหม่</button>
+        <span id="zonesCount" style="font-size:12px;color:var(--text3);margin-left:auto"></span>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>จุดเสี่ยง</th>
+                <th>จังหวัด</th>
+                <th>อำเภอ</th>
+                <th>ประเภท</th>
+                <th>ระดับ</th>
+                <th>พิกัด</th>
+                <th>วันที่แจ้ง</th>
+                <th>รูปภาพ</th>
+              </tr>
+            </thead>
+            <tbody id="zonesTableBody">
+              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ACCIDENTS ===== -->
+    <div class="section" id="page-accidents">
+      <div class="api-note">
+        📡 ข้อมูลสถิติอุบัติเหตุ — อ้างอิงจาก กรมทางหลวง, กรมป้องกันและบรรเทาสาธารณภัย, สำนักงานตำรวจแห่งชาติ (ปีปัจจุบัน 2568)
+      </div>
+      <div class="stat-grid" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-label">อุบัติเหตุรวมภาคตะวันออก</div>
+          <div class="stat-value risk-high">8,423</div>
+          <div class="stat-change up">↑ 3.2% จากปีก่อน</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ผู้เสียชีวิต</div>
+          <div class="stat-value risk-high">312</div>
+          <div class="stat-change down">↓ 1.8% จากปีก่อน</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">ผู้บาดเจ็บสาหัส</div>
+          <div class="stat-value risk-med">1,847</div>
+          <div class="stat-change up">↑ 2.1% จากปีก่อน</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">รถจักรยานยนต์ (สัดส่วน)</div>
+          <div class="stat-value">74%</div>
+          <div class="stat-change">ของอุบัติเหตุทั้งหมด</div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-header"><div class="card-title">สถิติรายจังหวัด (ภาคตะวันออก) 2568</div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>จังหวัด</th><th>อุบัติเหตุ</th><th>เสียชีวิต</th><th>บาดเจ็บ</th><th>ระดับ</th></tr></thead>
+              <tbody>
+                <tr><td>ชลบุรี</td><td>2,841</td><td>98</td><td>612</td><td><span class="badge badge-danger">สูงมาก</span></td></tr>
+                <tr><td>ระยอง</td><td>1,523</td><td>56</td><td>334</td><td><span class="badge badge-danger">สูง</span></td></tr>
+                <tr><td>ฉะเชิงเทรา</td><td>1,102</td><td>41</td><td>243</td><td><span class="badge badge-warning">ปานกลาง</span></td></tr>
+                <tr><td>จันทบุรี</td><td>987</td><td>38</td><td>219</td><td><span class="badge badge-warning">ปานกลาง</span></td></tr>
+                <tr><td>ปราจีนบุรี</td><td>743</td><td>29</td><td>164</td><td><span class="badge badge-warning">ปานกลาง</span></td></tr>
+                <tr><td>สระแก้ว</td><td>621</td><td>24</td><td>138</td><td><span class="badge badge-success">ต่ำ</span></td></tr>
+                <tr><td>ตราด</td><td>389</td><td>15</td><td>87</td><td><span class="badge badge-success">ต่ำ</span></td></tr>
+                <tr><td>นครนายก</td><td>217</td><td>11</td><td>50</td><td><span class="badge badge-success">ต่ำ</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">สาเหตุหลักอุบัติเหตุ</div></div>
+          <div style="margin-top:4px">
+            <div class="risk-bar-container"><div class="risk-bar-label">ขับเร็วเกิน</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:82%;background:#F85149"></div></div><div class="risk-bar-val">82%</div></div>
+            <div class="risk-bar-container"><div class="risk-bar-label">เมาแล้วขับ</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:41%;background:#E3B341"></div></div><div class="risk-bar-val">41%</div></div>
+            <div class="risk-bar-container"><div class="risk-bar-label">ตัดหน้ากระชั้น</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:35%;background:#E3B341"></div></div><div class="risk-bar-val">35%</div></div>
+            <div class="risk-bar-container"><div class="risk-bar-label">ไม่สวมหมวก</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:28%;background:#58A6FF"></div></div><div class="risk-bar-val">28%</div></div>
+            <div class="risk-bar-container"><div class="risk-bar-label">ถนนไม่ดี</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:19%;background:#56D364"></div></div><div class="risk-bar-val">19%</div></div>
+            <div class="risk-bar-container"><div class="risk-bar-label">หลับใน</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:14%;background:#56D364"></div></div><div class="risk-bar-val">14%</div></div>
+          </div>
+          <div style="margin-top:16px;font-size:11px;color:var(--text3)">ที่มา: กรมทางหลวง / สรจ. / รายงานอุบัติเหตุทางถนน 2568</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">สถิติเพิ่มเติมจาก Google Sheet (กำหนดเองได้)</div></div>
+        <div id="accidentsSheetData">
+          <div class="empty-state" style="padding:30px">
+            <div class="ei">📊</div>
+            <div class="et">เชื่อมต่อ Google Sheet เพื่อแสดงสถิติที่คุณกำหนดเอง</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WEATHER ===== -->
+    <div class="section" id="page-weather">
+      <div class="filter-row">
+        <select id="weatherProvince" onchange="loadWeather()">
+          <option value="ชลบุรี">ชลบุรี</option><option value="ระยอง">ระยอง</option>
+          <option value="จันทบุรี">จันทบุรี</option><option value="ตราด">ตราด</option>
+          <option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ปราจีนบุรี">ปราจีนบุรี</option>
+          <option value="สระแก้ว">สระแก้ว</option><option value="นครนายก">นครนายก</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="loadWeather()">🔄 รีเฟรช</button>
+      </div>
+
+      <div class="weather-grid">
+        <div class="weather-main" id="weatherMain">
+          <div class="weather-province" id="wProvince">ชลบุรี</div>
+          <div class="weather-temp" id="wTemp">—°C</div>
+          <div class="weather-desc" id="wDesc">กำลังโหลด...</div>
+          <div class="weather-details">
+            <div class="weather-detail-item">
+              <div class="wdi-label">ความชื้น</div>
+              <div class="wdi-val" id="wHumidity">—%</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="wdi-label">ลม</div>
+              <div class="wdi-val" id="wWind">— กม/ชม.</div>
+            </div>
+            <div class="weather-detail-item">
+              <div class="wdi-label">UV Index</div>
+              <div class="wdi-val" id="wUV">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="forecast-card">
+          <div class="forecast-title">🗓️ พยากรณ์ 7 วันล่วงหน้า</div>
+          <div id="forecast7day">
+            <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⚠️ แจ้งเตือนสภาพอากาศที่กระทบการขับขี่</div>
+            <div class="card-sub">วันนี้ในภาคตะวันออก</div>
+          </div>
+        </div>
+        <div id="weatherAlerts">
+          <div class="config-area">
+            🌧️ <strong>ฝนตกหนักถึงหนักมาก</strong> — ระยอง, จันทบุรี, ตราด — ระวังน้ำท่วมฉับพลัน ถนนลื่น มองเห็นน้อยลง<br>
+            ⚡ <strong>พายุฝนฟ้าคะนอง</strong> — ชลบุรี ตอนบน — ไม่ควรขับขี่ในช่วงพายุ หยุดพักใต้หลังคาที่ปลอดภัย<br>
+            🌫️ <strong>หมอกหนา</strong> — ปราจีนบุรี, สระแก้ว — ตอนเช้าตรู่ (04.00–07.00 น.) ทัศนวิสัยต่ำ
+          </div>
+          <div style="font-size:11px;color:var(--text3)">* ข้อมูลพยากรณ์อากาศ: ใช้ OpenWeatherMap API (ตั้งค่าได้ในหน้า Settings)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PREVENTION ===== -->
+    <div class="section" id="page-prevention">
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">🪖 การป้องกันอุบัติเหตุสำหรับไรเดอร์ส่งสินค้า</div>
+        <div style="font-size:13px;color:var(--text3)">แนวทางปฏิบัติเพื่อความปลอดภัยในการขับขี่เพื่องาน</div>
+      </div>
+
+      <div class="prevention-grid">
+        <div class="prevention-card">
+          <div class="prev-icon">🪖</div>
+          <div class="prev-title">อุปกรณ์ป้องกันที่จำเป็น</div>
+          <ul class="prev-list">
+            <li><span>หมวกกันน็อคมาตรฐาน มอก. หรือ ECE 22.06 ทุกครั้งไม่มีข้อยกเว้น</span></li>
+            <li><span>แว่นตากันลม / visors ลดละอองน้ำ หมอก และแมลง</span></li>
+            <li><span>ถุงมือกันลื่น ช่วยจับแฮนด์ได้มั่นคงในฝนและความร้อน</span></li>
+            <li><span>รองเท้าหุ้มส้น ปิดข้อเท้า ป้องกันการบาดเจ็บเมื่อล้ม</span></li>
+            <li><span>เสื้อแจ็กเก็ตสะท้อนแสง (hi-vis) ให้รถอื่นมองเห็นชัดขึ้น</span></li>
+          </ul>
+        </div>
+
+        <div class="prevention-card">
+          <div class="prev-icon">🏍️</div>
+          <div class="prev-title">การตรวจเช็กรถก่อนออกงาน</div>
+          <ul class="prev-list">
+            <li><span>ตรวจลมยาง (หน้า 28–32, หลัง 30–36 PSI) ทุกเช้า</span></li>
+            <li><span>ดูน้ำมันเครื่อง — ไม่ให้ขาดเกิน 2 สัปดาห์</span></li>
+            <li><span>ทดสอบเบรกหน้า-หลัง ให้ทำงานสม่ำเสมอ</span></li>
+            <li><span>ไฟหน้า ไฟท้าย ไฟเลี้ยว ใช้งานได้ครบ</span></li>
+            <li><span>โซ่ (ถ้ามี) หย่อนพอดี ไม่ตึงหรือหลวมเกิน</span></li>
+          </ul>
+        </div>
+
+        <div class="prevention-card">
+          <div class="prev-icon">⏱️</div>
+          <div class="prev-title">การบริหารเวลาและความเหนื่อยล้า</div>
+          <ul class="prev-list">
+            <li><span>พักทุก 2 ชั่วโมง อย่างน้อย 15 นาที ไม่ควรขับต่อเนื่อง</span></li>
+            <li><span>อย่ารับงานเกินกำลัง — ความเครียดจากเวลาทำให้ขับเร็วขึ้น</span></li>
+            <li><span>ดื่มน้ำสม่ำเสมอ ป้องกันหน้ามืด เพลีย และหลับใน</span></li>
+            <li><span>ถ้างีบหลับ 10–15 นาทีก็ช่วยได้ดีกว่าฝืนขับ</span></li>
+            <li><span>แจ้งลูกค้าล่าช้าดีกว่าเร่งรีบแล้วเกิดอุบัติเหตุ</span></li>
+          </ul>
+        </div>
+
+        <div class="prevention-card">
+          <div class="prev-icon">📦</div>
+          <div class="prev-title">การบรรทุกสินค้าอย่างปลอดภัย</div>
+          <ul class="prev-list">
+            <li><span>ผูกมัดสินค้าให้แน่น ไม่ให้โยกหรือเลื่อนหลุด</span></li>
+            <li><span>ห้ามบรรทุกเกินน้ำหนักที่กำหนด (ตรวจสอบ spec รถ)</span></li>
+            <li><span>ของหนักวางกลางรถหรือใกล้แฮนด์ ไม่ใช่ด้านหลัง</span></li>
+            <li><span>กล่อง/ลัง ต้องไม่บดบังทัศนวิสัยของผู้ขับ</span></li>
+            <li><span>ใช้กระเป๋าเป้หรือกล่องติดรถแทนถุงแขวน</span></li>
+          </ul>
+        </div>
+
+        <div class="prevention-card">
+          <div class="prev-icon">🌧️</div>
+          <div class="prev-title">การขับขี่ในสภาพอากาศเลวร้าย</div>
+          <ul class="prev-list">
+            <li><span>ฝนตก — ลดความเร็วลง 20–30% และเพิ่มระยะห่างหน้า</span></li>
+            <li><span>หลีกเลี่ยงการเบรกกะทันหันบนถนนเปียก</span></li>
+            <li><span>หมอก — เปิดไฟหน้าตลอดเวลา ขับช้าลง</span></li>
+            <li><span>ลมแรง — จับแฮนด์ให้มั่น ระวังรถใหญ่สวน</span></li>
+            <li><span>หยุดพักในที่ปลอดภัยหากฝนตกหนักหรือมองไม่เห็น</span></li>
+          </ul>
+        </div>
+
+        <div class="prevention-card">
+          <div class="prev-icon">📱</div>
+          <div class="prev-title">การใช้อุปกรณ์อิเล็กทรอนิกส์</div>
+          <ul class="prev-list">
+            <li><span>ห้ามถือโทรศัพท์ขณะขับ — ใช้ที่จับโทรศัพท์ติดรถ</span></li>
+            <li><span>ตั้งค่า GPS และรับออเดอร์ก่อนออกเดินทาง</span></li>
+            <li><span>ใช้หูฟังแบบข้างเดียวเท่านั้น ห้ามสองข้าง</span></li>
+            <li><span>ตรวจสอบแผนที่ขณะจอดนิ่งในที่ปลอดภัย</span></li>
+            <li><span>เปิด Volume Alert ในแอป เพื่อรับการแจ้งเตือนเสียง</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SEASONS ===== -->
+    <div class="section" id="page-seasons">
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">🌦️ วิธีรับมือกับอันตรายแต่ละฤดูกาล</div>
+        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่รถจักรยานยนต์ในภาคตะวันออก</div>
+      </div>
+
+      <div class="season-grid">
+        <div class="season-card hot">
+          <div class="season-icon">☀️</div>
+          <div class="season-name" style="color:#FF7043">ฤดูร้อน</div>
+          <div class="season-months">มีนาคม – พฤษภาคม</div>
+          <ul class="season-tips">
+            <li>ดื่มน้ำทุก 30–45 นาที หลีกเลี่ยงเครื่องดื่มชูกำลัง</li>
+            <li>สวมเสื้อแขนยาว ป้องกัน UV และความร้อนสะสม</li>
+            <li>ระวัง Heat Stroke — หยุดพักทันทีหากรู้สึกมึนงง</li>
+            <li>ตรวจลมยางบ่อยขึ้น อากาศร้อนทำให้แรงดันเพิ่ม</li>
+            <li>หลีกเลี่ยงขับช่วง 11.00–14.00 น. หากไม่จำเป็น</li>
+            <li>ระวังถนนละลายในพื้นที่ยางมะตอยเก่า</li>
+            <li>พักในร่มเงาและดื่มน้ำทดแทนเกลือแร่</li>
+          </ul>
+        </div>
+
+        <div class="season-card rain">
+          <div class="season-icon">🌧️</div>
+          <div class="season-name" style="color:#42A5F5">ฤดูฝน</div>
+          <div class="season-months">มิถุนายน – ตุลาคม</div>
+          <ul class="season-tips">
+            <li>สวมเสื้อกันฝนที่ไม่บดบังทัศนวิสัย (ใสหรือสีสด)</li>
+            <li>ลดความเร็ว 20–30% บนถนนเปียก</li>
+            <li>หลีกเลี่ยงขับผ่านน้ำขัง — ไม่รู้ความลึก</li>
+            <li>เปิดไฟหน้าตลอดเวลาแม้กลางวัน</li>
+            <li>ระวังใบไม้ร่วงบนถนน ลื่นเหมือนน้ำมัน</li>
+            <li>ตรวจสอบดอกยางเป็นประจำ ต้องไม่ต่ำกว่า 1.6 มม.</li>
+            <li>พกชุดกันฝนไว้กับรถตลอดเวลา</li>
+          </ul>
+        </div>
+
+        <div class="season-card cold">
+          <div class="season-icon">🌬️</div>
+          <div class="season-name" style="color:#90CAF9">ฤดูหนาว</div>
+          <div class="season-months">พฤศจิกายน – กุมภาพันธ์</div>
+          <ul class="season-tips">
+            <li>ระวังหมอกตอนเช้าตรู่ — เปิดไฟและขับช้า</li>
+            <li>สวมเสื้อกันหนาว ป้องกันร่างกายอ่อนล้าจากความเย็น</li>
+            <li>อย่าลืมถุงมือ — มือเย็นทำให้ response time ช้าลง</li>
+            <li>อุ่นเครื่องยนต์ 3–5 นาทีก่อนออก</li>
+            <li>ระวังถนนชื้นจากน้ำค้าง โดยเฉพาะสะพาน</li>
+            <li>ลดความเร็วในช่วงหมอกลงหนัก</li>
+            <li>ดื่มน้ำอุ่น หรืออาหารอุ่น ก่อนออกขับ</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px">
+        <div class="card-title" style="margin-bottom:14px">📋 ตารางสรุปความเสี่ยงรายฤดู</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ฤดู</th><th>อันตรายหลัก</th><th>ช่วงเวลาเสี่ยงสูงสุด</th><th>จุดที่ควรระวัง</th><th>อุปกรณ์พิเศษ</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>☀️ ร้อน</td>
+                <td>Heat Stroke, ยางแตก, ร่างกายอ่อนเพลีย</td>
+                <td>10.00–15.00 น.</td>
+                <td>ถนนยางมะตอยเก่า, ไม่มีร่มเงา</td>
+                <td>เสื้อแขนยาว, น้ำดื่ม, ผ้าชุบน้ำ</td>
+              </tr>
+              <tr>
+                <td>🌧️ ฝน</td>
+                <td>ถนนลื่น, ทัศนวิสัยต่ำ, น้ำท่วม</td>
+                <td>14.00–20.00 น.</td>
+                <td>ทางแยก, สะพาน, พื้นที่ลุ่ม</td>
+                <td>ชุดกันฝน, ยางดอกดี, ไฟหน้าสว่าง</td>
+              </tr>
+              <tr>
+                <td>🌬️ หนาว</td>
+                <td>หมอก, ร่างกายตึง, ถนนชื้น</td>
+                <td>04.00–08.00 น.</td>
+                <td>ภูเขา, สะพาน, ถนนร่มเงา</td>
+                <td>เสื้อกันหนาว, ถุงมือ, ไฟตัดหมอก</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DISEASE ===== -->
+    <div class="section" id="page-disease">
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:6px">💊 โรคที่มักพบในแต่ละฤดูและวิธีดูแล</div>
+        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่และประชาชนในภาคตะวันออก</div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="showDiseaseTab('hot')">☀️ ฤดูร้อน</button>
+        <button class="tab" onclick="showDiseaseTab('rain')">🌧️ ฤดูฝน</button>
+        <button class="tab" onclick="showDiseaseTab('cold')">🌬️ ฤดูหนาว</button>
+      </div>
+
+      <div class="disease-list" id="diseaseList"></div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="section" id="page-settings">
+      <div class="setup-card" style="margin:0;max-width:100%">
+        <div class="card-title" style="font-size:16px;margin-bottom:4px">⚙️ ตั้งค่า Google Sheet</div>
+        <div id="gasAutoNotice" style="display:none;background:rgba(46,160,67,0.1);border:1px solid rgba(46,160,67,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin:8px 0 12px;font-size:12px;color:#56D364">
+          ✅ Web App นี้รันอยู่บน Google Apps Script — เชื่อมต่อกับ Google Sheet อัตโนมัติ ไม่จำเป็นต้องตั้งค่า URL
+        </div>
+        <div class="card-sub" style="margin-bottom:20px">เชื่อมต่อ Google Sheets เพื่อบันทึกและดึงข้อมูลจุดเสี่ยงแบบ Real-time</div>
+
+        <div class="setup-step">
+          <div class="setup-step-num">1</div>
+          <div>สร้าง Google Sheet ใหม่ แล้วไปที่ <strong>Extensions → Apps Script</strong> เพื่อสร้าง Web App API</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">2</div>
+          <div>วาง Google Apps Script Code (ให้กดปุ่มด้านล่างเพื่อดู) แล้ว Deploy เป็น <strong>Web App</strong> (Anyone can access)</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">3</div>
+          <div>คัดลอก <strong>Web App URL</strong> ที่ได้จาก Deploy แล้วใส่ในช่องด้านล่าง</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-step-num">4</div>
+          <div>กด <strong>ทดสอบการเชื่อมต่อ</strong> — ระบบจะดึงข้อมูลจาก Sheet อัตโนมัติ</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Google Apps Script Web App URL</label>
+          <input type="url" id="gsUrl" placeholder="https://script.google.com/macros/s/AKfyc.../exec"
+            value="">
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px">
+          <label>OpenWeatherMap API Key (สำหรับพยากรณ์อากาศ)</label>
+          <input type="text" id="owmKey" placeholder="ใส่ API Key จาก openweathermap.org (ฟรี)">
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึก</button>
+          <button class="btn btn-secondary" onclick="testConnection()">🔌 ทดสอบการเชื่อมต่อ</button>
+          <button class="btn btn-secondary" onclick="showScriptModal()">📋 ดู Apps Script Code</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="card-title" style="margin-bottom:12px">📋 โครงสร้าง Google Sheet ที่แนะนำ</div>
+        <div class="config-area">
+          <strong>Sheet 1: "จุดเสี่ยง"</strong><br>
+          คอลัมน์: timestamp | จังหวัด | อำเภอ | ชื่อจุด | ประเภท | ละติจูด | ลองจิจูด | ระดับความเสี่ยง | รายละเอียด | รูปภาพ | ผู้แจ้ง | สถานะ<br><br>
+          <strong>Sheet 2: "สถิติ"</strong><br>
+          คอลัมน์: จังหวัด | ปี | อุบัติเหตุ | เสียชีวิต | บาดเจ็บ | หมายเหตุ
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- OFFLINE BANNER -->
+<div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#7c4a00;color:#FFB74D;padding:8px 20px;font-size:13px;font-weight:500;text-align:center;border-bottom:1px solid rgba(255,183,77,0.3)">
+  📵 ไม่มีอินเทอร์เน็ต — ข้อมูลที่ส่งจะถูกบันทึกไว้และส่งอัตโนมัติเมื่อกลับมาออนไลน์
+  <span id="offlineQueueCount" style="margin-left:8px;background:rgba(255,183,77,0.2);padding:1px 8px;border-radius:10px"></span>
+</div>
+
+<!-- DUPLICATE WARNING MODAL -->
+<div class="modal-overlay" id="dupModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">⚠️ พบจุดเสี่ยงใกล้เคียง</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6">
+      มีจุดเสี่ยงอยู่แล้วในรัศมี 200 เมตรจากตำแหน่งที่เลือก:
+    </div>
+    <div id="dupList" style="margin-bottom:16px"></div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">
+      ต้องการส่งข้อมูลใหม่เพิ่มเติมอยู่ไหม?
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('dupModal')">ยกเลิก — ไม่ส่งซ้ำ</button>
+      <button class="btn btn-primary" onclick="forceSubmit()">ส่งต่อ — เป็นจุดใหม่</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS TRACKING MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">✅</div>
+    <div style="font-size:17px;font-weight:700;color:#56D364;margin-bottom:6px">ส่งรายงานสำเร็จ!</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">ทีมงานจะตรวจสอบและเผยแพร่โดยเร็ว</div>
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">หมายเลขติดตาม</div>
+      <div id="trackingNumber" style="font-size:22px;font-weight:700;color:#58A6FF;font-family:monospace;letter-spacing:2px"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px" id="successLocation"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="closeModal('successModal');clearForm()">📍 แจ้งจุดเสี่ยงอีกจุด</button>
+      <a class="btn btn-success" id="successMapsLink" href="#" target="_blank" style="background:rgba(46,160,67,0.15);color:#56D364;border:1px solid rgba(86,211,100,0.3)">🗺️ ดูใน Google Maps</a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Apps Script Code -->
+<div class="modal-overlay" id="scriptModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-title">📋 Google Apps Script Code</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">คัดลอก Code นี้ไปวางใน Apps Script แล้ว Deploy เป็น Web App</div>
+    <textarea readonly style="width:100%;height:320px;font-family:monospace;font-size:11px;background:var(--bg4);border:1px solid var(--border2);color:#7ee787;padding:12px;border-radius:6px;resize:none">
+const SHEET_NAME = 'จุดเสี่ยง';
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok', data: rows }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const payload = JSON.parse(e.postData.contents);
+  const now = new Date().toLocaleString('th-TH');
+  sheet.appendRow([
+    now,
+    payload.province || '',
+    payload.amphoe || '',
+    payload.name || '',
+    payload.type || '',
+    payload.lat || '',
+    payload.lng || '',
+    payload.risk || '',
+    payload.detail || '',
+    payload.img || '',
+    payload.reporter || '',
+    'รอตรวจสอบ'
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok', message: 'บันทึกสำเร็จ' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+    </textarea>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="copyScript()">📋 คัดลอก Code</button>
+      <button class="btn btn-secondary" onclick="closeModal('scriptModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast" style="display:none"></div>
+
+<script>
+// ===== CONFIG =====
+let config = {
+  gsUrl: localStorage.getItem('gsUrl') || '',
+  owmKey: localStorage.getItem('owmKey') || '',
+};
+
+let zonesData = [];
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  loadConfig();
+  if (window.IS_GAS) {
+    const dot = document.getElementById('gsDot');
+    const txt = document.getElementById('gsStatusText');
+    if (dot) dot.className = 'gs-dot connected';
+    if (txt) txt.textContent = 'เชื่อมต่อผ่าน Apps Script';
+    const notice = document.getElementById('gasAutoNotice');
+    if (notice) notice.style.display = 'block';
+  } else {
+    updateGsStatus();
+  }
+  loadWeather();
+  loadZones();
+  initRiskBars();
+  renderDiseaseTab('hot');
+  updatePendingBadge();
+  initOfflineDetection();
+  checkDraft();
+});
+
+// ===== NAVIGATION =====
+const pageTitles = {
+  dashboard: 'ภาพรวม Dashboard',
+  report: 'แจ้งพื้นที่เสี่ยง',
+  zones: 'จุดเสี่ยงทั้งหมด',
+  accidents: 'สถิติอุบัติเหตุ',
+  weather: 'พยากรณ์อากาศ',
+  prevention: 'การป้องกันอุบัติเหตุ (ไรเดอร์)',
+  seasons: 'รับมือแต่ละฤดู',
+  disease: 'โรคประจำฤดู',
+  settings: 'ตั้งค่า Google Sheet',
+};
+
+function showPage(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[id] || id;
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') === `showPage('${id}')`) n.classList.add('active');
+  });
+  if (id === 'settings') {
+    document.getElementById('gsUrl').value = config.gsUrl;
+    document.getElementById('owmKey').value = config.owmKey;
+  }
+  if (id === 'report') {
+    setTimeout(() => { initReportMap(); initDraftWatchers(); checkDraft(); }, 80);
+  }
+  if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ===== GOOGLE SHEET =====
+function loadConfig() {
+  config.gsUrl = localStorage.getItem('gsUrl') || '';
+  config.owmKey = localStorage.getItem('owmKey') || '';
+}
+
+function saveSettings() {
+  config.gsUrl = document.getElementById('gsUrl').value.trim();
+  config.owmKey = document.getElementById('owmKey').value.trim();
+  localStorage.setItem('gsUrl', config.gsUrl);
+  localStorage.setItem('owmKey', config.owmKey);
+  updateGsStatus();
+  showToast('💾 บันทึกการตั้งค่าแล้ว', 'success');
+}
+
+function updateGsStatus() {
+  const dot = document.getElementById('gsDot');
+  const txt = document.getElementById('gsStatusText');
+  if (config.gsUrl) {
+    dot.className = 'gs-dot connected';
+    txt.textContent = 'เชื่อมต่อ Google Sheet แล้ว';
+  } else {
+    dot.className = 'gs-dot';
+    txt.textContent = 'ยังไม่ได้เชื่อมต่อ Google Sheet';
+  }
+}
+
+async function testConnection() {
+  if (!window.IS_GAS && !config.gsUrl) {
+    showToast('⚠️ กรุณาใส่ URL ก่อน', 'warning');
+    return;
+  }
+  showToast('🔌 กำลังทดสอบ...', 'info');
+  try {
+    const json = await apiGet('zones');
+    if (json && json.status === 'ok') {
+      document.getElementById('gsDot').className = 'gs-dot connected';
+      document.getElementById('gsStatusText').textContent = 'เชื่อมต่อสำเร็จ';
+      showToast('✅ เชื่อมต่อสำเร็จ! พบ ' + (json.data ? json.data.length : 0) + ' รายการ', 'success');
+      loadZones();
+    } else {
+      throw new Error((json && json.message) || 'API error');
+    }
+  } catch(e) {
+    document.getElementById('gsDot').className = 'gs-dot error';
+    showToast('❌ เชื่อมต่อไม่ได้: ' + (e.message || e), 'error');
+  }
+}
+
+async function loadZones() {
+  if (!window.IS_GAS && !config.gsUrl) {
+    const sample = getSampleData();
+    zonesData = sample;
+    renderZonesTable(sample);
+    renderRecentZones(sample.slice(0,4));
+    updateStats(sample);
+    return;
+  }
+  try {
+    const json = await apiGet('zones');
+    if (json && json.status === 'ok') {
+      zonesData = json.data || [];
+      renderZonesTable(zonesData);
+      renderRecentZones(zonesData.slice(0,4));
+      updateStats(zonesData);
+    } else {
+      throw new Error((json && json.message) || 'API error');
+    }
+  } catch(e) {
+    console.error('loadZones error:', e);
+    const sample = getSampleData();
+    zonesData = sample;
+    renderZonesTable(sample);
+    renderRecentZones(sample.slice(0,4));
+    updateStats(sample);
+  }
+}
+
+function getSampleData() {
+  return [
+    { timestamp:'01/04/2568 08:15', จังหวัด:'ชลบุรี', อำเภอ:'บ้านบึง', ชื่อจุด:'สี่แยกบ้านบึง', ประเภท:'ทางแยกอันตราย', ละติจูด:'13.362', ลองจิจูด:'101.047', ระดับความเสี่ยง:'สูง', รายละเอียด:'รถชนบ่อยในช่วงเช้า', รูปภาพ:'', ผู้แจ้ง:'สมศักดิ์ ใจดี', สถานะ:'ตรวจสอบแล้ว' },
+    { timestamp:'02/04/2568 10:30', จังหวัด:'ระยอง', อำเภอ:'เมืองระยอง', ชื่อจุด:'ถนนสุขุมวิท กม.179', ประเภท:'ถนนลื่น / ขรุขระ', ละติจูด:'12.682', ลองจิจูด:'101.274', ระดับความเสี่ยง:'ปานกลาง', รายละเอียด:'ฝนตกถนนลื่นมาก', รูปภาพ:'', ผู้แจ้ง:'ไรเดอร์ Kerry', สถานะ:'รอตรวจสอบ' },
+    { timestamp:'03/04/2568 14:22', จังหวัด:'จันทบุรี', อำเภอ:'เมืองจันทบุรี', ชื่อจุด:'ทางโค้งเขาคิชฌกูฏ', ประเภท:'ทางโค้งอันตราย', ละติจูด:'12.609', ลองจิจูด:'102.104', ระดับความเสี่ยง:'สูง', รายละเอียด:'โค้งแคบ ไม่มีราวกั้น', รูปภาพ:'', ผู้แจ้ง:'อัมพร วงษ์สุวรรณ', สถานะ:'รอตรวจสอบ' },
+    { timestamp:'05/04/2568 07:44', จังหวัด:'ฉะเชิงเทรา', อำเภอ:'เมืองฉะเชิงเทรา', ชื่อจุด:'ถนนฉะเชิงเทรา-บางปะกง', ประเภท:'ไฟส่องสว่างไม่เพียงพอ', ละติจูด:'13.688', ลองจิจูด:'101.077', ระดับความเสี่ยง:'ปานกลาง', รายละเอียด:'กลางคืนมืดมาก', รูปภาพ:'', ผู้แจ้ง:'ประชาชน', สถานะ:'รอตรวจสอบ' },
+    { timestamp:'06/04/2568 16:10', จังหวัด:'ปราจีนบุรี', อำเภอ:'กบินทร์บุรี', ชื่อจุด:'ทางหลวง 304 กม.89', ประเภท:'ขาดป้ายเตือน', ละติจูด:'13.990', ลองจิจูด:'101.744', ระดับความเสี่ยง:'ต่ำ', รายละเอียด:'ป้ายหลุดหายไปหลังพายุ', รูปภาพ:'', ผู้แจ้ง:'เจ้าหน้าที่', สถานะ:'ตรวจสอบแล้ว' },
+  ];
+}
+
+function renderZonesTable(data) {
+  const tbody = document.getElementById('zonesTableBody');
+  const fp = document.getElementById('filterProvince').value;
+  const fr = document.getElementById('filterRisk').value;
+  const fs = document.getElementById('filterSearch').value.toLowerCase();
+  const filtered = data.filter(d => {
+    if (fp && d.จังหวัด !== fp) return false;
+    if (fr && d.ระดับความเสี่ยง !== fr) return false;
+    if (fs && !d.ชื่อจุด.toLowerCase().includes(fs) && !d.อำเภอ.toLowerCase().includes(fs)) return false;
+    return true;
+  });
+  document.getElementById('zonesCount').textContent = `แสดง ${filtered.length} จาก ${data.length} รายการ`;
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map((d,i) => `
+    <tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="color:var(--text);font-weight:500">${d.ชื่อจุด || '—'}</td>
+      <td>${d.จังหวัด || '—'}</td>
+      <td>${d.อำเภอ || '—'}</td>
+      <td><span class="badge badge-gray">${d.ประเภท || '—'}</span></td>
+      <td>${riskBadge(d.ระดับความเสี่ยง)}</td>
+      <td>${d.ละติจูด && d.ลองจิจูด ? `<a class="map-link" href="https://www.google.com/maps?q=${d.ละติจูด},${d.ลองจิจูด}" target="_blank">📍 ${parseFloat(d.ละติจูด).toFixed(4)}, ${parseFloat(d.ลองจิจูด).toFixed(4)}</a>` : '—'}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--text3)">${d.timestamp || '—'}</td>
+      <td>${d.รูปภาพ ? `<a class="map-link" href="${d.รูปภาพ}" target="_blank">🖼️ ดูรูป</a>` : '<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
+    </tr>
+  `).join('');
+}
+
+function renderRecentZones(data) {
+  const el = document.getElementById('recentZonesList');
+  if (!data.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📋</div><div class="et">ยังไม่มีข้อมูล</div></div>'; return; }
+  el.innerHTML = data.map(d => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      ${riskBadge(d.ระดับความเสี่ยง)}
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${d.ชื่อจุด}</div>
+        <div style="font-size:11px;color:var(--text3)">${d.จังหวัด} › ${d.อำเภอ}</div>
+      </div>
+      ${d.ละติจูด ? `<a class="map-link" href="https://www.google.com/maps?q=${d.ละติจูด},${d.ลองจิจูด}" target="_blank" style="font-size:12px">🗺️</a>` : ''}
+    </div>
+  `).join('');
+}
+
+function updateStats(data) {
+  document.getElementById('totalZones').textContent = data.length;
+  const pending = data.filter(d => d.สถานะ === 'รอตรวจสอบ').length;
+  document.getElementById('pendingCount').textContent = pending;
+  document.getElementById('pendingBadge').textContent = pending;
+}
+
+function updatePendingBadge() { /* called on load, updated by updateStats */ }
+
+function filterZones() { renderZonesTable(zonesData); }
+
+function riskBadge(r) {
+  if (r === 'สูง') return '<span class="badge badge-danger">🔴 สูง</span>';
+  if (r === 'ปานกลาง') return '<span class="badge badge-warning">🟡 ปานกลาง</span>';
+  if (r === 'ต่ำ') return '<span class="badge badge-success">🟢 ต่ำ</span>';
+  return '<span class="badge badge-gray">—</span>';
+}
+
+function initRiskBars() {
+  const provinces = ['ชลบุรี','ระยอง','ฉะเชิงเทรา','จันทบุรี','ปราจีนบุรี','สระแก้ว','ตราด','นครนายก'];
+  const vals = [88, 71, 54, 48, 39, 28, 22, 14];
+  const colors = ['#F85149','#F85149','#E3B341','#E3B341','#E3B341','#56D364','#56D364','#56D364'];
+  document.getElementById('riskBarsContent').innerHTML = provinces.map((p,i) => `
+    <div class="risk-bar-container">
+      <div class="risk-bar-label">${p}</div>
+      <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${vals[i]}%;background:${colors[i]}"></div></div>
+      <div class="risk-bar-val">${vals[i]}</div>
+    </div>
+  `).join('');
+}
+
+// ===== REPORT MAP =====
+let rptMap, rptMarker, rptSelectedLat = null, rptSelectedLng = null, rptGeoTimer = null;
+
+function initReportMap() {
+  if (rptMap) return;
+  rptMap = L.map('rptMap', { center: [13.0, 101.5], zoom: 8, zoomControl: true });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(rptMap);
+  rptMap.on('click', e => rptSetLocation(e.latlng.lat, e.latlng.lng));
+}
+
+function rptPinIcon() {
+  return L.divIcon({
+    html: `<svg width="32" height="44" viewBox="0 0 32 44" fill="none"><circle cx="16" cy="16" r="14" fill="#D84315" opacity="0.15"/><circle cx="16" cy="16" r="11" fill="#FF7043"/><circle cx="16" cy="16" r="5" fill="white"/><path d="M16 27L16 42" stroke="#FF7043" stroke-width="2.5" stroke-linecap="round"/></svg>`,
+    className: '', iconSize: [32, 44], iconAnchor: [16, 44], popupAnchor: [0, -46]
+  });
+}
+
+function rptSetLocation(lat, lng) {
+  rptSelectedLat = parseFloat(lat.toFixed(6));
+  rptSelectedLng = parseFloat(lng.toFixed(6));
+  if (rptMarker) { rptMarker.setLatLng([rptSelectedLat, rptSelectedLng]); }
+  else {
+    rptMarker = L.marker([rptSelectedLat, rptSelectedLng], { icon: rptPinIcon(), draggable: true }).addTo(rptMap);
+    rptMarker.on('dragend', e => { const p = e.target.getLatLng(); rptSetLocation(p.lat, p.lng); });
+  }
+  rptMap.setView([rptSelectedLat, rptSelectedLng], Math.max(rptMap.getZoom(), 15), { animate: true });
+
+  // Update UI chips
+  document.getElementById('rptCoordDot').style.background = '#2EA043';
+  document.getElementById('rptCoordDot').style.boxShadow = '0 0 6px rgba(46,160,67,0.5)';
+  document.getElementById('rptCoordText').textContent = 'ตำแหน่งพร้อมแล้ว — ลากหมุดเพื่อปรับ';
+  document.getElementById('rptCoordText').style.color = 'var(--text2)';
+  document.getElementById('rptLatChip').textContent = 'Lat ' + rptSelectedLat.toFixed(5);
+  document.getElementById('rptLatChip').style.color = '#58A6FF';
+  document.getElementById('rptLngChip').textContent = 'Lng ' + rptSelectedLng.toFixed(5);
+  document.getElementById('rptLngChip').style.color = '#58A6FF';
+  const mBtn = document.getElementById('rptOpenMaps');
+  mBtn.style.display = 'inline-flex';
+  mBtn.href = 'https://www.google.com/maps?q=' + rptSelectedLat + ',' + rptSelectedLng + '&z=17';
+  document.getElementById('rptLat').value = rptSelectedLat.toFixed(6);
+  document.getElementById('rptLng').value = rptSelectedLng.toFixed(6);
+  document.getElementById('rptMapHint').style.opacity = '0';
+  document.getElementById('rptResetBtn').style.display = '';
+  document.getElementById('rptSubmitBtn').disabled = false;
+  document.getElementById('rptSubmitHint').textContent = 'ตำแหน่งพร้อมแล้ว';
+  document.getElementById('rptSubmitHint').style.color = '#56D364';
+
+  // Update step indicators
+  updateStep(1, 'done', rptSelectedLat.toFixed(4) + ', ' + rptSelectedLng.toFixed(4));
+  updateStep(2, 'active', 'กรอกข้อมูล');
+  saveDraft();
+
+  // Reverse geocode
+  const addrBox = document.getElementById('rptAddressBox');
+  const addrTxt = document.getElementById('rptAddressText');
+  addrBox.style.display = 'flex';
+  addrTxt.innerHTML = '<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)"><span style="width:11px;height:11px;border:1.5px solid rgba(255,255,255,0.2);border-top-color:var(--accent);border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span>กำลังค้นหาที่อยู่...</span>';
+  clearTimeout(rptGeoTimer);
+  rptGeoTimer = setTimeout(() => {
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + rptSelectedLat + '&lon=' + rptSelectedLng + '&accept-language=th,en&zoom=17')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.display_name) {
+          addrTxt.textContent = d.display_name.split(', ').slice(0, 5).join(', ');
+          if (d.address) rptAutoProvince(d.address);
+        } else addrTxt.textContent = rptSelectedLat.toFixed(5) + ', ' + rptSelectedLng.toFixed(5);
+      })
+      .catch(() => { addrTxt.textContent = rptSelectedLat.toFixed(5) + ', ' + rptSelectedLng.toFixed(5); });
+  }, 400);
+}
+
+function rptAutoProvince(addr) {
+  const map = { 'Chon Buri':'ชลบุรี','Chonburi':'ชลบุรี','Rayong':'ระยอง','Chanthaburi':'จันทบุรี','Trat':'ตราด','Chachoengsao':'ฉะเชิงเทรา','Prachinburi':'ปราจีนบุรี','Sa Kaeo':'สระแก้ว','Nakhon Nayok':'นครนายก' };
+  const th = map[addr.state || addr.county || ''];
+  if (th) { const sel = document.getElementById('rptProvince'); if (!sel.value) { sel.value = th; updateAmphoe(); } }
+}
+
+function rptGetMyLocation() {
+  if (!navigator.geolocation) { showToast('เบราว์เซอร์ไม่รองรับ GPS', 'warning'); return; }
+  const btn = document.getElementById('rptLocateBtn');
+  btn.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid rgba(255,112,67,0.3);border-top-color:#FF7043;border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span> กำลังหาตำแหน่ง...';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => { rptSetLocation(pos.coords.latitude, pos.coords.longitude); btn.innerHTML = '🎯 ตำแหน่งของฉัน'; btn.disabled = false; },
+    err => {
+      showToast(err.code === 1 ? 'กรุณาอนุญาต GPS ในเบราว์เซอร์' : 'ไม่พบสัญญาณ GPS', 'warning');
+      btn.innerHTML = '🎯 ตำแหน่งของฉัน'; btn.disabled = false;
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+function rptResetLocation() {
+  if (rptMarker) { rptMap.removeLayer(rptMarker); rptMarker = null; }
+  rptSelectedLat = null; rptSelectedLng = null;
+  document.getElementById('rptCoordDot').style.background = 'var(--text3)';
+  document.getElementById('rptCoordDot').style.boxShadow = 'none';
+  document.getElementById('rptCoordText').textContent = 'ยังไม่ได้เลือกตำแหน่ง';
+  document.getElementById('rptCoordText').style.color = 'var(--text3)';
+  document.getElementById('rptLatChip').textContent = 'Lat —';
+  document.getElementById('rptLatChip').style.color = 'var(--text3)';
+  document.getElementById('rptLngChip').textContent = 'Lng —';
+  document.getElementById('rptLngChip').style.color = 'var(--text3)';
+  document.getElementById('rptOpenMaps').style.display = 'none';
+  document.getElementById('rptAddressBox').style.display = 'none';
+  document.getElementById('rptLat').value = '';
+  document.getElementById('rptLng').value = '';
+  document.getElementById('rptResetBtn').style.display = 'none';
+  document.getElementById('rptMapHint').style.opacity = '1';
+  document.getElementById('rptSubmitBtn').disabled = true;
+  document.getElementById('rptSubmitHint').textContent = 'กรุณาเลือกตำแหน่งบนแผนที่ก่อน';
+  document.getElementById('rptSubmitHint').style.color = '';
+  rptMap.setView([13.0, 101.5], 8, { animate: true });
+}
+
+// ===== RISK SELECTOR =====
+function selectRisk(val) {
+  const styles = {
+    'สูง': { bg:'rgba(218,54,51,0.12)', border:'rgba(248,81,73,0.5)', color:'#F85149', id:'lRiskHigh' },
+    'ปานกลาง': { bg:'rgba(210,153,34,0.12)', border:'rgba(227,179,65,0.5)', color:'#E3B341', id:'lRiskMed' },
+    'ต่ำ': { bg:'rgba(46,160,67,0.12)', border:'rgba(86,211,100,0.5)', color:'#56D364', id:'lRiskLow' },
+  };
+  ['lRiskHigh','lRiskMed','lRiskLow'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.background = 'var(--bg3)';
+    el.style.borderColor = 'var(--border2)';
+    el.style.color = 'var(--text3)';
+  });
+  const s = styles[val];
+  const el = document.getElementById(s.id);
+  el.style.background = s.bg;
+  el.style.borderColor = s.border;
+  el.style.color = s.color;
+  document.querySelector(`input[name="rptRisk"][value="${val}"]`).checked = true;
+}
+
+// ===== IMAGE PICKER — with compression =====
+function rptHandleImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) { showToast('รูปภาพต้องไม่เกิน 15 MB', 'warning'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // Compress: max 1200px, 72% quality
+      const canvas = document.createElement('canvas');
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.72);
+      const compressedKB = Math.round(compressed.length * 0.75 / 1024);
+      const origKB = Math.round(file.size / 1024);
+
+      document.getElementById('rptImgData').value = compressed;
+      document.getElementById('rptImgName').value = file.name;
+      document.getElementById('rptImgEmpty').style.display = 'none';
+      document.getElementById('rptImgPreviewWrap').style.display = 'block';
+      document.getElementById('rptImgPreview').src = compressed;
+      document.getElementById('rptImgFileInfo').textContent =
+        file.name + '  (' + origKB + ' KB → ' + compressedKB + ' KB)';
+      document.getElementById('rptImgStripName').textContent =
+        file.name + ' (' + compressedKB + ' KB)';
+
+      updateStep(3, 'done', 'มีรูปภาพแล้ว');
+      saveDraft();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function rptClearImage() {
+  document.getElementById('rptImgData').value = '';
+  document.getElementById('rptImgName').value = '';
+  document.getElementById('rptImgPreviewWrap').style.display = 'none';
+  document.getElementById('rptImgEmpty').style.display = 'flex';
+  updateStep(3, 'idle', 'ไม่บังคับ');
+  saveDraft();
+}
+
+// ===== STEP INDICATOR =====
+function updateStep(step, state, sub) {
+  const dot = document.getElementById('step' + step + 'Dot');
+  const subEl = document.getElementById('step' + step + 'Sub');
+  if (!dot) return;
+  if (state === 'done') {
+    dot.style.background = '#2EA043'; dot.style.border = 'none';
+    dot.style.color = 'white'; dot.textContent = '✓';
+  } else if (state === 'active') {
+    dot.style.background = 'var(--primary)'; dot.style.border = 'none';
+    dot.style.color = 'white'; dot.textContent = step;
+  } else {
+    dot.style.background = 'var(--bg4)'; dot.style.border = '1px solid var(--border2)';
+    dot.style.color = 'var(--text3)'; dot.textContent = step;
+  }
+  if (subEl && sub) subEl.textContent = sub;
+}
+
+// ===== DRAFT AUTOSAVE =====
+let draftTimer = null;
+function saveDraft() {
+  const draft = {
+    province: document.getElementById('rptProvince')?.value || '',
+    amphoe: document.getElementById('rptAmphoe')?.value || '',
+    name: document.getElementById('rptName')?.value || '',
+    type: document.getElementById('rptType')?.value || '',
+    reporter: document.getElementById('rptReporter')?.value || '',
+    detail: document.getElementById('rptDetail')?.value || '',
+    risk: document.querySelector('input[name="rptRisk"]:checked')?.value || '',
+    lat: rptSelectedLat, lng: rptSelectedLng,
+    ts: Date.now(),
+  };
+  // Only save if has meaningful data
+  if (draft.name || draft.province || draft.lat) {
+    localStorage.setItem('rptDraft', JSON.stringify(draft));
+  }
+}
+
+function checkDraft() {
+  try {
+    const raw = localStorage.getItem('rptDraft');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    // Discard drafts older than 24h
+    if (Date.now() - d.ts > 86400000) { localStorage.removeItem('rptDraft'); return; }
+    if (d.name || d.province) {
+      const b = document.getElementById('draftBanner');
+      if (b) b.style.display = 'flex';
+    }
+  } catch(e) { localStorage.removeItem('rptDraft'); }
+}
+
+function restoreDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem('rptDraft'));
+    if (!d) return;
+    if (d.province) { document.getElementById('rptProvince').value = d.province; updateAmphoe(); }
+    if (d.amphoe) setTimeout(() => { document.getElementById('rptAmphoe').value = d.amphoe; }, 50);
+    if (d.name) document.getElementById('rptName').value = d.name;
+    if (d.type) document.getElementById('rptType').value = d.type;
+    if (d.reporter) document.getElementById('rptReporter').value = d.reporter;
+    if (d.detail) document.getElementById('rptDetail').value = d.detail;
+    if (d.risk) selectRisk(d.risk);
+    if (d.lat && d.lng && rptMap) rptSetLocation(d.lat, d.lng);
+    discardDraft();
+    showToast('📝 กู้คืนข้อมูลแล้ว', 'success');
+  } catch(e) { showToast('ไม่สามารถกู้คืนข้อมูลได้', 'error'); }
+}
+
+function discardDraft() {
+  localStorage.removeItem('rptDraft');
+  const b = document.getElementById('draftBanner');
+  if (b) b.style.display = 'none';
+}
+
+// Auto-save on input change
+function initDraftWatchers() {
+  ['rptProvince','rptAmphoe','rptName','rptType','rptReporter','rptDetail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { clearTimeout(draftTimer); draftTimer = setTimeout(saveDraft, 1500); });
+  });
+  document.querySelectorAll('input[name="rptRisk"]').forEach(r => {
+    r.addEventListener('change', saveDraft);
+  });
+}
+
+// ===== GEOFENCE — ภาคตะวันออก =====
+const EAST_BOUNDS = { minLat: 12.2, maxLat: 14.6, minLng: 100.5, maxLng: 103.2 };
+function isInEasternThailand(lat, lng) {
+  return lat >= EAST_BOUNDS.minLat && lat <= EAST_BOUNDS.maxLat &&
+         lng >= EAST_BOUNDS.minLng && lng <= EAST_BOUNDS.maxLng;
+}
+
+// ===== DUPLICATE DETECTION =====
+function findNearbyZones(lat, lng, radiusM = 200) {
+  return zonesData.filter(z => {
+    if (!z.ละติจูด || !z.ลองจิจูด) return false;
+    const dLat = (parseFloat(z.ละติจูด) - lat) * 111000;
+    const dLng = (parseFloat(z.ลองจิจูด) - lng) * 111000 * Math.cos(lat * Math.PI / 180);
+    return Math.sqrt(dLat * dLat + dLng * dLng) <= radiusM;
+  });
+}
+
+let pendingPayload = null;
+function forceSubmit() {
+  closeModal('dupModal');
+  if (pendingPayload) doSend(pendingPayload);
+}
+
+// ===== RATE LIMITING =====
+const RATE_LIMIT = 5;
+const RATE_WINDOW = 3600000; // 1 hour
+const COOLDOWN = 30000; // 30s between submits
+let lastSubmitTime = 0;
+
+function checkRateLimit() {
+  const now = Date.now();
+  // Cooldown between submits
+  if (now - lastSubmitTime < COOLDOWN) {
+    const wait = Math.ceil((COOLDOWN - (now - lastSubmitTime)) / 1000);
+    showToast(`⏳ กรุณารอ ${wait} วินาทีก่อนส่งอีกครั้ง`, 'warning');
+    return false;
+  }
+  // Hourly rate limit
+  const history = JSON.parse(localStorage.getItem('submitHistory') || '[]');
+  const recent = history.filter(t => now - t < RATE_WINDOW);
+  if (recent.length >= RATE_LIMIT) {
+    showToast(`⚠️ ส่งรายงานได้สูงสุด ${RATE_LIMIT} ครั้งต่อชั่วโมง กรุณารอสักครู่`, 'warning');
+    return false;
+  }
+  return true;
+}
+
+function recordSubmit() {
+  lastSubmitTime = Date.now();
+  const history = JSON.parse(localStorage.getItem('submitHistory') || '[]');
+  const now = Date.now();
+  const recent = history.filter(t => now - t < RATE_WINDOW);
+  recent.push(now);
+  localStorage.setItem('submitHistory', JSON.stringify(recent));
+}
+
+// ===== SANITIZE INPUT =====
+function sanitize(str) {
+  if (!str) return '';
+  return str.toString()
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
+    .substring(0, 500);
+}
+
+// ===== TRACKING NUMBER =====
+function genTrackingNumber() {
+  const y = new Date().getFullYear() + 543;
+  const n = String(Math.floor(Math.random() * 9000) + 1000);
+  const prefix = ['CHB','RYG','CTB','TRT','CCO','PRB','SKW','NNY'][Math.floor(Math.random() * 8)];
+  return `RPT-${y}-${prefix}-${n}`;
+}
+
+// ===== OFFLINE QUEUE =====
+function initOfflineDetection() {
+  function updateOnlineStatus() {
+    const banner = document.getElementById('offlineBanner');
+    if (!navigator.onLine) {
+      banner.style.display = 'block';
+      document.getElementById('rptSubmitBtn') &&
+        (document.getElementById('rptSubmitBtn').textContent !== '📤 ส่งรายงาน' || null);
+    } else {
+      banner.style.display = 'none';
+      flushOfflineQueue();
+    }
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+}
+
+function saveToOfflineQueue(payload) {
+  const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+  queue.push({ ...payload, _queuedAt: Date.now() });
+  localStorage.setItem('offlineQueue', JSON.stringify(queue));
+  const count = queue.length;
+  document.getElementById('offlineQueueCount').textContent = count + ' รายการรอส่ง';
+  showToast('📵 บันทึกไว้แล้ว จะส่งอัตโนมัติเมื่อมีเน็ต', 'warning');
+}
+
+async function flushOfflineQueue() {
+  if (!config.gsUrl) return;
+  const queue = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+  if (!queue.length) return;
+  showToast(`🔄 กำลังส่ง ${queue.length} รายการที่ค้างไว้...`, 'info');
+  const failed = [];
+  for (const payload of queue) {
+    try {
+      await apiPost(payload);
+    } catch(e) { failed.push(payload); }
+  }
+  localStorage.setItem('offlineQueue', JSON.stringify(failed));
+  document.getElementById('offlineQueueCount').textContent =
+    failed.length ? failed.length + ' รายการรอส่ง' : '';
+  if (!failed.length) showToast('✅ ส่งข้อมูลที่ค้างไว้ครบแล้ว', 'success');
+}
+
+// ===== TIMEZONE FIX =====
+function getBKKTimestamp() {
+  return new Date().toLocaleString('th-TH', {
+    timeZone: 'Asia/Bangkok',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+}
+
+// ===== SUBMIT REPORT (full upgraded) =====
+async function submitReport() {
+  if (!rptSelectedLat || !rptSelectedLng) {
+    showToast('⚠️ กรุณาเลือกตำแหน่งบนแผนที่ก่อน', 'warning'); return;
+  }
+
+  // Geofence check
+  if (!isInEasternThailand(rptSelectedLat, rptSelectedLng)) {
+    showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก 8 จังหวัด', 'warning'); return;
+  }
+
+  // Rate limit check
+  if (!checkRateLimit()) return;
+
+  // Field validation
+  const province = document.getElementById('rptProvince').value;
+  const name = document.getElementById('rptName').value.trim();
+  const type = document.getElementById('rptType').value;
+  const risk = document.querySelector('input[name="rptRisk"]:checked')?.value;
+  if (!province || !name || !type || !risk) {
+    showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ (*)', 'warning'); return;
+  }
+  if (name.length < 3) {
+    showToast('⚠️ ชื่อจุดเสี่ยงสั้นเกินไป (อย่างน้อย 3 ตัวอักษร)', 'warning'); return;
+  }
+
+  const payload = {
+    timestamp: getBKKTimestamp(),
+    province: sanitize(province),
+    amphoe: sanitize(document.getElementById('rptAmphoe').value),
+    name: sanitize(name),
+    type: sanitize(type),
+    lat: rptSelectedLat,
+    lng: rptSelectedLng,
+    risk,
+    detail: sanitize(document.getElementById('rptDetail').value),
+    img: document.getElementById('rptImgData').value,
+    imgName: sanitize(document.getElementById('rptImgName').value),
+    reporter: sanitize(document.getElementById('rptReporter').value),
+  };
+
+  // Duplicate detection
+  const nearby = findNearbyZones(rptSelectedLat, rptSelectedLng);
+  if (nearby.length > 0) {
+    pendingPayload = payload;
+    document.getElementById('dupList').innerHTML = nearby.slice(0,3).map(z => `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;font-size:13px">
+        <div style="font-weight:600;color:var(--text);margin-bottom:3px">${z.ชื่อจุด || '—'}</div>
+        <div style="color:var(--text3)">${z.จังหวัด} › ${z.อำเภอ} · ${riskBadge(z.ระดับความเสี่ยง)}</div>
+        ${z.ละติจูด ? `<a href="https://www.google.com/maps?q=${z.ละติจูด},${z.ลองจิจูด}" target="_blank" style="font-size:11px;color:#58A6FF;text-decoration:none">📍 ดูบน Maps</a>` : ''}
+      </div>`).join('');
+    document.getElementById('dupModal').classList.add('show');
+    return;
+  }
+
+  await doSend(payload);
+}
+
+async function doSend(payload) {
+  if (!config.gsUrl) {
+    showToast('⚠️ กรุณาตั้งค่า Google Sheet URL ก่อน (หน้า Settings)', 'warning'); return;
+  }
+
+  const btn = document.getElementById('rptSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span> กำลังส่ง...';
+
+  // Offline → queue
+  if (!navigator.onLine) {
+    saveToOfflineQueue(payload);
+    btn.disabled = false; btn.innerHTML = '📤 ส่งรายงาน';
+    return;
+  }
+
+  try {
+    const result = await apiPost(payload);
+    if (result && result.status === 'error') {
+      throw new Error(result.message || 'Submit failed');
+    }
+
+    recordSubmit();
+    discardDraft();
+
+    // Show success modal with tracking number
+    const trackNo = genTrackingNumber();
+    document.getElementById('trackingNumber').textContent = trackNo;
+    document.getElementById('successLocation').textContent =
+      `${payload.province}${payload.amphoe ? ' › ' + payload.amphoe : ''} — ${rptSelectedLat.toFixed(5)}, ${rptSelectedLng.toFixed(5)}`;
+    document.getElementById('successMapsLink').href =
+      `https://www.google.com/maps?q=${rptSelectedLat},${rptSelectedLng}&z=17`;
+    document.getElementById('successModal').classList.add('show');
+
+    clearForm();
+    loadZones();
+    pendingPayload = null;
+  } catch(e) {
+    if (e.name === 'AbortError') {
+      showToast('⏱️ หมดเวลา — กรุณาลองใหม่หรือตรวจสอบการเชื่อมต่อ', 'error');
+    } else {
+      showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
+    }
+  } finally {
+    btn.disabled = !rptSelectedLat;
+    btn.innerHTML = '📤 ส่งรายงาน';
+  }
+}
+
+function clearForm() {
+  ['rptProvince','rptAmphoe','rptName','rptType','rptReporter','rptDetail'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.querySelectorAll('input[name="rptRisk"]').forEach(r => r.checked = false);
+  ['lRiskHigh','lRiskMed','lRiskLow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.background = 'var(--bg3)'; el.style.borderColor = 'var(--border2)'; el.style.color = 'var(--text3)'; }
+  });
+  rptClearImage();
+  rptResetLocation();
+  discardDraft();
+  updateStep(1, 'active', 'ยังไม่เลือก');
+  updateStep(2, 'idle', 'กรอกข้อมูล');
+  updateStep(3, 'idle', 'ไม่บังคับ');
+}
+
+// ===== AMPHOE DATA =====
+const amphoeMap = {
+  'ชลบุรี': ['เมืองชลบุรี','บ้านบึง','หนองใหญ่','บางละมุง','พานทอง','พนัสนิคม','ศรีราชา','เกาะสีชัง','สัตหีบ','บ่อทอง','เกาะจันทร์'],
+  'ระยอง': ['เมืองระยอง','บ้านฉาง','แกลง','วังจันทร์','บ้านค่าย','ปลวกแดง','เขาชะเมา','นิคมพัฒนา'],
+  'จันทบุรี': ['เมืองจันทบุรี','ขลุง','ท่าใหม่','โป่งน้ำร้อน','มะขาม','แหลมสิงห์','สอยดาว','แก่งหางแมว','นายายอาม','เขาคิชฌกูฏ'],
+  'ตราด': ['เมืองตราด','คลองใหญ่','เขาสมิง','บ่อไร','ไม้รูด','เกาะกูด','เกาะช้าง'],
+  'ฉะเชิงเทรา': ['เมืองฉะเชิงเทรา','บ้านโพธิ์','แปลงยาว','บางน้ำเปรี้ยว','บางปะกง','บางคล้า','บางสาน','พนมสารคาม','ราชสาส์น','สนามชัยเขต','ท่าตะเกียบ'],
+  'ปราจีนบุรี': ['เมืองปราจีนบุรี','กบินทร์บุรี','นาดี','บ้านสร้าง','ประจันตคาม','ศรีมโหสถ','ศรีมหาโพธิ'],
+  'สระแก้ว': ['เมืองสระแก้ว','คลองหาด','ตาพระยา','วังน้ำเย็น','วัฒนานคร','อรัญประเทศ','เขาฉกรรจ์','โคกสูง','วังสมบูรณ์'],
+  'นครนายก': ['เมืองนครนายก','ปากพลี','บ้านนา','องครักษ์'],
+};
+
+function updateAmphoe() {
+  const p = document.getElementById('rptProvince').value;
+  const sel = document.getElementById('rptAmphoe');
+  sel.innerHTML = '<option value="">-- เลือกอำเภอ --</option>';
+  if (amphoeMap[p]) {
+    amphoeMap[p].forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; sel.appendChild(o); });
+  }
+}
+
+// ===== WEATHER =====
+async function loadWeather() {
+  const province = document.getElementById('weatherProvince').value;
+  document.getElementById('wProvince').textContent = province;
+  const weatherData = {
+    'ชลบุรี': { temp:33, desc:'มีเมฆบางส่วน ร้อนชื้น', humidity:76, wind:18, uv:9, forecast:[
+      {day:'พรุ่งนี้',icon:'⛅',desc:'มีเมฆ',hi:34,lo:27},{day:'อาทิตย์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:31,lo:26},
+      {day:'จันทร์',icon:'🌧️',desc:'ฝนตก',hi:29,lo:25},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:32,lo:26},
+      {day:'พุธ',icon:'☀️',desc:'แดดจัด',hi:35,lo:27},{day:'พฤหัส',icon:'🌤️',desc:'แดดจ้า',hi:34,lo:27},
+      {day:'ศุกร์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:31,lo:26}
+    ]},
+    'ระยอง': { temp:32, desc:'แดดจ้า ร้อนมาก', humidity:72, wind:15, uv:10, forecast:[
+      {day:'พรุ่งนี้',icon:'☀️',desc:'แดดจัด',hi:34,lo:26},{day:'อาทิตย์',icon:'🌤️',desc:'แดดจ้า',hi:33,lo:26},
+      {day:'จันทร์',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},{day:'อังคาร',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:25},
+      {day:'พุธ',icon:'🌧️',desc:'ฝนตก',hi:28,lo:24},{day:'พฤหัส',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
+      {day:'ศุกร์',icon:'☀️',desc:'แดดจัด',hi:34,lo:26}
+    ]},
+    'จันทบุรี': { temp:31, desc:'ฝนตกบางพื้นที่', humidity:84, wind:12, uv:7, forecast:[
+      {day:'พรุ่งนี้',icon:'🌧️',desc:'ฝนหนัก',hi:29,lo:24},{day:'อาทิตย์',icon:'⛈️',desc:'พายุฝน',hi:28,lo:23},
+      {day:'จันทร์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:24},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
+      {day:'พุธ',icon:'🌤️',desc:'แดดจ้า',hi:32,lo:25},{day:'พฤหัส',icon:'🌦️',desc:'ฝนปาน',hi:30,lo:24},
+      {day:'ศุกร์',icon:'🌧️',desc:'ฝนหนัก',hi:28,lo:23}
+    ]},
+  };
+  const wd = weatherData[province] || { temp:30, desc:'สภาพอากาศปกติ', humidity:75, wind:15, uv:8, forecast:[
+    {day:'พรุ่งนี้',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},{day:'อาทิตย์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:24},
+    {day:'จันทร์',icon:'☀️',desc:'แดดจัด',hi:33,lo:25},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
+    {day:'พุธ',icon:'🌧️',desc:'ฝนตก',hi:29,lo:24},{day:'พฤหัส',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},
+    {day:'ศุกร์',icon:'☀️',desc:'แดดจัด',hi:34,lo:26}
+  ]};
+  document.getElementById('wTemp').textContent = wd.temp + '°C';
+  document.getElementById('wDesc').textContent = wd.desc;
+  document.getElementById('wHumidity').textContent = wd.humidity + '%';
+  document.getElementById('wWind').textContent = wd.wind + ' กม/ชม.';
+  document.getElementById('wUV').textContent = wd.uv + ' ' + (wd.uv >= 8 ? '🔴สูงมาก' : wd.uv >= 6 ? '🟠สูง' : '🟡ปานกลาง');
+  document.getElementById('forecast7day').innerHTML = wd.forecast.map(f => `
+    <div class="forecast-row">
+      <div class="forecast-day">${f.day}</div>
+      <div class="forecast-icon">${f.icon}</div>
+      <div class="forecast-desc">${f.desc}</div>
+      <div class="forecast-temps">${f.hi}° <span class="forecast-lo">${f.lo}°</span></div>
+    </div>
+  `).join('');
+}
+
+// ===== DISEASE DATA =====
+const diseaseData = {
+  hot: [
+    { icon:'🌡️', name:'โรคลมแดด (Heat Stroke)', desc:'ร่างกายอุณหภูมิสูงเกิน 40°C เกิดจากการโดนแดดนาน เหงื่อออกมาก', prevent:'หลีกเลี่ยงแดดจัด สวมเสื้อแขนยาว ดื่มน้ำทุก 30 นาที พักในที่ร่ม', treat:'ย้ายผู้ป่วยเข้าร่ม ประคบเย็น ให้น้ำเย็น พาพบแพทย์ทันที' },
+    { icon:'💧', name:'โรคอุจจาระร่วงเฉียบพลัน', desc:'เชื้อแบคทีเรียในอาหาร น้ำดื่ม ระบาดมากในอากาศร้อน', prevent:'ล้างมือบ่อย รับประทานอาหารสุก หลีกเลี่ยงอาหารค้างคืน', treat:'ดื่มน้ำ ORS ทดแทน หากอาการรุนแรง (เลือด ไข้) พบแพทย์' },
+    { icon:'👁️', name:'โรคตาแดง (Conjunctivitis)', desc:'ติดต่อง่ายในที่สาธารณะ อากาศร้อนทำให้เชื้อแพร่เร็ว', prevent:'ไม่ใช้ผ้าเช็ดหน้าร่วมกัน ล้างมือก่อนสัมผัสตา สวมแว่นกันฝุ่น', treat:'ยาหยอดตาปฏิชีวนะ หลีกเลี่ยงการขยี้ตา พบแพทย์หากรุนแรง' },
+    { icon:'🦟', name:'โรคไข้เลือดออก (Dengue)', desc:'ยุงลายชุกชุมในฤดูร้อน น้ำขังตามภาชนะ', prevent:'ทำลายแหล่งน้ำขัง นอนกางมุ้ง ทาโลชั่นกันยุง', treat:'พักผ่อน ดื่มน้ำมาก เฝ้าระวังเลือดออก หากเกร็ดเลือดต่ำ นอนโรงพยาบาล' },
+  ],
+  rain: [
+    { icon:'🤧', name:'ไข้หวัดใหญ่ (Influenza)', desc:'ระบาดมากในฤดูฝน เชื้อไวรัสแพร่ทางละอองอากาศ', prevent:'ฉีดวัคซีนประจำปี ล้างมือบ่อย สวมหน้ากากในที่ชุมชน', treat:'พักผ่อน ยาลดไข้ (Paracetamol) น้ำมาก หากไม่ดีขึ้น 3 วัน พบแพทย์' },
+    { icon:'🦟', name:'โรคมาลาเรีย / ไข้เลือดออก', desc:'ฤดูฝนยุงชุกชุม แหล่งน้ำขังมาก โดยเฉพาะพื้นที่ป่าชายแดน', prevent:'นอนกางมุ้ง ทาโลชั่นกันยุง สวมเสื้อแขนยาวช่วงหัวค่ำ-เช้าตรู่', treat:'ยาต้านมาลาเรีย (ต้องพบแพทย์) ไม่ซื้อยาเอง' },
+    { icon:'🦶', name:'โรคน้ำกัดเท้า / เชื้อรา', desc:'เดินลุยน้ำในฤดูฝน เชื้อราสะสมในรองเท้าชื้น', prevent:'สวมรองเท้าปิดนิ้ว เช็ดเท้าให้แห้งหลังเดินน้ำ', treat:'ยาต้านเชื้อรา (Clotrimazole) ทาวันละ 2 ครั้ง ใส่รองเท้าเปิดพัก' },
+    { icon:'🫁', name:'โรคฉี่หนู (Leptospirosis)', desc:'เชื้อ Leptospira ในน้ำท่วม ปนเปื้อนจากปัสสาวะหนู', prevent:'หลีกเลี่ยงลุยน้ำท่วม สวมรองเท้าบูท ล้างมือหลังสัมผัสน้ำ', treat:'ยาปฏิชีวนะ Doxycycline พบแพทย์ด่วนหากมีไข้หลังลุยน้ำ' },
+  ],
+  cold: [
+    { icon:'🤧', name:'ไข้หวัด / ทอนซิลอักเสบ', desc:'อากาศเย็นแห้ง ระบบภูมิคุ้มกันลดลง เชื้อไวรัสแพร่ง่าย', prevent:'สวมเสื้อกันหนาว ดื่มน้ำอุ่น รับประทานผักผลไม้ให้พอ', treat:'พักผ่อน ยาแก้ไข้ ยาแก้เจ็บคอ หากมีหนองที่ทอนซิล พบแพทย์' },
+    { icon:'💨', name:'โรคหอบหืด / ภูมิแพ้กำเริบ', desc:'อากาศเย็นและแห้ง กระตุ้นการกำเริบของโรคทางเดินหายใจ', prevent:'พกยาสูด (inhaler) ไว้เสมอ หลีกเลี่ยงอากาศเย็นจัด', treat:'ใช้ยาสูดขยายหลอดลมทันที หากไม่ดีขึ้น พบแพทย์ฉุกเฉิน' },
+    { icon:'🦴', name:'ปวดข้อ / ปวดกล้ามเนื้อ', desc:'ความเย็นทำให้กล้ามเนื้อตึง ข้อต่อเคลื่อนไหวแข็ง เสี่ยงบาดเจ็บ', prevent:'อบอุ่นร่างกายก่อนออกกำลัง สวมเสื้อผ้าหลายชั้น', treat:'ยาคลายกล้ามเนื้อ ประคบร้อน นวด หรือพบกายภาพบำบัด' },
+    { icon:'👃', name:'ไซนัสอักเสบ', desc:'หมอกและอากาศเย็นชื้นกระตุ้นการอักเสบของไซนัส', prevent:'สวมผ้าปิดจมูกขณะขับขี่ หลีกเลี่ยงอากาศเย็นจัดโดยตรง', treat:'สเปรย์น้ำเกลือล้างจมูก ยาแก้แพ้ (Antihistamine) พักผ่อน' },
+  ],
+};
+
+function showDiseaseTab(season) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderDiseaseTab(season);
+}
+
+function renderDiseaseTab(season) {
+  const list = document.getElementById('diseaseList');
+  list.innerHTML = diseaseData[season].map(d => `
+    <div class="disease-item">
+      <div class="disease-icon">${d.icon}</div>
+      <div style="flex:1">
+        <div class="disease-name">${d.name}</div>
+        <div class="disease-desc">${d.desc}</div>
+        <div class="disease-pills">
+          <span class="disease-pill dp-prevent">✅ ป้องกัน: ${d.prevent}</span>
+        </div>
+        <div class="disease-pills" style="margin-top:5px">
+          <span class="disease-pill dp-treat">💊 รักษา: ${d.treat}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== SYNC =====
+function syncData() {
+  showToast('🔄 กำลังซิงค์ข้อมูล...', 'info');
+  loadZones();
+  setTimeout(() => showToast('✅ ซิงค์ข้อมูลเรียบร้อย', 'success'), 1000);
+}
+
+function openAllMaps() {
+  window.open('https://www.google.com/maps/search/ภาคตะวันออก+ประเทศไทย', '_blank');
+}
+
+// ===== MODALS =====
+function showScriptModal() {
+  document.getElementById('scriptModal').classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+function copyScript() {
+  const ta = document.querySelector('#scriptModal textarea');
+  ta.select();
+  document.execCommand('copy');
+  showToast('📋 คัดลอก Code แล้ว!', 'success');
+}
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  const colors = { success: '#56D364', warning: '#E3B341', error: '#F85149', info: '#58A6FF' };
+  t.style.display = 'flex';
+  t.style.borderLeftColor = colors[type] || colors.info;
+  t.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${colors[type]};flex-shrink:0"></span> ${msg}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display = 'none', 3500);
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('show'); });
+});
+</script>
+</body>
+</html>
