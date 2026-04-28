@@ -860,7 +860,6 @@ function apiPost(payload) {
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="logo-area">
     <div class="logo-icon">🛡️</div>
@@ -920,7 +919,6 @@ function apiPost(payload) {
   </div>
 </aside>
 
-<!-- MAIN -->
 <div class="main">
   <header class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
@@ -935,7 +933,6 @@ function apiPost(payload) {
 
   <div class="content">
 
-    <!-- ===== DASHBOARD ===== -->
     <div class="section active" id="page-dashboard">
       <div class="stat-grid">
         <div class="stat-card">
@@ -1003,11 +1000,9 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== REPORT FORM ===== -->
     <div class="section" id="page-report">
       <div style="max-width:700px">
 
-        <!-- DRAFT RESTORE BANNER -->
         <div id="draftBanner" style="display:none;background:rgba(245,124,0,0.1);border:1px solid rgba(245,124,0,0.3);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#FFB74D;display:none;align-items:center;gap:10px">
           <span>📝</span>
           <span style="flex:1">พบข้อมูลที่กรอกค้างไว้ก่อนหน้า — ต้องการกู้คืนไหม?</span>
@@ -1015,7 +1010,6 @@ function apiPost(payload) {
           <button onclick="discardDraft()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:0 2px">×</button>
         </div>
 
-        <!-- STEP INDICATOR -->
         <div style="display:flex;align-items:center;gap:0;margin-bottom:18px">
           <div class="step-item" id="step1" style="display:flex;align-items:center;gap:8px;flex:1">
             <div id="step1Dot" style="width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;flex-shrink:0;transition:all 0.2s">1</div>
@@ -1046,7 +1040,6 @@ function apiPost(payload) {
           💡 กด <strong>ตำแหน่งของฉัน</strong> เพื่อใช้ GPS อัตโนมัติ หรือ <strong>คลิกบนแผนที่</strong> เพื่อเลือกจุด — ระบบดึงที่อยู่ให้อัตโนมัติ
         </div>
 
-        <!-- MAP LOCATION PICKER -->
         <div class="card" style="padding:0;margin-bottom:16px;overflow:hidden">
           <div style="padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
             <div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px">
@@ -1061,14 +1054,12 @@ function apiPost(payload) {
             </div>
           </div>
 
-          <!-- MAP -->
           <div style="position:relative;height:320px;background:var(--bg3)">
             <div id="rptMap" style="width:100%;height:100%"></div>
             <div id="rptMapHint" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(13,17,23,0.88);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--text2);pointer-events:none;z-index:1000;white-space:nowrap;transition:opacity 0.3s">คลิกบนแผนที่เพื่อปักหมุดตำแหน่ง</div>
             <button onclick="rptGetMyLocation()" style="position:absolute;bottom:12px;right:12px;z-index:1000;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:7px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;font-weight:500;display:flex;align-items:center;gap:5px;transition:all 0.15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text2)'">⊕ ตำแหน่งปัจจุบัน</button>
           </div>
 
-          <!-- COORD ROW -->
           <div style="padding:12px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg3);border-top:1px solid var(--border)">
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
               <div id="rptCoordDot" style="width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background 0.3s"></div>
@@ -1081,7 +1072,6 @@ function apiPost(payload) {
             <a id="rptOpenMaps" href="#" target="_blank" style="display:none;align-items:center;gap:4px;font-size:12px;color:#58A6FF;background:rgba(31,111,235,0.1);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius-sm);padding:4px 10px;text-decoration:none;font-weight:500">🗺️ เปิด Google Maps</a>
           </div>
 
-          <!-- ADDRESS -->
           <div id="rptAddressBox" style="display:none;padding:10px 18px;border-top:1px solid var(--border);align-items:flex-start;gap:10px">
             <span style="font-size:15px;flex-shrink:0">📬</span>
             <div style="flex:1">
@@ -1091,7 +1081,6 @@ function apiPost(payload) {
           </div>
         </div>
 
-        <!-- DETAIL FORM -->
         <div class="card">
           <div class="card-title" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">รายละเอียดจุดเสี่ยง</div>
           <div class="form-grid">
@@ -1128,7 +1117,6 @@ function apiPost(payload) {
               <input type="text" id="rptReporter" placeholder="ชื่อ-นามสกุล (ไม่บังคับ)">
             </div>
 
-            <!-- read-only lat/lng -->
             <div class="form-group">
               <label>ละติจูด (auto)</label>
               <input type="text" id="rptLat" placeholder="เลือกตำแหน่งบนแผนที่" readonly style="color:#58A6FF;background:rgba(31,111,235,0.06);border-color:rgba(88,166,255,0.2);cursor:default">
@@ -1138,7 +1126,6 @@ function apiPost(payload) {
               <input type="text" id="rptLng" placeholder="เลือกตำแหน่งบนแผนที่" readonly style="color:#58A6FF;background:rgba(31,111,235,0.06);border-color:rgba(88,166,255,0.2);cursor:default">
             </div>
 
-            <!-- RISK SELECTOR -->
             <div class="form-group full">
               <label>ระดับความเสี่ยง *</label>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
@@ -1162,7 +1149,6 @@ function apiPost(payload) {
               <textarea id="rptDetail" placeholder="อธิบายลักษณะอันตราย ช่วงเวลา หรือสภาพแวดล้อมเพิ่มเติม..."></textarea>
             </div>
 
-            <!-- IMAGE PICKER -->
             <div class="form-group full">
               <label>รูปภาพประกอบ</label>
               <input type="file" id="rptInputGallery" accept="image/*" style="display:none" onchange="rptHandleImage(this)">
@@ -1171,7 +1157,6 @@ function apiPost(payload) {
               <input type="hidden" id="rptImgName">
 
               <div id="rptImgPicker" style="border:1.5px dashed var(--border2);border-radius:var(--radius);overflow:hidden;background:var(--bg3);transition:border-color 0.2s">
-                <!-- empty -->
                 <div id="rptImgEmpty" style="padding:24px 20px 20px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center">
                   <span style="font-size:26px;margin-bottom:6px">🖼️</span>
                   <div style="font-size:13px;font-weight:600;color:var(--text2)">เพิ่มรูปภาพ</div>
@@ -1187,7 +1172,6 @@ function apiPost(payload) {
                     </button>
                   </div>
                 </div>
-                <!-- preview -->
                 <div id="rptImgPreviewWrap" style="display:none">
                   <div style="position:relative;width:100%;aspect-ratio:16/9;max-height:240px;overflow:hidden">
                     <img id="rptImgPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
@@ -1224,7 +1208,6 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== RISK ZONES ===== -->
     <div class="section" id="page-zones">
       <div class="filter-row">
         <select id="filterProvince" style="min-width:150px" onchange="filterZones()">
@@ -1267,7 +1250,6 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== ACCIDENTS ===== -->
     <div class="section" id="page-accidents">
       <div class="api-note">
         📡 ข้อมูลสถิติอุบัติเหตุ — อ้างอิงจาก กรมทางหลวง, กรมป้องกันและบรรเทาสาธารณภัย, สำนักงานตำรวจแห่งชาติ (ปีปัจจุบัน 2568)
@@ -1340,7 +1322,6 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== WEATHER ===== -->
     <div class="section" id="page-weather">
       <div class="filter-row">
         <select id="weatherProvince" onchange="loadWeather()">
@@ -1356,7 +1337,7 @@ function apiPost(payload) {
         <div class="weather-main" id="weatherMain">
           <div class="weather-province" id="wProvince">ชลบุรี</div>
           <div class="weather-temp" id="wTemp">—°C</div>
-          <div class="weather-desc" id="wDesc">กำลังโหลด...</div>
+          <div class="weather-desc" id="wDesc" style="text-transform: capitalize;">กำลังโหลด...</div>
           <div class="weather-details">
             <div class="weather-detail-item">
               <div class="wdi-label">ความชื้น</div>
@@ -1374,7 +1355,7 @@ function apiPost(payload) {
         </div>
 
         <div class="forecast-card">
-          <div class="forecast-title">🗓️ พยากรณ์ 7 วันล่วงหน้า</div>
+          <div class="forecast-title">🗓️ พยากรณ์ 5 วันล่วงหน้า</div>
           <div id="forecast7day">
             <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">กำลังโหลด...</div>
           </div>
@@ -1394,12 +1375,11 @@ function apiPost(payload) {
             ⚡ <strong>พายุฝนฟ้าคะนอง</strong> — ชลบุรี ตอนบน — ไม่ควรขับขี่ในช่วงพายุ หยุดพักใต้หลังคาที่ปลอดภัย<br>
             🌫️ <strong>หมอกหนา</strong> — ปราจีนบุรี, สระแก้ว — ตอนเช้าตรู่ (04.00–07.00 น.) ทัศนวิสัยต่ำ
           </div>
-          <div style="font-size:11px;color:var(--text3)">* ข้อมูลพยากรณ์อากาศ: ใช้ OpenWeatherMap API (ตั้งค่าได้ในหน้า Settings)</div>
+          <div style="font-size:11px;color:var(--text3)">* ข้อมูลพยากรณ์อากาศเชื่อมต่อ API จริงของ OpenWeatherMap</div>
         </div>
       </div>
     </div>
 
-    <!-- ===== PREVENTION ===== -->
     <div class="section" id="page-prevention">
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">🪖 การป้องกันอุบัติเหตุสำหรับไรเดอร์ส่งสินค้า</div>
@@ -1481,7 +1461,6 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== SEASONS ===== -->
     <div class="section" id="page-seasons">
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">🌦️ วิธีรับมือกับอันตรายแต่ละฤดูกาล</div>
@@ -1568,7 +1547,6 @@ function apiPost(payload) {
       </div>
     </div>
 
-    <!-- ===== DISEASE ===== -->
     <div class="section" id="page-disease">
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">💊 โรคที่มักพบในแต่ละฤดูและวิธีดูแล</div>
@@ -1584,7 +1562,6 @@ function apiPost(payload) {
       <div class="disease-list" id="diseaseList"></div>
     </div>
 
-    <!-- ===== SETTINGS ===== -->
     <div class="section" id="page-settings">
       <div class="setup-card" style="margin:0;max-width:100%">
         <div class="card-title" style="font-size:16px;margin-bottom:4px">⚙️ ตั้งค่า Google Sheet</div>
@@ -1641,16 +1618,25 @@ function apiPost(payload) {
       </div>
     </div>
 
-  </div><!-- /content -->
-</div><!-- /main -->
+  </div></div><div class="modal-overlay" id="pwdModal">
+  <div class="modal" style="max-width:320px;text-align:center;border-top: 5px solid #FF7043;">
+    <div style="font-size:48px;margin-bottom:12px">🤫🎀</div>
+    <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px">ต๊ะเอ๋! ขอรหัสผ่านหน่อยน้า~</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:20px">เข้าห้องตั้งค่าต้องมีรหัสลับนะค๊า (1150) ✨</div>
+    <input type="password" id="cutePwdInput" placeholder="พิมพ์รหัสลับตรงนี้เลย..." style="width:100%;text-align:center;font-size:16px;letter-spacing:2px;margin-bottom:16px" onkeypress="if(event.key === 'Enter') checkCutePwd()">
+    <div id="pwdError" style="color:#F85149;font-size:12px;display:none;margin-bottom:12px">แงง รหัสผิดง่าา ลองใหม่น้า 🥺</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('pwdModal')">ปิดไปก่อน</button>
+      <button class="btn btn-primary" onclick="checkCutePwd()">เข้าสู่ระบบ 🚀</button>
+    </div>
+  </div>
+</div>
 
-<!-- OFFLINE BANNER -->
 <div id="offlineBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9998;background:#7c4a00;color:#FFB74D;padding:8px 20px;font-size:13px;font-weight:500;text-align:center;border-bottom:1px solid rgba(255,183,77,0.3)">
   📵 ไม่มีอินเทอร์เน็ต — ข้อมูลที่ส่งจะถูกบันทึกไว้และส่งอัตโนมัติเมื่อกลับมาออนไลน์
   <span id="offlineQueueCount" style="margin-left:8px;background:rgba(255,183,77,0.2);padding:1px 8px;border-radius:10px"></span>
 </div>
 
-<!-- DUPLICATE WARNING MODAL -->
 <div class="modal-overlay" id="dupModal">
   <div class="modal" style="max-width:460px">
     <div class="modal-title">⚠️ พบจุดเสี่ยงใกล้เคียง</div>
@@ -1668,7 +1654,6 @@ function apiPost(payload) {
   </div>
 </div>
 
-<!-- SUCCESS TRACKING MODAL -->
 <div class="modal-overlay" id="successModal">
   <div class="modal" style="max-width:440px;text-align:center">
     <div style="font-size:36px;margin-bottom:12px">✅</div>
@@ -1686,7 +1671,6 @@ function apiPost(payload) {
   </div>
 </div>
 
-<!-- MODAL: Apps Script Code -->
 <div class="modal-overlay" id="scriptModal">
   <div class="modal" style="max-width:680px">
     <div class="modal-title">📋 Google Apps Script Code</div>
@@ -1740,14 +1724,15 @@ function doPost(e) {
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
 // ===== CONFIG =====
+const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbwdSPVqcY44WZ1gy9fNxIptLXnrlqRcK_i7p72QRphdCp8soODqrFF-j5svbrvUViNEPA/exec";
+
 let config = {
-  gsUrl: localStorage.getItem('gsUrl') || '',
-  owmKey: localStorage.getItem('owmKey') || '',
+  gsUrl: localStorage.getItem('gsUrl') || DEFAULT_GAS_URL,
+  owmKey: localStorage.getItem('owmKey') || '52f9e21e2c9a1cf5560272b165963223',
 };
 
 let zonesData = [];
@@ -1788,9 +1773,38 @@ const pageTitles = {
 };
 
 function showPage(id) {
+  // เรียกระบบรหัสผ่านแบบน่ารักถ้าเปิดหน้า Settings
+  if (id === 'settings') {
+    document.getElementById('cutePwdInput').value = '';
+    document.getElementById('pwdError').style.display = 'none';
+    document.getElementById('pwdModal').classList.add('show');
+    setTimeout(() => document.getElementById('cutePwdInput').focus(), 100);
+    return; // หยุดทำงาน แล้วรอรับรหัสใน Modal
+  }
+  
+  executeShowPage(id);
+}
+
+// โค้ดสำหรับตรวจสอบรหัสผ่านใน Modal น่ารักๆ
+function checkCutePwd() {
+  const pwd = document.getElementById('cutePwdInput').value;
+  if (pwd === "1150") {
+    closeModal('pwdModal');
+    executeShowPage('settings');
+  } else {
+    document.getElementById('pwdError').style.display = 'block';
+    document.getElementById('cutePwdInput').focus();
+  }
+}
+
+// ฟังก์ชันหลักที่ใช้เปลี่ยนหน้า
+function executeShowPage(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
+  
+  const targetSection = document.getElementById('page-' + id);
+  if(targetSection) targetSection.classList.add('active');
+  
   document.getElementById('pageTitle').textContent = pageTitles[id] || id;
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') === `showPage('${id}')`) n.classList.add('active');
@@ -1811,8 +1825,8 @@ function toggleSidebar() {
 
 // ===== GOOGLE SHEET =====
 function loadConfig() {
-  config.gsUrl = localStorage.getItem('gsUrl') || '';
-  config.owmKey = localStorage.getItem('owmKey') || '';
+  config.gsUrl = localStorage.getItem('gsUrl') || DEFAULT_GAS_URL;
+  config.owmKey = localStorage.getItem('owmKey') || '52f9e21e2c9a1cf5560272b165963223';
 }
 
 function saveSettings() {
@@ -1822,6 +1836,8 @@ function saveSettings() {
   localStorage.setItem('owmKey', config.owmKey);
   updateGsStatus();
   showToast('💾 บันทึกการตั้งค่าแล้ว', 'success');
+  // อัปเดตพยากรณ์อากาศทันทีที่เปลี่ยนคีย์
+  loadWeather();
 }
 
 function updateGsStatus() {
@@ -1908,7 +1924,8 @@ function renderZonesTable(data) {
     if (fs && !d.ชื่อจุด.toLowerCase().includes(fs) && !d.อำเภอ.toLowerCase().includes(fs)) return false;
     return true;
   });
-  document.getElementById('zonesCount').textContent = `แสดง ${filtered.length} จาก ${data.length} รายการ`;
+  const countEl = document.getElementById('zonesCount');
+  if(countEl) countEl.textContent = `แสดง ${filtered.length} จาก ${data.length} รายการ`;
   if (!filtered.length) {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>';
     return;
@@ -1944,13 +1961,16 @@ function renderRecentZones(data) {
 }
 
 function updateStats(data) {
-  document.getElementById('totalZones').textContent = data.length;
+  const tz = document.getElementById('totalZones');
+  if(tz) tz.textContent = data.length;
   const pending = data.filter(d => d.สถานะ === 'รอตรวจสอบ').length;
-  document.getElementById('pendingCount').textContent = pending;
-  document.getElementById('pendingBadge').textContent = pending;
+  const pc = document.getElementById('pendingCount');
+  if(pc) pc.textContent = pending;
+  const pb = document.getElementById('pendingBadge');
+  if(pb) pb.textContent = pending;
 }
 
-function updatePendingBadge() { /* called on load, updated by updateStats */ }
+function updatePendingBadge() { /* logic inside updateStats */ }
 
 function filterZones() { renderZonesTable(zonesData); }
 
@@ -1965,13 +1985,16 @@ function initRiskBars() {
   const provinces = ['ชลบุรี','ระยอง','ฉะเชิงเทรา','จันทบุรี','ปราจีนบุรี','สระแก้ว','ตราด','นครนายก'];
   const vals = [88, 71, 54, 48, 39, 28, 22, 14];
   const colors = ['#F85149','#F85149','#E3B341','#E3B341','#E3B341','#56D364','#56D364','#56D364'];
-  document.getElementById('riskBarsContent').innerHTML = provinces.map((p,i) => `
-    <div class="risk-bar-container">
-      <div class="risk-bar-label">${p}</div>
-      <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${vals[i]}%;background:${colors[i]}"></div></div>
-      <div class="risk-bar-val">${vals[i]}</div>
-    </div>
-  `).join('');
+  const rb = document.getElementById('riskBarsContent');
+  if(rb) {
+    rb.innerHTML = provinces.map((p,i) => `
+      <div class="risk-bar-container">
+        <div class="risk-bar-label">${p}</div>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${vals[i]}%;background:${colors[i]}"></div></div>
+        <div class="risk-bar-val">${vals[i]}</div>
+      </div>
+    `).join('');
+  }
 }
 
 // ===== REPORT MAP =====
@@ -1981,7 +2004,7 @@ function initReportMap() {
   if (rptMap) return;
   rptMap = L.map('rptMap', { center: [13.0, 101.5], zoom: 8, zoomControl: true });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 19
+    attribution: '© CARTO', subdomains: 'abcd', maxZoom: 19
   }).addTo(rptMap);
   rptMap.on('click', e => rptSetLocation(e.latlng.lat, e.latlng.lng));
 }
@@ -2003,7 +2026,6 @@ function rptSetLocation(lat, lng) {
   }
   rptMap.setView([rptSelectedLat, rptSelectedLng], Math.max(rptMap.getZoom(), 15), { animate: true });
 
-  // Update UI chips
   document.getElementById('rptCoordDot').style.background = '#2EA043';
   document.getElementById('rptCoordDot').style.boxShadow = '0 0 6px rgba(46,160,67,0.5)';
   document.getElementById('rptCoordText').textContent = 'ตำแหน่งพร้อมแล้ว — ลากหมุดเพื่อปรับ';
@@ -2023,12 +2045,10 @@ function rptSetLocation(lat, lng) {
   document.getElementById('rptSubmitHint').textContent = 'ตำแหน่งพร้อมแล้ว';
   document.getElementById('rptSubmitHint').style.color = '#56D364';
 
-  // Update step indicators
   updateStep(1, 'done', rptSelectedLat.toFixed(4) + ', ' + rptSelectedLng.toFixed(4));
   updateStep(2, 'active', 'กรอกข้อมูล');
   saveDraft();
 
-  // Reverse geocode
   const addrBox = document.getElementById('rptAddressBox');
   const addrTxt = document.getElementById('rptAddressText');
   addrBox.style.display = 'flex';
@@ -2100,16 +2120,21 @@ function selectRisk(val) {
   };
   ['lRiskHigh','lRiskMed','lRiskLow'].forEach(id => {
     const el = document.getElementById(id);
-    el.style.background = 'var(--bg3)';
-    el.style.borderColor = 'var(--border2)';
-    el.style.color = 'var(--text3)';
+    if(el) {
+      el.style.background = 'var(--bg3)';
+      el.style.borderColor = 'var(--border2)';
+      el.style.color = 'var(--text3)';
+    }
   });
   const s = styles[val];
   const el = document.getElementById(s.id);
-  el.style.background = s.bg;
-  el.style.borderColor = s.border;
-  el.style.color = s.color;
-  document.querySelector(`input[name="rptRisk"][value="${val}"]`).checked = true;
+  if(el) {
+    el.style.background = s.bg;
+    el.style.borderColor = s.border;
+    el.style.color = s.color;
+  }
+  const radio = document.querySelector(`input[name="rptRisk"][value="${val}"]`);
+  if(radio) radio.checked = true;
 }
 
 // ===== IMAGE PICKER — with compression =====
@@ -2121,7 +2146,6 @@ function rptHandleImage(input) {
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      // Compress: max 1200px, 72% quality
       const canvas = document.createElement('canvas');
       const MAX = 1200;
       let w = img.width, h = img.height;
@@ -2195,7 +2219,6 @@ function saveDraft() {
     lat: rptSelectedLat, lng: rptSelectedLng,
     ts: Date.now(),
   };
-  // Only save if has meaningful data
   if (draft.name || draft.province || draft.lat) {
     localStorage.setItem('rptDraft', JSON.stringify(draft));
   }
@@ -2206,7 +2229,6 @@ function checkDraft() {
     const raw = localStorage.getItem('rptDraft');
     if (!raw) return;
     const d = JSON.parse(raw);
-    // Discard drafts older than 24h
     if (Date.now() - d.ts > 86400000) { localStorage.removeItem('rptDraft'); return; }
     if (d.name || d.province) {
       const b = document.getElementById('draftBanner');
@@ -2238,7 +2260,6 @@ function discardDraft() {
   if (b) b.style.display = 'none';
 }
 
-// Auto-save on input change
 function initDraftWatchers() {
   ['rptProvince','rptAmphoe','rptName','rptType','rptReporter','rptDetail'].forEach(id => {
     const el = document.getElementById(id);
@@ -2274,23 +2295,21 @@ function forceSubmit() {
 
 // ===== RATE LIMITING =====
 const RATE_LIMIT = 5;
-const RATE_WINDOW = 3600000; // 1 hour
-const COOLDOWN = 30000; // 30s between submits
+const RATE_WINDOW = 3600000; 
+const COOLDOWN = 30000; 
 let lastSubmitTime = 0;
 
 function checkRateLimit() {
   const now = Date.now();
-  // Cooldown between submits
   if (now - lastSubmitTime < COOLDOWN) {
     const wait = Math.ceil((COOLDOWN - (now - lastSubmitTime)) / 1000);
     showToast(`⏳ กรุณารอ ${wait} วินาทีก่อนส่งอีกครั้ง`, 'warning');
     return false;
   }
-  // Hourly rate limit
   const history = JSON.parse(localStorage.getItem('submitHistory') || '[]');
   const recent = history.filter(t => now - t < RATE_WINDOW);
   if (recent.length >= RATE_LIMIT) {
-    showToast(`⚠️ ส่งรายงานได้สูงสุด ${RATE_LIMIT} ครั้งต่อชั่วโมง กรุณารอสักครู่`, 'warning');
+    showToast(`⚠️ ส่งรายงานได้สูงสุด ${RATE_LIMIT} ครั้งต่อชั่วโมง`, 'warning');
     return false;
   }
   return true;
@@ -2305,16 +2324,13 @@ function recordSubmit() {
   localStorage.setItem('submitHistory', JSON.stringify(recent));
 }
 
-// ===== SANITIZE INPUT =====
 function sanitize(str) {
   if (!str) return '';
   return str.toString()
-    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
+    .replace(/</g, '<').replace(/>/g, '>')
     .substring(0, 500);
 }
 
-// ===== TRACKING NUMBER =====
 function genTrackingNumber() {
   const y = new Date().getFullYear() + 543;
   const n = String(Math.floor(Math.random() * 9000) + 1000);
@@ -2327,11 +2343,9 @@ function initOfflineDetection() {
   function updateOnlineStatus() {
     const banner = document.getElementById('offlineBanner');
     if (!navigator.onLine) {
-      banner.style.display = 'block';
-      document.getElementById('rptSubmitBtn') &&
-        (document.getElementById('rptSubmitBtn').textContent !== '📤 ส่งรายงาน' || null);
+      if(banner) banner.style.display = 'block';
     } else {
-      banner.style.display = 'none';
+      if(banner) banner.style.display = 'none';
       flushOfflineQueue();
     }
   }
@@ -2345,7 +2359,8 @@ function saveToOfflineQueue(payload) {
   queue.push({ ...payload, _queuedAt: Date.now() });
   localStorage.setItem('offlineQueue', JSON.stringify(queue));
   const count = queue.length;
-  document.getElementById('offlineQueueCount').textContent = count + ' รายการรอส่ง';
+  const qc = document.getElementById('offlineQueueCount');
+  if(qc) qc.textContent = count + ' รายการรอส่ง';
   showToast('📵 บันทึกไว้แล้ว จะส่งอัตโนมัติเมื่อมีเน็ต', 'warning');
 }
 
@@ -2356,17 +2371,14 @@ async function flushOfflineQueue() {
   showToast(`🔄 กำลังส่ง ${queue.length} รายการที่ค้างไว้...`, 'info');
   const failed = [];
   for (const payload of queue) {
-    try {
-      await apiPost(payload);
-    } catch(e) { failed.push(payload); }
+    try { await apiPost(payload); } catch(e) { failed.push(payload); }
   }
   localStorage.setItem('offlineQueue', JSON.stringify(failed));
-  document.getElementById('offlineQueueCount').textContent =
-    failed.length ? failed.length + ' รายการรอส่ง' : '';
+  const qc = document.getElementById('offlineQueueCount');
+  if(qc) qc.textContent = failed.length ? failed.length + ' รายการรอส่ง' : '';
   if (!failed.length) showToast('✅ ส่งข้อมูลที่ค้างไว้ครบแล้ว', 'success');
 }
 
-// ===== TIMEZONE FIX =====
 function getBKKTimestamp() {
   return new Date().toLocaleString('th-TH', {
     timeZone: 'Asia/Bangkok',
@@ -2376,30 +2388,22 @@ function getBKKTimestamp() {
   });
 }
 
-// ===== SUBMIT REPORT (full upgraded) =====
+// ===== SUBMIT REPORT =====
 async function submitReport() {
   if (!rptSelectedLat || !rptSelectedLng) {
     showToast('⚠️ กรุณาเลือกตำแหน่งบนแผนที่ก่อน', 'warning'); return;
   }
-
-  // Geofence check
   if (!isInEasternThailand(rptSelectedLat, rptSelectedLng)) {
-    showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก 8 จังหวัด', 'warning'); return;
+    showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก', 'warning'); return;
   }
-
-  // Rate limit check
   if (!checkRateLimit()) return;
 
-  // Field validation
   const province = document.getElementById('rptProvince').value;
   const name = document.getElementById('rptName').value.trim();
   const type = document.getElementById('rptType').value;
   const risk = document.querySelector('input[name="rptRisk"]:checked')?.value;
   if (!province || !name || !type || !risk) {
     showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ (*)', 'warning'); return;
-  }
-  if (name.length < 3) {
-    showToast('⚠️ ชื่อจุดเสี่ยงสั้นเกินไป (อย่างน้อย 3 ตัวอักษร)', 'warning'); return;
   }
 
   const payload = {
@@ -2417,7 +2421,6 @@ async function submitReport() {
     reporter: sanitize(document.getElementById('rptReporter').value),
   };
 
-  // Duplicate detection
   const nearby = findNearbyZones(rptSelectedLat, rptSelectedLng);
   if (nearby.length > 0) {
     pendingPayload = payload;
@@ -2425,25 +2428,21 @@ async function submitReport() {
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;font-size:13px">
         <div style="font-weight:600;color:var(--text);margin-bottom:3px">${z.ชื่อจุด || '—'}</div>
         <div style="color:var(--text3)">${z.จังหวัด} › ${z.อำเภอ} · ${riskBadge(z.ระดับความเสี่ยง)}</div>
-        ${z.ละติจูด ? `<a href="https://www.google.com/maps?q=${z.ละติจูด},${z.ลองจิจูด}" target="_blank" style="font-size:11px;color:#58A6FF;text-decoration:none">📍 ดูบน Maps</a>` : ''}
       </div>`).join('');
     document.getElementById('dupModal').classList.add('show');
     return;
   }
-
   await doSend(payload);
 }
 
 async function doSend(payload) {
   if (!config.gsUrl) {
-    showToast('⚠️ กรุณาตั้งค่า Google Sheet URL ก่อน (หน้า Settings)', 'warning'); return;
+    showToast('⚠️ กรุณาตั้งค่า Google Sheet URL ก่อน', 'warning'); return;
   }
-
   const btn = document.getElementById('rptSubmitBtn');
   btn.disabled = true;
   btn.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span> กำลังส่ง...';
 
-  // Offline → queue
   if (!navigator.onLine) {
     saveToOfflineQueue(payload);
     btn.disabled = false; btn.innerHTML = '📤 ส่งรายงาน';
@@ -2452,31 +2451,18 @@ async function doSend(payload) {
 
   try {
     const result = await apiPost(payload);
-    if (result && result.status === 'error') {
-      throw new Error(result.message || 'Submit failed');
-    }
-
     recordSubmit();
     discardDraft();
-
-    // Show success modal with tracking number
     const trackNo = genTrackingNumber();
     document.getElementById('trackingNumber').textContent = trackNo;
-    document.getElementById('successLocation').textContent =
-      `${payload.province}${payload.amphoe ? ' › ' + payload.amphoe : ''} — ${rptSelectedLat.toFixed(5)}, ${rptSelectedLng.toFixed(5)}`;
-    document.getElementById('successMapsLink').href =
-      `https://www.google.com/maps?q=${rptSelectedLat},${rptSelectedLng}&z=17`;
+    document.getElementById('successLocation').textContent = `${payload.province} › ${payload.amphoe} — ${rptSelectedLat}, ${rptSelectedLng}`;
+    document.getElementById('successMapsLink').href = `https://www.google.com/maps?q=${rptSelectedLat},${rptSelectedLng}&z=17`;
     document.getElementById('successModal').classList.add('show');
-
     clearForm();
     loadZones();
     pendingPayload = null;
   } catch(e) {
-    if (e.name === 'AbortError') {
-      showToast('⏱️ หมดเวลา — กรุณาลองใหม่หรือตรวจสอบการเชื่อมต่อ', 'error');
-    } else {
-      showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
-    }
+    showToast('❌ เกิดข้อผิดพลาด: ' + e.message, 'error');
   } finally {
     btn.disabled = !rptSelectedLat;
     btn.innerHTML = '📤 ส่งรายงาน';
@@ -2500,7 +2486,6 @@ function clearForm() {
   updateStep(3, 'idle', 'ไม่บังคับ');
 }
 
-// ===== AMPHOE DATA =====
 const amphoeMap = {
   'ชลบุรี': ['เมืองชลบุรี','บ้านบึง','หนองใหญ่','บางละมุง','พานทอง','พนัสนิคม','ศรีราชา','เกาะสีชัง','สัตหีบ','บ่อทอง','เกาะจันทร์'],
   'ระยอง': ['เมืองระยอง','บ้านฉาง','แกลง','วังจันทร์','บ้านค่าย','ปลวกแดง','เขาชะเมา','นิคมพัฒนา'],
@@ -2521,70 +2506,90 @@ function updateAmphoe() {
   }
 }
 
-// ===== WEATHER =====
+// ===== WEATHER API MAPPING =====
+const provinceMapEN = {
+  'ชลบุรี': 'Chon Buri', 
+  'ระยอง': 'Rayong', 
+  'จันทบุรี': 'Chanthaburi',
+  'ตราด': 'Trat', 
+  'ฉะเชิงเทรา': 'Chachoengsao', 
+  'ปราจีนบุรี': 'Prachin Buri',
+  'สระแก้ว': 'Sa Kaeo', 
+  'นครนายก': 'Nakhon Nayok'
+};
+
 async function loadWeather() {
-  const province = document.getElementById('weatherProvince').value;
-  document.getElementById('wProvince').textContent = province;
-  const weatherData = {
-    'ชลบุรี': { temp:33, desc:'มีเมฆบางส่วน ร้อนชื้น', humidity:76, wind:18, uv:9, forecast:[
-      {day:'พรุ่งนี้',icon:'⛅',desc:'มีเมฆ',hi:34,lo:27},{day:'อาทิตย์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:31,lo:26},
-      {day:'จันทร์',icon:'🌧️',desc:'ฝนตก',hi:29,lo:25},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:32,lo:26},
-      {day:'พุธ',icon:'☀️',desc:'แดดจัด',hi:35,lo:27},{day:'พฤหัส',icon:'🌤️',desc:'แดดจ้า',hi:34,lo:27},
-      {day:'ศุกร์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:31,lo:26}
-    ]},
-    'ระยอง': { temp:32, desc:'แดดจ้า ร้อนมาก', humidity:72, wind:15, uv:10, forecast:[
-      {day:'พรุ่งนี้',icon:'☀️',desc:'แดดจัด',hi:34,lo:26},{day:'อาทิตย์',icon:'🌤️',desc:'แดดจ้า',hi:33,lo:26},
-      {day:'จันทร์',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},{day:'อังคาร',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:25},
-      {day:'พุธ',icon:'🌧️',desc:'ฝนตก',hi:28,lo:24},{day:'พฤหัส',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
-      {day:'ศุกร์',icon:'☀️',desc:'แดดจัด',hi:34,lo:26}
-    ]},
-    'จันทบุรี': { temp:31, desc:'ฝนตกบางพื้นที่', humidity:84, wind:12, uv:7, forecast:[
-      {day:'พรุ่งนี้',icon:'🌧️',desc:'ฝนหนัก',hi:29,lo:24},{day:'อาทิตย์',icon:'⛈️',desc:'พายุฝน',hi:28,lo:23},
-      {day:'จันทร์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:24},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
-      {day:'พุธ',icon:'🌤️',desc:'แดดจ้า',hi:32,lo:25},{day:'พฤหัส',icon:'🌦️',desc:'ฝนปาน',hi:30,lo:24},
-      {day:'ศุกร์',icon:'🌧️',desc:'ฝนหนัก',hi:28,lo:23}
-    ]},
-  };
-  const wd = weatherData[province] || { temp:30, desc:'สภาพอากาศปกติ', humidity:75, wind:15, uv:8, forecast:[
-    {day:'พรุ่งนี้',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},{day:'อาทิตย์',icon:'🌦️',desc:'ฝนเล็กน้อย',hi:30,lo:24},
-    {day:'จันทร์',icon:'☀️',desc:'แดดจัด',hi:33,lo:25},{day:'อังคาร',icon:'⛅',desc:'มีเมฆ',hi:31,lo:25},
-    {day:'พุธ',icon:'🌧️',desc:'ฝนตก',hi:29,lo:24},{day:'พฤหัส',icon:'⛅',desc:'มีเมฆ',hi:32,lo:25},
-    {day:'ศุกร์',icon:'☀️',desc:'แดดจัด',hi:34,lo:26}
-  ]};
-  document.getElementById('wTemp').textContent = wd.temp + '°C';
-  document.getElementById('wDesc').textContent = wd.desc;
-  document.getElementById('wHumidity').textContent = wd.humidity + '%';
-  document.getElementById('wWind').textContent = wd.wind + ' กม/ชม.';
-  document.getElementById('wUV').textContent = wd.uv + ' ' + (wd.uv >= 8 ? '🔴สูงมาก' : wd.uv >= 6 ? '🟠สูง' : '🟡ปานกลาง');
-  document.getElementById('forecast7day').innerHTML = wd.forecast.map(f => `
-    <div class="forecast-row">
-      <div class="forecast-day">${f.day}</div>
-      <div class="forecast-icon">${f.icon}</div>
-      <div class="forecast-desc">${f.desc}</div>
-      <div class="forecast-temps">${f.hi}° <span class="forecast-lo">${f.lo}°</span></div>
-    </div>
-  `).join('');
+  const provinceTH = document.getElementById('weatherProvince').value;
+  const wp = document.getElementById('wProvince');
+  if(wp) wp.textContent = provinceTH;
+
+  const apiKey = config.owmKey;
+  
+  if (!apiKey) {
+    showToast('⚠️ กรุณาใส่ API Key ของ OpenWeatherMap ที่หน้าตั้งค่าก่อน', 'warning');
+    const wds = document.getElementById('wDesc'); 
+    if(wds) wds.textContent = 'กรุณาตั้งค่า API Key';
+    return;
+  }
+
+  const cityEN = provinceMapEN[provinceTH] || 'Bangkok';
+  
+  try {
+    const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cityEN},th&units=metric&lang=th&appid=${apiKey}`);
+    if (!weatherRes.ok) throw new Error('API Key อาจจะไม่ถูกต้อง หรือเชื่อมต่อไม่ได้');
+    const weatherData = await weatherRes.json();
+
+    const wt = document.getElementById('wTemp'); if(wt) wt.textContent = Math.round(weatherData.main.temp) + '°C';
+    const wds = document.getElementById('wDesc'); if(wds) wds.textContent = weatherData.weather[0].description;
+    const wh = document.getElementById('wHumidity'); if(wh) wh.textContent = weatherData.main.humidity + '%';
+    const ww = document.getElementById('wWind'); if(ww) ww.textContent = Math.round(weatherData.wind.speed * 3.6) + ' กม/ชม.'; 
+    
+    const wuv = document.getElementById('wUV'); if(wuv) wuv.textContent = 'N/A';
+
+    const forecastRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${cityEN},th&units=metric&lang=th&appid=${apiKey}`);
+    const forecastData = await forecastRes.json();
+
+    const dailyData = forecastData.list.filter(item => item.dt_txt.includes('12:00:00'));
+
+    const f7 = document.getElementById('forecast7day');
+    if(f7) {
+      f7.innerHTML = dailyData.slice(0, 5).map(f => {
+        const date = new Date(f.dt * 1000);
+        const daysTH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
+        const dayName = daysTH[date.getDay()];
+        
+        const iconCode = f.weather[0].icon;
+        const iconImg = `<img src="https://openweathermap.org/img/wn/${iconCode}.png" style="width:28px; height:28px; vertical-align:middle; filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));">`;
+
+        return `
+          <div class="forecast-row">
+            <div class="forecast-day">${dayName}</div>
+            <div class="forecast-icon">${iconImg}</div>
+            <div class="forecast-desc" style="text-transform: capitalize;">${f.weather[0].description}</div>
+            <div class="forecast-temps">${Math.round(f.main.temp_max)}° <span class="forecast-lo">${Math.round(f.main.temp_min)}°</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+
+  } catch (error) {
+    console.error(error);
+    showToast('❌ ' + error.message, 'error');
+  }
 }
 
-// ===== DISEASE DATA =====
 const diseaseData = {
   hot: [
-    { icon:'🌡️', name:'โรคลมแดด (Heat Stroke)', desc:'ร่างกายอุณหภูมิสูงเกิน 40°C เกิดจากการโดนแดดนาน เหงื่อออกมาก', prevent:'หลีกเลี่ยงแดดจัด สวมเสื้อแขนยาว ดื่มน้ำทุก 30 นาที พักในที่ร่ม', treat:'ย้ายผู้ป่วยเข้าร่ม ประคบเย็น ให้น้ำเย็น พาพบแพทย์ทันที' },
-    { icon:'💧', name:'โรคอุจจาระร่วงเฉียบพลัน', desc:'เชื้อแบคทีเรียในอาหาร น้ำดื่ม ระบาดมากในอากาศร้อน', prevent:'ล้างมือบ่อย รับประทานอาหารสุก หลีกเลี่ยงอาหารค้างคืน', treat:'ดื่มน้ำ ORS ทดแทน หากอาการรุนแรง (เลือด ไข้) พบแพทย์' },
-    { icon:'👁️', name:'โรคตาแดง (Conjunctivitis)', desc:'ติดต่อง่ายในที่สาธารณะ อากาศร้อนทำให้เชื้อแพร่เร็ว', prevent:'ไม่ใช้ผ้าเช็ดหน้าร่วมกัน ล้างมือก่อนสัมผัสตา สวมแว่นกันฝุ่น', treat:'ยาหยอดตาปฏิชีวนะ หลีกเลี่ยงการขยี้ตา พบแพทย์หากรุนแรง' },
-    { icon:'🦟', name:'โรคไข้เลือดออก (Dengue)', desc:'ยุงลายชุกชุมในฤดูร้อน น้ำขังตามภาชนะ', prevent:'ทำลายแหล่งน้ำขัง นอนกางมุ้ง ทาโลชั่นกันยุง', treat:'พักผ่อน ดื่มน้ำมาก เฝ้าระวังเลือดออก หากเกร็ดเลือดต่ำ นอนโรงพยาบาล' },
+    { icon:'🌡️', name:'โรคลมแดด (Heat Stroke)', desc:'ร่างกายอุณหภูมิสูงเกิน 40°C', prevent:'หลีกเลี่ยงแดดจัด ดื่มน้ำบ่อย', treat:'ย้ายเข้าร่ม ประคบเย็น พบแพทย์' },
+    { icon:'💧', name:'โรคอุจจาระร่วงเฉียบพลัน', desc:'เชื้อแบคทีเรียในอาหาร น้ำดื่ม', prevent:'กินร้อน ช้อนกลาง ล้างมือ', treat:'ดื่มน้ำ ORS พบแพทย์หากไม่ดีขึ้น' }
   ],
   rain: [
-    { icon:'🤧', name:'ไข้หวัดใหญ่ (Influenza)', desc:'ระบาดมากในฤดูฝน เชื้อไวรัสแพร่ทางละอองอากาศ', prevent:'ฉีดวัคซีนประจำปี ล้างมือบ่อย สวมหน้ากากในที่ชุมชน', treat:'พักผ่อน ยาลดไข้ (Paracetamol) น้ำมาก หากไม่ดีขึ้น 3 วัน พบแพทย์' },
-    { icon:'🦟', name:'โรคมาลาเรีย / ไข้เลือดออก', desc:'ฤดูฝนยุงชุกชุม แหล่งน้ำขังมาก โดยเฉพาะพื้นที่ป่าชายแดน', prevent:'นอนกางมุ้ง ทาโลชั่นกันยุง สวมเสื้อแขนยาวช่วงหัวค่ำ-เช้าตรู่', treat:'ยาต้านมาลาเรีย (ต้องพบแพทย์) ไม่ซื้อยาเอง' },
-    { icon:'🦶', name:'โรคน้ำกัดเท้า / เชื้อรา', desc:'เดินลุยน้ำในฤดูฝน เชื้อราสะสมในรองเท้าชื้น', prevent:'สวมรองเท้าปิดนิ้ว เช็ดเท้าให้แห้งหลังเดินน้ำ', treat:'ยาต้านเชื้อรา (Clotrimazole) ทาวันละ 2 ครั้ง ใส่รองเท้าเปิดพัก' },
-    { icon:'🫁', name:'โรคฉี่หนู (Leptospirosis)', desc:'เชื้อ Leptospira ในน้ำท่วม ปนเปื้อนจากปัสสาวะหนู', prevent:'หลีกเลี่ยงลุยน้ำท่วม สวมรองเท้าบูท ล้างมือหลังสัมผัสน้ำ', treat:'ยาปฏิชีวนะ Doxycycline พบแพทย์ด่วนหากมีไข้หลังลุยน้ำ' },
+    { icon:'🤧', name:'ไข้หวัดใหญ่', desc:'ไวรัสระบาดมากในฤดูฝน', prevent:'ฉีดวัคซีน สวมหน้ากาก', treat:'พักผ่อน ดื่มน้ำอุ่น' },
+    { icon:'🫁', name:'โรคฉี่หนู', desc:'เชื้อในน้ำท่วมขัง', prevent:'เลี่ยงลุยน้ำ สวมรองเท้าบูท', treat:'พบแพทย์ด่วนหากมีไข้หลังลุยน้ำ' }
   ],
   cold: [
-    { icon:'🤧', name:'ไข้หวัด / ทอนซิลอักเสบ', desc:'อากาศเย็นแห้ง ระบบภูมิคุ้มกันลดลง เชื้อไวรัสแพร่ง่าย', prevent:'สวมเสื้อกันหนาว ดื่มน้ำอุ่น รับประทานผักผลไม้ให้พอ', treat:'พักผ่อน ยาแก้ไข้ ยาแก้เจ็บคอ หากมีหนองที่ทอนซิล พบแพทย์' },
-    { icon:'💨', name:'โรคหอบหืด / ภูมิแพ้กำเริบ', desc:'อากาศเย็นและแห้ง กระตุ้นการกำเริบของโรคทางเดินหายใจ', prevent:'พกยาสูด (inhaler) ไว้เสมอ หลีกเลี่ยงอากาศเย็นจัด', treat:'ใช้ยาสูดขยายหลอดลมทันที หากไม่ดีขึ้น พบแพทย์ฉุกเฉิน' },
-    { icon:'🦴', name:'ปวดข้อ / ปวดกล้ามเนื้อ', desc:'ความเย็นทำให้กล้ามเนื้อตึง ข้อต่อเคลื่อนไหวแข็ง เสี่ยงบาดเจ็บ', prevent:'อบอุ่นร่างกายก่อนออกกำลัง สวมเสื้อผ้าหลายชั้น', treat:'ยาคลายกล้ามเนื้อ ประคบร้อน นวด หรือพบกายภาพบำบัด' },
-    { icon:'👃', name:'ไซนัสอักเสบ', desc:'หมอกและอากาศเย็นชื้นกระตุ้นการอักเสบของไซนัส', prevent:'สวมผ้าปิดจมูกขณะขับขี่ หลีกเลี่ยงอากาศเย็นจัดโดยตรง', treat:'สเปรย์น้ำเกลือล้างจมูก ยาแก้แพ้ (Antihistamine) พักผ่อน' },
+    { icon:'🤧', name:'ไข้หวัด / ทอนซิลอักเสบ', desc:'อากาศเย็นทำให้ภูมิคุ้มกันลดลง', prevent:'รักษาร่างกายให้อบอุ่น', treat:'ยาแก้ไข้ พักผ่อน' },
+    { icon:'💨', name:'โรคหอบหืดกำเริบ', desc:'อากาศแห้งกระตุ้นการอักเสบ', prevent:'สวมหน้ากากเลี่ยงอากาศเย็นจัด', treat:'ใช้ยาสูดขยายหลอดลม' }
   ],
 };
 
@@ -2596,24 +2601,25 @@ function showDiseaseTab(season) {
 
 function renderDiseaseTab(season) {
   const list = document.getElementById('diseaseList');
-  list.innerHTML = diseaseData[season].map(d => `
-    <div class="disease-item">
-      <div class="disease-icon">${d.icon}</div>
-      <div style="flex:1">
-        <div class="disease-name">${d.name}</div>
-        <div class="disease-desc">${d.desc}</div>
-        <div class="disease-pills">
-          <span class="disease-pill dp-prevent">✅ ป้องกัน: ${d.prevent}</span>
-        </div>
-        <div class="disease-pills" style="margin-top:5px">
-          <span class="disease-pill dp-treat">💊 รักษา: ${d.treat}</span>
+  if(list) {
+    list.innerHTML = diseaseData[season].map(d => `
+      <div class="disease-item">
+        <div class="disease-icon">${d.icon}</div>
+        <div style="flex:1">
+          <div class="disease-name">${d.name}</div>
+          <div class="disease-desc">${d.desc}</div>
+          <div class="disease-pills">
+            <span class="disease-pill dp-prevent">✅ ป้องกัน: ${d.prevent}</span>
+          </div>
+          <div class="disease-pills" style="margin-top:5px">
+            <span class="disease-pill dp-treat">💊 รักษา: ${d.treat}</span>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
 }
 
-// ===== SYNC =====
 function syncData() {
   showToast('🔄 กำลังซิงค์ข้อมูล...', 'info');
   loadZones();
@@ -2621,27 +2627,30 @@ function syncData() {
 }
 
 function openAllMaps() {
-  window.open('https://www.google.com/maps/search/ภาคตะวันออก+ประเทศไทย', '_blank');
+  window.open('http://googleusercontent.com/maps.google.com/5', '_blank');
 }
 
-// ===== MODALS =====
 function showScriptModal() {
-  document.getElementById('scriptModal').classList.add('show');
+  const sm = document.getElementById('scriptModal');
+  if(sm) sm.classList.add('show');
 }
 function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+  const m = document.getElementById(id);
+  if(m) m.classList.remove('show');
 }
 function copyScript() {
   const ta = document.querySelector('#scriptModal textarea');
-  ta.select();
-  document.execCommand('copy');
-  showToast('📋 คัดลอก Code แล้ว!', 'success');
+  if(ta) {
+    ta.select();
+    document.execCommand('copy');
+    showToast('📋 คัดลอก Code แล้ว!', 'success');
+  }
 }
 
-// ===== TOAST =====
 let toastTimer;
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
+  if(!t) return;
   const colors = { success: '#56D364', warning: '#E3B341', error: '#F85149', info: '#58A6FF' };
   t.style.display = 'flex';
   t.style.borderLeftColor = colors[type] || colors.info;
@@ -2650,7 +2659,6 @@ function showToast(msg, type = 'info') {
   toastTimer = setTimeout(() => t.style.display = 'none', 3500);
 }
 
-// Close modal on overlay click
 document.querySelectorAll('.modal-overlay').forEach(o => {
   o.addEventListener('click', e => { if(e.target === o) o.classList.remove('show'); });
 });
