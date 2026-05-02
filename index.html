@@ -1422,6 +1422,18 @@ function apiPost(payload) {
           <strong>Sheet 1: "จุดเสี่ยง"</strong> (Apps Script จะสร้างให้อัตโนมัติเมื่อมีรายงานแรกเข้ามา)<br>
           คอลัมน์: timestamp | จังหวัด | อำเภอ | ชื่อจุด | ประเภท | ละติจูด | ลองจิจูด | ระดับความเสี่ยง | รายละเอียด | รูปภาพ | ผู้แจ้ง | สถานะ
         </div>
+
+        <div class="divider"></div>
+
+        <div class="card-title" style="margin-bottom:12px">🚦 ค่าสถานะที่ระบบใช้</div>
+        <div class="config-area" style="line-height:1.7">
+          ในคอลัมน์ <code>สถานะ</code> ของ sheet "จุดเสี่ยง" ใช้ค่าเหล่านี้:<br>
+          • <code>รอตรวจสอบ</code> — รายงานใหม่จากหน้าแจ้งจุดเสี่ยง (ค่าตั้งต้น) — <strong>ไม่แสดง</strong>บน Dashboard<br>
+          • <code>อนุมัติแล้ว</code> — ผ่านการตรวจสอบโดย admin — <strong>แสดง</strong>บน Dashboard<br>
+          • <code>ปิดเคส</code> — แก้ไขเสร็จแล้ว/ยกเลิก — <strong>ไม่แสดง</strong>บน Dashboard<br>
+          <br>
+          <strong>วิธีอนุมัติ:</strong> เปิด Google Sheet → คอลัมน์ <code>สถานะ</code> → เปลี่ยนจาก <code>รอตรวจสอบ</code> เป็น <code>อนุมัติแล้ว</code> → ข้อมูลจะขึ้นบน Dashboard ภายในไม่กี่วินาที
+        </div>
       </div>
     </div>
 
@@ -1494,7 +1506,7 @@ function apiPost(payload) {
 // CONFIG — ไม่มี secret ในไฟล์นี้แล้ว
 // secrets (password, OWM key) เก็บใน Apps Script Properties
 // ============================================================
-const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbwdSPVqcY44WZ1gy9fNxIptLXnrIqRcK_i7p72QRphdCp8soODqrFF-j5svbrvUViNEPA/exec';
+const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbzSRVjc847wimjcbx_i2UlPJj9t3J26U-eq50fgejbRg9Z4WgyPDR3BfW1zSxR_-aiKww/exec';
 
 let config = {
   gsUrl: localStorage.getItem('gsUrl') || DEFAULT_GS_URL,
@@ -1763,12 +1775,18 @@ function renderRecentZones(data) {
 }
 
 function updateStats(data) {
-  const active = data.filter(d => d['สถานะ'] !== 'ปิดเคส');
-  document.getElementById('totalZones').textContent = active.length;
-  const pending = active.filter(d => d['สถานะ'] === 'รอตรวจสอบ').length;
-  document.getElementById('pendingCount').textContent = pending;
-  const badge = document.getElementById('pendingBadge');
-  if (badge) badge.textContent = pending;
+  // data จาก server ได้รับมาแล้วเฉพาะ "อนุมัติแล้ว" เท่านั้น
+  document.getElementById('totalZones').textContent = data.length;
+
+  // ดึงจำนวน pending แยกจาก endpoint pending
+  apiGet('pending').then(res => {
+    const pending = res.count || 0;
+    document.getElementById('pendingCount').textContent = pending;
+    const badge = document.getElementById('pendingBadge');
+    if (badge) badge.textContent = pending;
+  }).catch(() => {
+    document.getElementById('pendingCount').textContent = '0';
+  });
 }
 
 function filterZones() { renderZonesTable(zonesData); }
