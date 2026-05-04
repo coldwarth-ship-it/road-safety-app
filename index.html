@@ -1410,7 +1410,7 @@ function apiPost(payload) {
           1. เปิด Apps Script Editor ของ project นี้<br>
           2. ไปที่ <code>Project Settings (⚙️)</code> → เลื่อนลงไป <code>Script Properties</code><br>
           3. กด <code>Add script property</code> เพิ่ม 2 ค่า:<br>
-          &nbsp;&nbsp;&nbsp;• <code>ADMIN_PASSWORD</code> = rdccb99<br>
+          &nbsp;&nbsp;&nbsp;• <code>ADMIN_PASSWORD</code> = รหัสผ่านที่ต้องการ<br>
           &nbsp;&nbsp;&nbsp;• <code>OWM_API_KEY</code> = key จาก openweathermap.org<br>
           4. กด <code>Save</code> เสร็จเลย ไม่ต้อง deploy ใหม่
         </div>
@@ -1427,12 +1427,13 @@ function apiPost(payload) {
 
         <div class="card-title" style="margin-bottom:12px">🚦 ค่าสถานะที่ระบบใช้</div>
         <div class="config-area" style="line-height:1.7">
-          ในคอลัมน์ <code>สถานะ</code> ของ sheet "จุดเสี่ยง" ใช้ค่าเหล่านี้:<br>
-          • <code>รอตรวจสอบ</code> — รายงานใหม่จากหน้าแจ้งจุดเสี่ยง (ค่าตั้งต้น) — <strong>ไม่แสดง</strong>บน Dashboard<br>
-          • <code>อนุมัติแล้ว</code> — ผ่านการตรวจสอบโดย admin — <strong>แสดง</strong>บน Dashboard<br>
-          • <code>ปิดเคส</code> — แก้ไขเสร็จแล้ว/ยกเลิก — <strong>ไม่แสดง</strong>บน Dashboard<br>
+          ในคอลัมน์ <code>สถานะ</code> ของ sheet "จุดเสี่ยง" — ระบบแสดงผลตามนี้:<br>
+          • <code>ตรวจสอบแล้ว</code> — ผ่านการตรวจสอบ → <strong>แสดง</strong>บน Dashboard ✅<br>
+          • <code>รอตรวจสอบ</code> — รายงานใหม่ (ค่าตั้งต้น) → <strong>ไม่แสดง</strong> ❌<br>
+          • <code>ปิดเคส</code> — แก้ไขเสร็จ/ยกเลิก → <strong>ไม่แสดง</strong> ❌<br>
+          • ค่าอื่น ๆ หรือเว้นว่าง → <strong>ไม่แสดง</strong> ❌<br>
           <br>
-          <strong>วิธีอนุมัติ:</strong> เปิด Google Sheet → คอลัมน์ <code>สถานะ</code> → เปลี่ยนจาก <code>รอตรวจสอบ</code> เป็น <code>อนุมัติแล้ว</code> → ข้อมูลจะขึ้นบน Dashboard ภายในไม่กี่วินาที
+          <strong>วิธีอนุมัติ:</strong> เปิด Google Sheet → คอลัมน์ <code>สถานะ</code> → พิมพ์ <code>ตรวจสอบแล้ว</code> → ข้อมูลจะขึ้น Dashboard ภายในไม่กี่วินาที (ตอน refresh ครั้งถัดไป)
         </div>
       </div>
     </div>
@@ -1775,7 +1776,7 @@ function renderRecentZones(data) {
 }
 
 function updateStats(data) {
-  // data จาก server ได้รับมาแล้วเฉพาะ "อนุมัติแล้ว" เท่านั้น
+  // data จาก server ได้รับมาแล้วเฉพาะ "ตรวจสอบแล้ว" เท่านั้น
   document.getElementById('totalZones').textContent = data.length;
 
   // ดึงจำนวน pending แยกจาก endpoint pending
