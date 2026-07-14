@@ -2026,7 +2026,7 @@ let pendingPayload=null;
 function forceSubmit(){closeModal('dupModal');if(pendingPayload)doSend(pendingPayload);}
 
 // ===== RATE LIMITING =====
-const RATE_LIMIT=5,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
+const RATE_LIMIT=35,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
 function checkRateLimit(){const now=Date.now();if(now-lastSubmitTime<COOLDOWN){showToast('⏳ กรุณารอ '+Math.ceil((COOLDOWN-(now-lastSubmitTime))/1000)+' วินาทีก่อนส่งอีกครั้ง','warning');return false;}const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const recent=history.filter(t=>now-t<RATE_WINDOW);if(recent.length>=RATE_LIMIT){showToast('⚠️ ส่งรายงานได้สูงสุด '+RATE_LIMIT+' ครั้งต่อชั่วโมง','warning');return false;}return true;}
 function recordSubmit(){lastSubmitTime=Date.now();const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const now=Date.now();const recent=history.filter(t=>now-t<RATE_WINDOW);recent.push(now);localStorage.setItem('submitHistory',JSON.stringify(recent));}
 function sanitize(str){if(!str)return '';return str.toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').substring(0,500);}
