@@ -805,6 +805,9 @@
   .leaflet-control-attribution { background: rgba(13,17,23,0.7) !important; color: var(--text3) !important; font-size: 10px !important; }
   .leaflet-popup-content-wrapper { background: var(--bg2) !important; border: 1px solid var(--border2) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; color: var(--text2) !important; }
   .leaflet-popup-tip-container { display: none; }
+.leaflet-control-layers { background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--text) !important; }
+.leaflet-control-layers-toggle { filter: invert(0.85); }
+.leaflet-control-layers label { color: var(--text2) !important; font-size: 12px !important; }
 
   @keyframes rptSpin { to { transform: rotate(360deg); } }
 
@@ -1830,7 +1833,10 @@ function ensureDashboardMap() {
   if (dashMap) return;
   const el = document.getElementById('dashboardMap'); if (!el) return;
   dashMap = L.map('dashboardMap', { center:[13.0,101.5], zoom:8, zoomControl:true, scrollWheelZoom:false });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution:'&copy; CARTO', subdomains:'abcd', maxZoom:19 }).addTo(dashMap);
+  const dashStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap', subdomains:'abc', maxZoom:19 });
+  const dashSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'&copy; Esri', maxZoom:19 });
+  dashStreet.addTo(dashMap);
+  L.control.layers({ 'แผนที่ถนน': dashStreet, 'ภาพถ่ายดาวเทียม': dashSat }, null, { position:'topright' }).addTo(dashMap);
   dashMap.on('click', () => dashMap.scrollWheelZoom.enable());
   dashMap.on('mouseout', () => dashMap.scrollWheelZoom.disable());
 }
@@ -1878,7 +1884,10 @@ let rptMap, rptMarker, rptSelectedLat=null, rptSelectedLng=null, rptGeoTimer=nul
 function initReportMap() {
   if (rptMap) return;
   rptMap = L.map('rptMap',{center:[13.0,101.5],zoom:8,zoomControl:true});
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(rptMap);
+  const rptStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap', subdomains:'abc', maxZoom:19 });
+  const rptSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'&copy; Esri', maxZoom:19 });
+  rptStreet.addTo(rptMap);
+  L.control.layers({ 'แผนที่ถนน': rptStreet, 'ภาพถ่ายดาวเทียม': rptSat }, null, { position:'topright' }).addTo(rptMap);
   rptMap.on('click',e=>rptSetLocation(e.latlng.lat,e.latlng.lng));
 }
 
@@ -2016,7 +2025,7 @@ function initDraftWatchers() {
 }
 
 // ===== GEOFENCE =====
-const EAST_BOUNDS={minLat:10.0,maxLat:16.0,minLng:99.0,maxLng:104.0};
+const EAST_BOUNDS={minLat:11.5,maxLat:14.6,minLng:100.5,maxLng:103.2};
 function isInEasternThailand(lat,lng){return lat>=EAST_BOUNDS.minLat&&lat<=EAST_BOUNDS.maxLat&&lng>=EAST_BOUNDS.minLng&&lng<=EAST_BOUNDS.maxLng;}
 
 // ===== DUPLICATE DETECTION =====
@@ -2042,6 +2051,7 @@ function getBKKTimestamp(){return new Date().toLocaleString('th-TH',{timeZone:'A
 // ===== SUBMIT REPORT =====
 async function submitReport() {
   if(!rptSelectedLat||!rptSelectedLng){showToast('⚠️ กรุณาเลือกตำแหน่งบนแผนที่ก่อน','warning');return;}
+  if(!isInEasternThailand(rptSelectedLat,rptSelectedLng)){showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก 8 จังหวัด','warning');return;}
   if(!checkRateLimit())return;
   const province=document.getElementById('rptProvince').value;const name=document.getElementById('rptName').value.trim();const type=document.getElementById('rptType').value;const risk=document.querySelector('input[name="rptRisk"]:checked')?.value;
   if(!province||!name||!type||!risk){showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ (*)','warning');return;}
