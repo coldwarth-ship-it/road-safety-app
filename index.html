@@ -2042,7 +2042,6 @@ function getBKKTimestamp(){return new Date().toLocaleString('th-TH',{timeZone:'A
 // ===== SUBMIT REPORT =====
 async function submitReport() {
   if(!rptSelectedLat||!rptSelectedLng){showToast('⚠️ กรุณาเลือกตำแหน่งบนแผนที่ก่อน','warning');return;}
-  if(!isInEasternThailand(rptSelectedLat,rptSelectedLng)){showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก 8 จังหวัด','warning');return;}
   if(!checkRateLimit())return;
   const province=document.getElementById('rptProvince').value;const name=document.getElementById('rptName').value.trim();const type=document.getElementById('rptType').value;const risk=document.querySelector('input[name="rptRisk"]:checked')?.value;
   if(!province||!name||!type||!risk){showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ (*)','warning');return;}
