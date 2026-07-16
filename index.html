@@ -3,6 +3,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก</title>
+
+<!-- ===== PWA ===== -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#D84315">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<!-- iOS: ทำให้เปิดแบบ standalone ไม่มีแถบ Safari -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Road Safety East">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -805,9 +818,9 @@
   .leaflet-control-attribution { background: rgba(13,17,23,0.7) !important; color: var(--text3) !important; font-size: 10px !important; }
   .leaflet-popup-content-wrapper { background: var(--bg2) !important; border: 1px solid var(--border2) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; color: var(--text2) !important; }
   .leaflet-popup-tip-container { display: none; }
-.leaflet-control-layers { background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--text) !important; }
-.leaflet-control-layers-toggle { filter: invert(0.85); }
-.leaflet-control-layers label { color: var(--text2) !important; font-size: 12px !important; }
+  .leaflet-control-layers { background: var(--bg2) !important; border: 1px solid var(--border2) !important; color: var(--text) !important; }
+  .leaflet-control-layers-toggle { filter: invert(0.85); }
+  .leaflet-control-layers label { color: var(--text2) !important; font-size: 12px !important; }
 
   @keyframes rptSpin { to { transform: rotate(360deg); } }
 
@@ -944,6 +957,7 @@ function apiPost(payload) {
       <span class="page-title" id="pageTitle">ภาพรวม Dashboard</span>
     </div>
     <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" id="pwaInstallBtn" onclick="installPWA()" style="display:none">📲 ติดตั้งแอป</button>
       <button class="btn btn-secondary btn-sm" onclick="syncData()">🔄 ซิงค์ข้อมูล</button>
       <button class="btn btn-primary btn-sm" onclick="showPage('report')">+ แจ้งจุดเสี่ยง</button>
     </div>
@@ -1520,6 +1534,39 @@ function apiPost(payload) {
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
+// ===== PWA: SERVICE WORKER + INSTALL PROMPT =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => console.warn('SW register failed:', err));
+  });
+}
+
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'inline-flex';
+});
+
+async function installPWA() {
+  if (!deferredInstallPrompt) {
+    showToast('📲 เปิดเมนูเบราว์เซอร์แล้วเลือก "เพิ่มไปยังหน้าจอหลัก" เพื่อติดตั้งแอป', 'info');
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') showToast('✅ ติดตั้งแอปสำเร็จแล้ว', 'success');
+  deferredInstallPrompt = null;
+  document.getElementById('pwaInstallBtn').style.display = 'none';
+}
+
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('pwaInstallBtn');
+  if (btn) btn.style.display = 'none';
+  showToast('✅ ติดตั้งแอปสำเร็จแล้ว', 'success');
+});
+
 // ===== CONFIG =====
 const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbzSRVjc847wimjcbx_i2UlPJj9t3J26U-eq50fgejbRg9Z4WgyPDR3BfW1zSxR_-aiKww/exec';
 let config = { gsUrl: localStorage.getItem('gsUrl') || DEFAULT_GS_URL };
@@ -2024,10 +2071,6 @@ function initDraftWatchers() {
   document.querySelectorAll('input[name="rptRisk"]').forEach(r=>r.addEventListener('change',saveDraft));
 }
 
-// ===== GEOFENCE =====
-const EAST_BOUNDS={minLat:11.5,maxLat:14.6,minLng:100.5,maxLng:103.2};
-function isInEasternThailand(lat,lng){return lat>=EAST_BOUNDS.minLat&&lat<=EAST_BOUNDS.maxLat&&lng>=EAST_BOUNDS.minLng&&lng<=EAST_BOUNDS.maxLng;}
-
 // ===== DUPLICATE DETECTION =====
 function findNearbyZones(lat,lng,radiusM=200){return zonesData.filter(z=>{if(!z.ละติจูด||!z.ลองจิจูด)return false;const dLat=(parseFloat(z.ละติจูด)-lat)*111000;const dLng=(parseFloat(z.ลองจิจูด)-lng)*111000*Math.cos(lat*Math.PI/180);return Math.sqrt(dLat*dLat+dLng*dLng)<=radiusM;});}
 
@@ -2035,7 +2078,7 @@ let pendingPayload=null;
 function forceSubmit(){closeModal('dupModal');if(pendingPayload)doSend(pendingPayload);}
 
 // ===== RATE LIMITING =====
-const RATE_LIMIT=35,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
+const RATE_LIMIT=5,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
 function checkRateLimit(){const now=Date.now();if(now-lastSubmitTime<COOLDOWN){showToast('⏳ กรุณารอ '+Math.ceil((COOLDOWN-(now-lastSubmitTime))/1000)+' วินาทีก่อนส่งอีกครั้ง','warning');return false;}const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const recent=history.filter(t=>now-t<RATE_WINDOW);if(recent.length>=RATE_LIMIT){showToast('⚠️ ส่งรายงานได้สูงสุด '+RATE_LIMIT+' ครั้งต่อชั่วโมง','warning');return false;}return true;}
 function recordSubmit(){lastSubmitTime=Date.now();const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const now=Date.now();const recent=history.filter(t=>now-t<RATE_WINDOW);recent.push(now);localStorage.setItem('submitHistory',JSON.stringify(recent));}
 function sanitize(str){if(!str)return '';return str.toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').substring(0,500);}
@@ -2051,7 +2094,6 @@ function getBKKTimestamp(){return new Date().toLocaleString('th-TH',{timeZone:'A
 // ===== SUBMIT REPORT =====
 async function submitReport() {
   if(!rptSelectedLat||!rptSelectedLng){showToast('⚠️ กรุณาเลือกตำแหน่งบนแผนที่ก่อน','warning');return;}
-  if(!isInEasternThailand(rptSelectedLat,rptSelectedLng)){showToast('⚠️ ตำแหน่งที่เลือกอยู่นอกพื้นที่ภาคตะวันออก 8 จังหวัด','warning');return;}
   if(!checkRateLimit())return;
   const province=document.getElementById('rptProvince').value;const name=document.getElementById('rptName').value.trim();const type=document.getElementById('rptType').value;const risk=document.querySelector('input[name="rptRisk"]:checked')?.value;
   if(!province||!name||!type||!risk){showToast('⚠️ กรุณากรอกข้อมูลที่จำเป็นให้ครบ (*)','warning');return;}
