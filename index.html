@@ -1,7 +1,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก</title>
 
 <!-- ===== PWA ===== -->
@@ -760,6 +760,32 @@
     .grid-2 { grid-template-columns: 1fr; }
   }
 
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1999;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-backdrop.show { display: block; opacity: 1; }
+
+  /* ===== LIGHT THEME ===== */
+  body.light-theme {
+    --bg: #F4F5F7;
+    --bg2: #FFFFFF;
+    --bg3: #F0F1F4;
+    --bg4: #E6E8EC;
+    --border: rgba(15,20,25,0.09);
+    --border2: rgba(15,20,25,0.15);
+    --text: #1C2128;
+    --text2: #57606A;
+    --text3: #7A828C;
+  }
+  body.light-theme .leaflet-container { background: #E9ECEF !important; }
+  body.light-theme .topbar { background: rgba(244,245,247,0.95) !important; }
+
   @media (max-width: 600px) {
     .stat-grid { grid-template-columns: 1fr 1fr; }
     .content { padding: 16px; }
@@ -949,6 +975,8 @@ function apiPost(payload) {
   </div>
 </aside>
 
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+
 <!-- MAIN -->
 <div class="main">
   <header class="topbar">
@@ -957,6 +985,8 @@ function apiPost(payload) {
       <span class="page-title" id="pageTitle">ภาพรวม Dashboard</span>
     </div>
     <div class="topbar-right">
+      <span id="lastSyncTime" style="font-size:11px;color:var(--text3);white-space:nowrap"></span>
+      <button class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()" title="สลับธีมสว่าง/มืด">🌙</button>
       <button class="btn btn-secondary btn-sm" id="pwaInstallBtn" onclick="installPWA()" style="display:none">📲 ติดตั้งแอป</button>
       <button class="btn btn-secondary btn-sm" onclick="syncData()">🔄 ซิงค์ข้อมูล</button>
       <button class="btn btn-primary btn-sm" onclick="showPage('report')">+ แจ้งจุดเสี่ยง</button>
@@ -1095,6 +1125,13 @@ function apiPost(payload) {
               </button>
               <button class="btn btn-secondary btn-sm" onclick="rptResetLocation()" id="rptResetBtn" style="display:none">↺ รีเซ็ต</button>
             </div>
+          </div>
+          <div style="padding:12px 18px;border-bottom:1px solid var(--border);position:relative">
+            <div style="display:flex;gap:8px">
+              <input type="text" id="rptPlaceSearch" placeholder="🔍 ค้นหาชื่อสถานที่ เช่น เซเว่นบ้านบึง, วัดใหญ่ชัยมงคล..." style="flex:1" oninput="handlePlaceSearchInput()" onkeydown="if(event.key==='Enter'){event.preventDefault();searchPlace();}">
+              <button class="btn btn-secondary btn-sm" onclick="searchPlace()">ค้นหา</button>
+            </div>
+            <div id="rptPlaceResults" style="display:none;position:absolute;left:18px;right:18px;top:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);margin-top:4px;max-height:240px;overflow-y:auto;z-index:1500;box-shadow:var(--shadow)"></div>
           </div>
           <div style="position:relative;height:320px;background:var(--bg3)">
             <div id="rptMap" style="width:100%;height:100%"></div>
@@ -1534,11 +1571,63 @@ function apiPost(payload) {
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
-// ===== PWA: SERVICE WORKER + INSTALL PROMPT =====
+// ===== PWA: SERVICE WORKER + INSTALL PROMPT + แจ้งเตือนเมื่อมีอัปเดตใหม่ =====
+let swRegistration = null;
+let swRefreshing = false;
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(err => console.warn('SW register failed:', err));
+    navigator.serviceWorker.register('service-worker.js').then(reg => {
+      swRegistration = reg;
+      reg.update().catch(() => {}); // เช็คทันทีเผื่อมีเวอร์ชันใหม่รออยู่แล้ว
+
+      // กรณีมีเวอร์ชันใหม่ "รอ" อยู่แล้วตั้งแต่ก่อนโหลดหน้านี้
+      if (reg.waiting) showUpdateBanner();
+
+      // กรณีเจอเวอร์ชันใหม่ระหว่างที่เปิดแอปอยู่
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+    }).catch(err => console.warn('SW register failed:', err));
+
+    // พอ service worker ใหม่เข้าควบคุมหน้าเว็บแล้ว ให้รีโหลดหนึ่งครั้งอัตโนมัติ
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
+
+    // เช็คอัปเดตใหม่ทุกครั้งที่สลับกลับมาเปิดแอป (จากพื้นหลังหรือแอปอื่น)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && swRegistration) swRegistration.update().catch(() => {});
+    });
   });
+}
+
+function showUpdateBanner() {
+  if (document.getElementById('updateBanner')) return; // กันแสดงซ้ำ
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9997;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,0.35)';
+  banner.innerHTML = `
+    <span>✨ มีเวอร์ชันใหม่ของแอปพร้อมใช้งาน</span>
+    <button onclick="applyAppUpdate()" style="background:white;color:var(--primary-dark);border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🔄 อัปเดตตอนนี้</button>
+    <button onclick="document.getElementById('updateBanner').remove()" style="background:rgba(255,255,255,0.22);border:none;color:white;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">ไว้ทีหลัง</button>
+  `;
+  document.body.prepend(banner);
+}
+
+function applyAppUpdate() {
+  const btn = document.querySelector('#updateBanner button');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังอัปเดต...'; }
+  if (!swRegistration || !swRegistration.waiting) { window.location.reload(); return; }
+  swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
 }
 
 let deferredInstallPrompt = null;
@@ -1572,6 +1661,26 @@ const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbzSRVjc847wimjcb
 let config = { gsUrl: localStorage.getItem('gsUrl') || DEFAULT_GS_URL };
 let zonesData = [];
 let pendingPage = null;
+
+// ===== THEME (LIGHT/DARK) =====
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  if (saved === 'light') document.body.classList.add('light-theme');
+  updateThemeUI();
+}
+function toggleTheme() {
+  document.body.classList.toggle('light-theme');
+  const isLight = document.body.classList.contains('light-theme');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  updateThemeUI();
+}
+function updateThemeUI() {
+  const isLight = document.body.classList.contains('light-theme');
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) { btn.textContent = isLight ? '☀️' : '🌙'; btn.title = isLight ? 'สลับเป็นธีมมืด' : 'สลับเป็นธีมสว่าง'; }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isLight ? '#FFFFFF' : '#D84315');
+}
 
 // ===== ADMIN AUTH =====
 async function checkPassword() {
@@ -1610,6 +1719,7 @@ function logoutAdmin() { sessionStorage.removeItem('adminToken'); sessionStorage
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   loadConfig();
   if (window.IS_GAS) {
     const dot = document.getElementById('gsDot'); const txt = document.getElementById('gsStatusText');
@@ -1647,10 +1757,40 @@ function showPage(id) {
   if (id === 'report') setTimeout(() => { initReportMap(); initDraftWatchers(); checkDraft(); }, 80);
   if (id === 'accidents') loadStats();   // ← โหลด stats ทุกครั้งที่เปิดหน้านี้
   if (id === 'dashboard') setTimeout(() => renderDashboardMap(), 100);
-  if (window.innerWidth < 900) document.getElementById('sidebar').classList.remove('open');
+  if (window.innerWidth < 900) {
+    document.getElementById('sidebar').classList.remove('open');
+    const bd = document.getElementById('sidebarBackdrop'); if (bd) bd.classList.remove('show');
+  }
 }
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebarBackdrop');
+  sb.classList.toggle('open');
+  if (bd) bd.classList.toggle('show', sb.classList.contains('open'));
+}
+
+// ===== SWIPE TO CLOSE SIDEBAR (มือถือ) =====
+(function initSidebarSwipe() {
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+  let startX = null, startY = null, dragging = false;
+  sb.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true;
+  }, { passive: true });
+  sb.addEventListener('touchmove', (e) => {
+    if (!dragging || startX === null) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    // ปัดไปทางซ้ายชัดเจนกว่าปัดขึ้น-ลง ถึงจะนับเป็นการปิดเมนู
+    if (dx < -60 && Math.abs(dx) > Math.abs(dy)) {
+      sb.classList.remove('open');
+      const bd = document.getElementById('sidebarBackdrop'); if (bd) bd.classList.remove('show');
+      dragging = false;
+    }
+  }, { passive: true });
+  sb.addEventListener('touchend', () => { dragging = false; startX = null; startY = null; });
+})();
 
 // ===== GOOGLE SHEET =====
 function loadConfig() { config.gsUrl = localStorage.getItem('gsUrl') || DEFAULT_GS_URL; }
@@ -1686,6 +1826,7 @@ async function loadZones() {
       zonesData = (json.data || []).filter(r => String(r['สถานะ']||'').trim() === 'ตรวจสอบแล้ว');
       renderZonesTable(zonesData); renderRecentZones(zonesData.slice(0,4));
       updateDashboardStats(zonesData); initRiskBars(); renderDashboardMap();
+      updateLastSyncTime();
       try {
         const pendingJson = await apiGet('pending');
         if (pendingJson && pendingJson.status === 'ok') {
@@ -1703,6 +1844,15 @@ async function loadZones() {
 
 function updateDashboardStats(data) {
   document.getElementById('totalZones').textContent = data.length;
+}
+
+function updateLastSyncTime() {
+  const el = document.getElementById('lastSyncTime');
+  if (!el) return;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit', hour12:false });
+  el.textContent = '🕐 อัปเดตล่าสุด ' + timeStr + ' น.';
+  el.title = now.toLocaleString('th-TH', { timeZone:'Asia/Bangkok' });
 }
 
 function renderZonesTable(data) {
@@ -1727,7 +1877,7 @@ function renderZonesTable(data) {
       <td>${riskBadge(d.ระดับความเสี่ยง)}</td>
       <td>${d.ละติจูด&&d.ลองจิจูด?`<a class="map-link" href="https://www.google.com/maps?q=${d.ละติจูด},${d.ลองจิจูด}" target="_blank">📍 ${parseFloat(d.ละติจูด).toFixed(4)}, ${parseFloat(d.ลองจิจูด).toFixed(4)}</a>`:'—'}</td>
       <td style="white-space:nowrap;font-size:12px;color:var(--text3)">${d.timestamp||'—'}</td>
-      <td>${d.รูปภาพ?`<a class="map-link" href="${d.รูปภาพ}" target="_blank">🖼️ ดูรูป</a>`:'<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
+      <td>${d.รูปภาพ?`<a class="map-link" href="${toDirectImageUrl(d.รูปภาพ)}" target="_blank">🖼️ ดูรูป</a>`:'<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
     </tr>`).join('');
 }
 
@@ -1748,6 +1898,14 @@ function riskBadge(r) {
   if (r==='ปานกลาง') return '<span class="badge badge-warning">🟡 ปานกลาง</span>';
   if (r==='ต่ำ') return '<span class="badge badge-success">🟢 ต่ำ</span>';
   return '<span class="badge badge-gray">—</span>';
+}
+
+// แปลงลิงก์ Google Drive ให้เปิดเป็นรูปตรงๆ ไม่ผ่านหน้า Drive Viewer ที่อาจขอให้ล็อกอิน
+function toDirectImageUrl(url) {
+  if (!url) return url;
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
+  if (m && m[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return url;
 }
 
 // ===== LOAD STATS (จาก Sheet "สถิติ") — หัวใจของการแก้ไข =====
@@ -1810,6 +1968,7 @@ async function loadStats() {
 
     // อัปเดต dashboard stat card ด้วย
     document.getElementById('totalAccidents').textContent = totalAcc.toLocaleString();
+    updateLastSyncTime();
 
     // อัปเดต label ปี
     const yearLabel = document.getElementById('statsYearLabel');
@@ -1924,6 +2083,55 @@ function initRiskBars() {
       <div class="risk-bar-val">${vals[i]}</div>
     </div>`).join('');
 }
+
+// ===== PLACE SEARCH (ค้นหาชื่อสถานที่) =====
+let placeSearchTimer = null;
+let rptPlaceResultsData = [];
+
+function handlePlaceSearchInput() {
+  clearTimeout(placeSearchTimer);
+  const q = document.getElementById('rptPlaceSearch').value.trim();
+  if (q.length < 3) { document.getElementById('rptPlaceResults').style.display = 'none'; return; }
+  placeSearchTimer = setTimeout(() => searchPlace(), 650);
+}
+
+async function searchPlace() {
+  const q = document.getElementById('rptPlaceSearch').value.trim();
+  const box = document.getElementById('rptPlaceResults');
+  if (!q) return;
+  box.style.display = 'block';
+  box.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text3)">🔎 กำลังค้นหา...</div>';
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&q=' + encodeURIComponent(q) + '&countrycodes=th&limit=6&accept-language=th';
+    const res = await fetch(url);
+    const data = await res.json();
+    rptPlaceResultsData = data || [];
+    if (!rptPlaceResultsData.length) {
+      box.innerHTML = '<div style="padding:12px;font-size:12px;color:var(--text3)">ไม่พบสถานที่ที่ค้นหา ลองพิมพ์คำอื่น</div>';
+      return;
+    }
+    box.innerHTML = rptPlaceResultsData.map((d, i) =>
+      `<div onclick="selectPlaceResult(${i})" style="padding:10px 12px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">📍 ${d.display_name}</div>`
+    ).join('');
+  } catch (e) {
+    box.innerHTML = '<div style="padding:12px;font-size:12px;color:#F85149">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</div>';
+  }
+}
+
+function selectPlaceResult(i) {
+  const d = rptPlaceResultsData[i];
+  if (!d) return;
+  rptSetLocation(parseFloat(d.lat), parseFloat(d.lon));
+  document.getElementById('rptPlaceResults').style.display = 'none';
+  document.getElementById('rptPlaceSearch').value = d.display_name.split(', ').slice(0, 3).join(', ');
+}
+
+document.addEventListener('click', (e) => {
+  const box = document.getElementById('rptPlaceResults');
+  const input = document.getElementById('rptPlaceSearch');
+  if (!box || !input) return;
+  if (e.target !== box && e.target !== input && !box.contains(e.target)) box.style.display = 'none';
+});
 
 // ===== REPORT MAP =====
 let rptMap, rptMarker, rptSelectedLat=null, rptSelectedLng=null, rptGeoTimer=null;
