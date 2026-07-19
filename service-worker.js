@@ -1,5 +1,5 @@
 // ===== Service Worker: ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก =====
-const CACHE_NAME = 'road-safety-east-v8';
+const CACHE_NAME = 'road-safety-east-v1';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -13,15 +13,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
-  // หมายเหตุ: ไม่เรียก skipWaiting() ที่นี่ตั้งใจ — ให้ service worker ใหม่รอจนกว่า
-  // ผู้ใช้จะกดยืนยัน "อัปเดตตอนนี้" ในหน้าเว็บ (ดู applyAppUpdate() ใน index.html)
-});
-
-// รับคำสั่งจากหน้าเว็บให้ activate เวอร์ชันใหม่ทันที
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  self.skipWaiting();
 });
 
 // ลบ cache เวอร์ชันเก่าเมื่อมีเวอร์ชันใหม่
