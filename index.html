@@ -54,6 +54,7 @@
     color: var(--text);
     min-height: 100vh;
     font-size: 15px;
+    touch-action: manipulation;
   }
 
   /* ===== SIDEBAR ===== */
@@ -1311,19 +1312,28 @@ function apiPost(payload) {
         </select>
         <input type="text" id="filterSearch" placeholder="🔍 ค้นหาชื่อจุด..." style="min-width:200px" oninput="filterZones()">
         <button class="btn btn-secondary btn-sm" onclick="loadZones()">🔄 โหลดใหม่</button>
+        <button class="btn btn-secondary btn-sm" onclick="locateMeForZones()" id="zonesLocateBtn">📍 ตำแหน่งปัจจุบัน</button>
         <span id="zonesCount" style="font-size:12px;color:var(--text3);margin-left:auto"></span>
       </div>
+
+      <div id="nearbyBanner" style="display:none;background:rgba(31,111,235,0.08);border:1px solid rgba(88,166,255,0.25);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:13px;color:#58A6FF;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap">
+        <span id="nearbyBannerText"></span>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap">
+          <input type="checkbox" id="nearbyOnlyToggle" onchange="filterZones()"> แสดงเฉพาะจุดใกล้ฉัน (≤5 กม.)
+        </label>
+      </div>
+
       <div class="card" style="padding:0">
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>#</th><th>จุดเสี่ยง</th><th>จังหวัด</th><th>อำเภอ</th>
-                <th>ประเภท</th><th>ระดับ</th><th>พิกัด</th><th>วันที่แจ้ง</th><th>รูปภาพ</th>
+                <th>ประเภท</th><th>ระดับ</th><th>พิกัด</th><th>ระยะห่าง</th><th>วันที่แจ้ง</th><th>รูปภาพ</th>
               </tr>
             </thead>
             <tbody id="zonesTableBody">
-              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">กำลังโหลดข้อมูล...</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1687,6 +1697,7 @@ window.addEventListener('appinstalled', () => {
 const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbzSRVjc847wimjcbx_i2UlPJj9t3J26U-eq50fgejbRg9Z4WgyPDR3BfW1zSxR_-aiKww/exec';
 let config = { gsUrl: localStorage.getItem('gsUrl') || DEFAULT_GS_URL };
 let zonesData = [];
+let userLocation = null;
 let pendingPage = null;
 
 // ===== THEME (LIGHT/DARK) =====
@@ -1854,6 +1865,7 @@ async function loadZones() {
       renderZonesTable(zonesData); renderRecentZones(zonesData.slice(0,4));
       updateDashboardStats(zonesData); initRiskBars(); renderDashboardMap();
       updateLastSyncTime();
+      if (userLocation) updateNearbyBanner();
       try {
         const pendingJson = await apiGet('pending');
         if (pendingJson && pendingJson.status === 'ok') {
@@ -1887,14 +1899,28 @@ function renderZonesTable(data) {
   const fp = document.getElementById('filterProvince').value;
   const fr = document.getElementById('filterRisk').value;
   const fs = document.getElementById('filterSearch').value.toLowerCase();
-  const filtered = data.filter(d => {
+  const nearbyOnly = document.getElementById('nearbyOnlyToggle')?.checked;
+
+  let filtered = data.filter(d => {
     if (fp && d.จังหวัด !== fp) return false;
     if (fr && d.ระดับความเสี่ยง !== fr) return false;
     if (fs && !d.ชื่อจุด.toLowerCase().includes(fs) && !(d.อำเภอ||'').toLowerCase().includes(fs)) return false;
     return true;
   });
+
+  // ถ้ามีตำแหน่งผู้ใช้แล้ว ให้คำนวณระยะห่างของแต่ละจุด
+  if (userLocation) {
+    filtered = filtered.map(d => {
+      const lat = parseFloat(d['ละติจูด']), lng = parseFloat(d['ลองจิจูด']);
+      const dist = (!isNaN(lat) && !isNaN(lng)) ? haversineKm(userLocation.lat, userLocation.lng, lat, lng) : null;
+      return Object.assign({}, d, { _distanceKm: dist });
+    });
+    if (nearbyOnly) filtered = filtered.filter(d => d._distanceKm !== null && d._distanceKm <= 5);
+    filtered.sort((a, b) => (a._distanceKm ?? Infinity) - (b._distanceKm ?? Infinity));
+  }
+
   document.getElementById('zonesCount').textContent = `แสดง ${filtered.length} จาก ${data.length} รายการ`;
-  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>'; return; }
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>'; return; }
   tbody.innerHTML = filtered.map((d,i) => `
     <tr>
       <td style="color:var(--text3)">${i+1}</td>
@@ -1903,9 +1929,55 @@ function renderZonesTable(data) {
       <td><span class="badge badge-gray">${d.ประเภท||'—'}</span></td>
       <td>${riskBadge(d.ระดับความเสี่ยง)}</td>
       <td>${d.ละติจูด&&d.ลองจิจูด?`<a class="map-link" href="https://www.google.com/maps?q=${d.ละติจูด},${d.ลองจิจูด}" target="_blank">📍 ${parseFloat(d.ละติจูด).toFixed(4)}, ${parseFloat(d.ลองจิจูด).toFixed(4)}</a>`:'—'}</td>
+      <td style="white-space:nowrap;font-size:12px;font-weight:${d._distanceKm!=null&&d._distanceKm<=5?'600':'400'};color:${d._distanceKm!=null&&d._distanceKm<=5?'#56D364':'var(--text3)'}">${d._distanceKm!=null? d._distanceKm.toFixed(1)+' กม.' : '—'}</td>
       <td style="white-space:nowrap;font-size:12px;color:var(--text3)">${d.timestamp||'—'}</td>
       <td>${d.รูปภาพ?`<a class="map-link" href="${toDirectImageUrl(d.รูปภาพ)}" target="_blank">🖼️ ดูรูป</a>`:'<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
     </tr>`).join('');
+}
+
+// คำนวณระยะทางระหว่าง 2 พิกัด ด้วยสูตร Haversine หน่วยกิโลเมตร
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function locateMeForZones() {
+  if (!navigator.geolocation) { showToast('เบราว์เซอร์ไม่รองรับ GPS', 'warning'); return; }
+  const btn = document.getElementById('zonesLocateBtn');
+  btn.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.3);border-top-color:currentColor;border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span> กำลังหาตำแหน่ง...';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      btn.innerHTML = '📍 ตำแหน่งของฉัน ✓';
+      btn.disabled = false;
+      updateNearbyBanner();
+      filterZones();
+      showToast('✅ ระบุตำแหน่งสำเร็จ', 'success');
+    },
+    (err) => {
+      showToast(err.code === 1 ? 'กรุณาอนุญาต GPS ในเบราว์เซอร์' : 'ไม่พบสัญญาณ GPS', 'warning');
+      btn.innerHTML = '📍 ตำแหน่งปัจจุบัน';
+      btn.disabled = false;
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+function updateNearbyBanner() {
+  const banner = document.getElementById('nearbyBanner');
+  const textEl = document.getElementById('nearbyBannerText');
+  if (!userLocation || !banner || !textEl) return;
+  const nearbyCount = zonesData.filter(z => {
+    const lat = parseFloat(z['ละติจูด']), lng = parseFloat(z['ลองจิจูด']);
+    if (isNaN(lat) || isNaN(lng)) return false;
+    return haversineKm(userLocation.lat, userLocation.lng, lat, lng) <= 5;
+  }).length;
+  textEl.textContent = `🎯 พบ ${nearbyCount} จุดเสี่ยงในระยะ 5 กม. จากตำแหน่งของคุณ`;
+  banner.style.display = 'flex';
 }
 
 function renderRecentZones(data) {
