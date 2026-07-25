@@ -1255,11 +1255,11 @@ function apiPost(payload) {
             <thead>
               <tr>
                 <th>#</th><th>จุดเสี่ยง</th><th>จังหวัด</th><th>อำเภอ</th>
-                <th>ประเภท</th><th>ระดับ</th><th>พิกัด</th><th>วันที่แจ้ง</th><th>รูปภาพ</th>
+                <th>ประเภท</th><th>ระดับ</th><th>พิกัด</th><th>วันที่แจ้ง</th><th>รูปภาพ</th><th>รายละเอียด</th>
               </tr>
             </thead>
             <tbody id="zonesTableBody">
-              <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">กำลังโหลดข้อมูล...</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1510,6 +1510,49 @@ function apiPost(payload) {
   </div>
 </div>
 
+<!-- ZONE DETAIL MODAL -->
+<div class="modal-overlay" id="zoneDetailModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title" id="zdTitle">📍 รายละเอียดจุดเสี่ยง</div>
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text2)">
+      <div id="zdRiskBadge"></div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">ประเภทอันตราย</div>
+        <div id="zdType" style="color:var(--text)"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">ที่ตั้ง</div>
+        <div id="zdLocation" style="color:var(--text)"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">พิกัด</div>
+        <a id="zdMapLink" class="map-link" target="_blank" style="display:inline-flex"></a>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">รายละเอียด / หมายเหตุ</div>
+        <div id="zdDetail" style="color:var(--text2);line-height:1.6;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px"></div>
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">ผู้แจ้ง</div>
+          <div id="zdReporter" style="color:var(--text)"></div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">วันที่แจ้ง</div>
+          <div id="zdDate" style="color:var(--text)"></div>
+        </div>
+      </div>
+      <div id="zdImageWrap" style="display:none">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">รูปภาพประกอบ</div>
+        <img id="zdImage" src="" alt="รูปภาพจุดเสี่ยง" style="width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);display:block">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('zoneDetailModal')">ปิด</button>
+    </div>
+  </div>
+</div>
+
 <!-- PASSWORD MODAL -->
 <div class="modal-overlay" id="passwordModal">
   <div class="modal" style="max-width:400px">
@@ -1705,6 +1748,8 @@ function updateDashboardStats(data) {
   document.getElementById('totalZones').textContent = data.length;
 }
 
+let currentRenderedZones = [];
+
 function renderZonesTable(data) {
   const tbody = document.getElementById('zonesTableBody');
   const fp = document.getElementById('filterProvince').value;
@@ -1716,8 +1761,9 @@ function renderZonesTable(data) {
     if (fs && !d.ชื่อจุด.toLowerCase().includes(fs) && !(d.อำเภอ||'').toLowerCase().includes(fs)) return false;
     return true;
   });
+  currentRenderedZones = filtered;
   document.getElementById('zonesCount').textContent = `แสดง ${filtered.length} จาก ${data.length} รายการ`;
-  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>'; return; }
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3)">ไม่พบข้อมูล</td></tr>'; return; }
   tbody.innerHTML = filtered.map((d,i) => `
     <tr>
       <td style="color:var(--text3)">${i+1}</td>
@@ -1727,8 +1773,47 @@ function renderZonesTable(data) {
       <td>${riskBadge(d.ระดับความเสี่ยง)}</td>
       <td>${d.ละติจูด&&d.ลองจิจูด?`<a class="map-link" href="https://www.google.com/maps?q=${d.ละติจูด},${d.ลองจิจูด}" target="_blank">📍 ${parseFloat(d.ละติจูด).toFixed(4)}, ${parseFloat(d.ลองจิจูด).toFixed(4)}</a>`:'—'}</td>
       <td style="white-space:nowrap;font-size:12px;color:var(--text3)">${d.timestamp||'—'}</td>
-      <td>${d.รูปภาพ?`<a class="map-link" href="${d.รูปภาพ}" target="_blank">🖼️ ดูรูป</a>`:'<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
+      <td>${d.รูปภาพ?`<a class="map-link" href="${toDirectImageUrl(d.รูปภาพ)}" target="_blank">🖼️ ดูรูป</a>`:'<span style="color:var(--text3);font-size:12px">ไม่มี</span>'}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="showZoneDetail(${i})">🔍 ดูรายละเอียด</button></td>
     </tr>`).join('');
+}
+
+// แปลงลิงก์ Google Drive ให้เปิดเป็นรูปตรงๆ ไม่ผ่านหน้า Drive Viewer ที่อาจขอให้ล็อกอิน
+function toDirectImageUrl(url) {
+  if (!url) return url;
+  const m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
+  if (m && m[1]) return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+  return url;
+}
+
+function showZoneDetail(i) {
+  const d = currentRenderedZones[i];
+  if (!d) return;
+  document.getElementById('zdTitle').textContent = '📍 ' + (d.ชื่อจุด || 'รายละเอียดจุดเสี่ยง');
+  document.getElementById('zdRiskBadge').innerHTML = riskBadge(d.ระดับความเสี่ยง);
+  document.getElementById('zdType').textContent = d.ประเภท || '—';
+  document.getElementById('zdLocation').textContent = `${d.จังหวัด||'—'} › ${d.อำเภอ||'—'}`;
+  const lat = d.ละติจูด, lng = d.ลองจิจูด;
+  const mapLink = document.getElementById('zdMapLink');
+  if (lat && lng) {
+    mapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
+    mapLink.style.display = 'inline-flex';
+    mapLink.textContent = `📍 ${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}`;
+  } else {
+    mapLink.style.display = 'none';
+  }
+  document.getElementById('zdDetail').textContent = d.รายละเอียด && d.รายละเอียด.trim() ? d.รายละเอียด : 'ไม่มีรายละเอียดเพิ่มเติม';
+  document.getElementById('zdReporter').textContent = d.ผู้แจ้ง && d.ผู้แจ้ง.trim() ? d.ผู้แจ้ง : 'ไม่ระบุ';
+  document.getElementById('zdDate').textContent = d.timestamp || '—';
+  const imgWrap = document.getElementById('zdImageWrap');
+  const img = document.getElementById('zdImage');
+  if (d.รูปภาพ) {
+    img.src = toDirectImageUrl(d.รูปภาพ);
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+  }
+  document.getElementById('zoneDetailModal').classList.add('show');
 }
 
 function renderRecentZones(data) {
@@ -2078,7 +2163,7 @@ let pendingPayload=null;
 function forceSubmit(){closeModal('dupModal');if(pendingPayload)doSend(pendingPayload);}
 
 // ===== RATE LIMITING =====
-const RATE_LIMIT=40,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
+const RATE_LIMIT=5,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
 function checkRateLimit(){const now=Date.now();if(now-lastSubmitTime<COOLDOWN){showToast('⏳ กรุณารอ '+Math.ceil((COOLDOWN-(now-lastSubmitTime))/1000)+' วินาทีก่อนส่งอีกครั้ง','warning');return false;}const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const recent=history.filter(t=>now-t<RATE_WINDOW);if(recent.length>=RATE_LIMIT){showToast('⚠️ ส่งรายงานได้สูงสุด '+RATE_LIMIT+' ครั้งต่อชั่วโมง','warning');return false;}return true;}
 function recordSubmit(){lastSubmitTime=Date.now();const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const now=Date.now();const recent=history.filter(t=>now-t<RATE_WINDOW);recent.push(now);localStorage.setItem('submitHistory',JSON.stringify(recent));}
 function sanitize(str){if(!str)return '';return str.toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').substring(0,500);}
