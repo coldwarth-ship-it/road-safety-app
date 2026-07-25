@@ -1023,7 +1023,10 @@ function apiPost(payload) {
       <div class="card">
         <div class="card-header">
           <div class="card-title">📌 แผนที่จุดเสี่ยงในภาคตะวันออก</div>
-          <button class="btn btn-secondary btn-sm" onclick="openAllZonesInMaps()">เปิดใน Google Maps</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="locateMeOnDashboard()" id="dashLocateBtn">📍 ตำแหน่งของฉัน</button>
+            <button class="btn btn-secondary btn-sm" onclick="openAllZonesInMaps()">เปิดใน Google Maps</button>
+          </div>
         </div>
         <div style="position:relative;height:420px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)">
           <div id="dashboardMap" style="width:100%;height:100%"></div>
@@ -1545,6 +1548,10 @@ function apiPost(payload) {
       <div id="zdImageWrap" style="display:none">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">รูปภาพประกอบ</div>
         <img id="zdImage" src="" alt="รูปภาพจุดเสี่ยง" style="width:100%;border-radius:var(--radius-sm);border:1px solid var(--border);display:block">
+        <div id="zdImageFallback" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;font-size:12px;color:var(--text3)">
+          🖼️ ไม่สามารถแสดงรูปตัวอย่างได้<br>
+          <a id="zdImageFallbackLink" href="#" target="_blank" class="map-link" style="margin-top:6px;display:inline-flex">🔗 เปิดรูปภาพในแท็บใหม่</a>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1789,6 +1796,10 @@ function toDirectImageUrl(url) {
 function showZoneDetail(i) {
   const d = currentRenderedZones[i];
   if (!d) return;
+  populateZoneDetailModal(d);
+}
+
+function populateZoneDetailModal(d) {
   document.getElementById('zdTitle').textContent = '📍 ' + (d.ชื่อจุด || 'รายละเอียดจุดเสี่ยง');
   document.getElementById('zdRiskBadge').innerHTML = riskBadge(d.ระดับความเสี่ยง);
   document.getElementById('zdType').textContent = d.ประเภท || '—';
@@ -1807,9 +1818,18 @@ function showZoneDetail(i) {
   document.getElementById('zdDate').textContent = d.timestamp || '—';
   const imgWrap = document.getElementById('zdImageWrap');
   const img = document.getElementById('zdImage');
+  const imgFallback = document.getElementById('zdImageFallback');
+  const imgFallbackLink = document.getElementById('zdImageFallbackLink');
   if (d.รูปภาพ) {
-    img.src = toDirectImageUrl(d.รูปภาพ);
     imgWrap.style.display = 'block';
+    img.style.display = 'block';
+    imgFallback.style.display = 'none';
+    img.onerror = () => {
+      img.style.display = 'none';
+      imgFallback.style.display = 'block';
+      imgFallbackLink.href = d.รูปภาพ;
+    };
+    img.src = toDirectImageUrl(d.รูปภาพ);
   } else {
     imgWrap.style.display = 'none';
   }
@@ -1959,7 +1979,41 @@ async function loadStats() {
 }
 
 // ===== DASHBOARD MAP =====
-let dashMap = null, dashMarkers = [];
+let dashMap = null, dashMarkers = [], dashUserMarker = null;
+
+function locateMeOnDashboard() {
+  if (!navigator.geolocation) { showToast('เบราว์เซอร์ไม่รองรับ GPS', 'warning'); return; }
+  ensureDashboardMap();
+  const btn = document.getElementById('dashLocateBtn');
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span style="width:12px;height:12px;border:1.5px solid rgba(255,255,255,0.3);border-top-color:currentColor;border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span> กำลังหา...';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      if (dashUserMarker) dashMap.removeLayer(dashUserMarker);
+      dashUserMarker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          html: '<div style="width:18px;height:18px;background:#1F6FEB;border:3px solid white;border-radius:50%;box-shadow:0 0 0 5px rgba(31,111,235,0.35)"></div>',
+          className: '', iconSize: [24,24], iconAnchor: [12,12]
+        }),
+        zIndexOffset: 1000
+      }).addTo(dashMap);
+      dashUserMarker.bindPopup('📍 ตำแหน่งของคุณ');
+      dashMap.setView([lat, lng], 13, { animate: true });
+      setTimeout(() => dashMap.invalidateSize(), 100);
+      btn.innerHTML = original;
+      btn.disabled = false;
+      showToast('✅ พบตำแหน่งของคุณแล้ว', 'success');
+    },
+    (err) => {
+      showToast(err.code === 1 ? 'กรุณาอนุญาต GPS ในเบราว์เซอร์' : 'ไม่พบสัญญาณ GPS', 'warning');
+      btn.innerHTML = original;
+      btn.disabled = false;
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
 
 function ensureDashboardMap() {
   if (dashMap) return;
@@ -1990,7 +2044,7 @@ function renderDashboardMap() {
   valid.forEach(z => {
     const lat=parseFloat(z['ละติจูด']), lng=parseFloat(z['ลองจิจูด']), risk=z['ระดับความเสี่ยง']||'';
     const m = L.marker([lat,lng],{icon:dashPinIcon(risk)}).addTo(dashMap);
-    m.bindPopup(`<div style="font-family:'Sarabun',sans-serif;color:#E6EDF3;min-width:180px"><div style="font-weight:600;margin-bottom:4px">${z['ชื่อจุด']||'—'}</div><div style="font-size:12px;color:#8B949E;margin-bottom:6px">${z['จังหวัด']||''} ${z['อำเภอ']?'› '+z['อำเภอ']:''}</div><div style="font-size:12px;margin-bottom:4px">${riskBadge(risk)}</div><a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:#58A6FF;text-decoration:none">📍 เปิดใน Google Maps</a></div>`);
+    m.on('click', () => populateZoneDetailModal(z));
     dashMarkers.push(m); bounds.push([lat,lng]);
   });
   if (bounds.length===1) dashMap.setView(bounds[0],13);
