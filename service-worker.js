@@ -1,5 +1,5 @@
 // ===== Service Worker: ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก =====
-const CACHE_NAME = 'road-safety-east-v9';
+const CACHE_NAME = 'road-safety-east-v10';
 const CORE_ASSETS = [
   './',
   './index.html',
