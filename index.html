@@ -826,6 +826,21 @@
 
   @media (max-width: 900px) { .hamburger { display: flex; } }
 
+  /* ===== LIGHT THEME ===== */
+  body.light-theme {
+    --bg: #F4F5F7;
+    --bg2: #FFFFFF;
+    --bg3: #F0F1F4;
+    --bg4: #E6E8EC;
+    --border: rgba(15,20,25,0.09);
+    --border2: rgba(15,20,25,0.15);
+    --text: #1C2128;
+    --text2: #57606A;
+    --text3: #7A828C;
+  }
+  body.light-theme .leaflet-container { background: #E9ECEF !important; }
+  body.light-theme .topbar { background: rgba(244,245,247,0.95) !important; }
+
   /* ===== ACCIDENTS LOADING STATE ===== */
   .skeleton {
     background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
@@ -954,9 +969,13 @@ function apiPost(payload) {
   <header class="topbar">
     <div style="display:flex;align-items:center;gap:12px">
       <button class="hamburger" onclick="toggleSidebar()">☰</button>
-      <span class="page-title" id="pageTitle">ภาพรวม Dashboard</span>
+      <div style="display:flex;flex-direction:column;line-height:1.3">
+        <span class="page-title" id="pageTitle">ภาพรวม Dashboard</span>
+        <span id="lastSyncTime" style="font-size:10px;color:var(--text3)"></span>
+      </div>
     </div>
     <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" id="themeToggleBtn" onclick="toggleTheme()" title="สลับธีมสว่าง/มืด">🌙</button>
       <button class="btn btn-secondary btn-sm" id="pwaInstallBtn" onclick="installPWA()" style="display:none">📲 ติดตั้งแอป</button>
       <button class="btn btn-secondary btn-sm" onclick="syncData()">🔄 ซิงค์ข้อมูล</button>
       <button class="btn btn-primary btn-sm" onclick="showPage('report')">+ แจ้งจุดเสี่ยง</button>
@@ -1584,10 +1603,36 @@ function apiPost(payload) {
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
-// ===== PWA: SERVICE WORKER + INSTALL PROMPT =====
+// ===== PWA: SERVICE WORKER + INSTALL PROMPT + แจ้งเตือนเมื่อมีอัปเดตใหม่ =====
+let swRegistration = null;
+let swRefreshing = false;
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(err => console.warn('SW register failed:', err));
+    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' }).then(reg => {
+      swRegistration = reg;
+      reg.update().catch(() => {});
+      if (reg.waiting) showUpdateBanner();
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+    }).catch(err => console.warn('SW register failed:', err));
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && swRegistration) swRegistration.update().catch(() => {});
+    });
   });
 }
 
@@ -1616,6 +1661,46 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.style.display = 'none';
   showToast('✅ ติดตั้งแอปสำเร็จแล้ว', 'success');
 });
+
+function showUpdateBanner() {
+  if (document.getElementById('updateBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'updateBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9997;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,0.35)';
+  banner.innerHTML = `
+    <span>✨ มีเวอร์ชันใหม่ของแอปพร้อมใช้งาน</span>
+    <button onclick="applyAppUpdate()" style="background:white;color:var(--primary-dark);border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🔄 อัปเดตตอนนี้</button>
+    <button onclick="document.getElementById('updateBanner').remove()" style="background:rgba(255,255,255,0.22);border:none;color:white;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">ไว้ทีหลัง</button>
+  `;
+  document.body.prepend(banner);
+}
+
+function applyAppUpdate() {
+  const btn = document.querySelector('#updateBanner button');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังอัปเดต...'; }
+  if (!swRegistration || !swRegistration.waiting) { window.location.reload(); return; }
+  swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+}
+
+// ===== THEME (LIGHT/DARK) =====
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  if (saved === 'light') document.body.classList.add('light-theme');
+  updateThemeUI();
+}
+function toggleTheme() {
+  document.body.classList.toggle('light-theme');
+  const isLight = document.body.classList.contains('light-theme');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  updateThemeUI();
+}
+function updateThemeUI() {
+  const isLight = document.body.classList.contains('light-theme');
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) { btn.textContent = isLight ? '☀️' : '🌙'; btn.title = isLight ? 'สลับเป็นธีมมืด' : 'สลับเป็นธีมสว่าง'; }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isLight ? '#FFFFFF' : '#D84315');
+}
 
 // ===== CONFIG =====
 const DEFAULT_GS_URL = 'https://script.google.com/macros/s/AKfycbzSRVjc847wimjcbx_i2UlPJj9t3J26U-eq50fgejbRg9Z4WgyPDR3BfW1zSxR_-aiKww/exec';
@@ -1660,6 +1745,7 @@ function logoutAdmin() { sessionStorage.removeItem('adminToken'); sessionStorage
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   loadConfig();
   if (window.IS_GAS) {
     const dot = document.getElementById('gsDot'); const txt = document.getElementById('gsStatusText');
@@ -1736,6 +1822,7 @@ async function loadZones() {
       zonesData = (json.data || []).filter(r => String(r['สถานะ']||'').trim() === 'ตรวจสอบแล้ว');
       renderZonesTable(zonesData); renderRecentZones(zonesData.slice(0,4));
       updateDashboardStats(zonesData); initRiskBars(); renderDashboardMap();
+      updateLastSyncTime();
       try {
         const pendingJson = await apiGet('pending');
         if (pendingJson && pendingJson.status === 'ok') {
@@ -1753,6 +1840,15 @@ async function loadZones() {
 
 function updateDashboardStats(data) {
   document.getElementById('totalZones').textContent = data.length;
+}
+
+function updateLastSyncTime() {
+  const el = document.getElementById('lastSyncTime');
+  if (!el) return;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit', hour12:false });
+  el.textContent = '🕐 อัปเดตล่าสุด ' + timeStr + ' น.';
+  el.title = now.toLocaleString('th-TH', { timeZone:'Asia/Bangkok' });
 }
 
 let currentRenderedZones = [];
@@ -1915,6 +2011,7 @@ async function loadStats() {
 
     // อัปเดต dashboard stat card ด้วย
     document.getElementById('totalAccidents').textContent = totalAcc.toLocaleString();
+    updateLastSyncTime();
 
     // อัปเดต label ปี
     const yearLabel = document.getElementById('statsYearLabel');
@@ -2217,7 +2314,7 @@ let pendingPayload=null;
 function forceSubmit(){closeModal('dupModal');if(pendingPayload)doSend(pendingPayload);}
 
 // ===== RATE LIMITING =====
-const RATE_LIMIT=5,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
+const RATE_LIMIT=30,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
 function checkRateLimit(){const now=Date.now();if(now-lastSubmitTime<COOLDOWN){showToast('⏳ กรุณารอ '+Math.ceil((COOLDOWN-(now-lastSubmitTime))/1000)+' วินาทีก่อนส่งอีกครั้ง','warning');return false;}const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const recent=history.filter(t=>now-t<RATE_WINDOW);if(recent.length>=RATE_LIMIT){showToast('⚠️ ส่งรายงานได้สูงสุด '+RATE_LIMIT+' ครั้งต่อชั่วโมง','warning');return false;}return true;}
 function recordSubmit(){lastSubmitTime=Date.now();const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const now=Date.now();const recent=history.filter(t=>now-t<RATE_WINDOW);recent.push(now);localStorage.setItem('submitHistory',JSON.stringify(recent));}
 function sanitize(str){if(!str)return '';return str.toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').substring(0,500);}
