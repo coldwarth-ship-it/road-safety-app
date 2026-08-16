@@ -1,5 +1,5 @@
 // ===== Service Worker: ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก =====
-const CACHE_NAME = 'road-safety-east-v10';
+const CACHE_NAME = 'road-safety-east-v11';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -8,23 +8,23 @@ const CORE_ASSETS = [
   './icon-512.png'
 ];
 
-// ติดตั้ง service worker และ cache หน้าเว็บหลักไว้ล่วงหน้า
+// ติดตั้ง service worker และ cache หน้าเว็บหลักไว้ล่วงหน้า (ไว้ใช้ตอนออฟไลน์เท่านั้น)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
-  // หมายเหตุ: ไม่เรียก skipWaiting() ที่นี่ตั้งใจ — ให้ service worker ใหม่รอจนกว่า
-  // ผู้ใช้จะกดยืนยัน "อัปเดตตอนนี้" ในหน้าเว็บ (ดู applyAppUpdate() ใน index.html)
+  // 🆕 บังคับให้เวอร์ชันใหม่ activate ทันที ไม่ต้องรอผู้ใช้กดยืนยัน
+  self.skipWaiting();
 });
 
-// รับคำสั่งจากหน้าเว็บให้ activate เวอร์ชันใหม่ทันที
+// รองรับคำสั่งจากหน้าเว็บเผื่อยังมีโค้ดเก่าเรียกอยู่ (ไม่มีผลเสีย ปลอดภัยไว้)
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
 
-// ลบ cache เวอร์ชันเก่าเมื่อมีเวอร์ชันใหม่
+// ลบ cache เวอร์ชันเก่าเมื่อมีเวอร์ชันใหม่ + เข้าควบคุมหน้าเว็บที่เปิดอยู่ทันที
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -34,11 +34,14 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// กลยุทธ์: Network first สำหรับ API/ข้อมูล, Cache first สำหรับไฟล์แอปเอง
+// กลยุทธ์:
+//  - หน้าเว็บ (HTML/นำทาง): Network First — ดึงของสดจากเน็ตก่อนเสมอ ถ้าออฟไลน์ค่อย fallback ไป cache
+//  - API ภายนอก (Google Apps Script): ดึงสดเสมอเช่นกัน
+//  - ไฟล์ประกอบอื่นๆ ของแอป (manifest, icons): cache ก่อน เน็ตทีหลัง (เปลี่ยนไม่บ่อย ไม่จำเป็นต้องเช็คทุกครั้ง)
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // อย่า cache คำขอไปยัง Google Apps Script / API ภายนอก — ให้ดึงสดเสมอ
+  // คำขอไปยัง Google Apps Script / API ภายนอก
   if (url.origin !== self.location.origin) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
@@ -46,7 +49,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ไฟล์ของแอปเอง: ลอง cache ก่อน ถ้าไม่มีค่อยไปดึงจากเน็ต แล้วเก็บ cache ไว้ใช้ครั้งถัดไป
+  // 🆕 หน้าเว็บหลัก (การนำทาง/โหลด/รีเฟรชหน้า) — ดึงสดจากเน็ตก่อนเสมอ
+  // เพื่อให้เปิดแอปแล้วเจอเวอร์ชันล่าสุดทันที ไม่ต้องรอกดปุ่มอัปเดตอีกต่อไป
+  const isDocument = event.request.mode === 'navigate' || event.request.destination === 'document';
+  if (isDocument) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // ไฟล์ประกอบอื่นๆ ของแอปเอง: cache ก่อน เน็ตทีหลัง
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
