@@ -1603,35 +1603,28 @@ function apiPost(payload) {
 <div id="toast" class="toast" style="display:none"></div>
 
 <script>
-// ===== PWA: SERVICE WORKER + INSTALL PROMPT + แจ้งเตือนเมื่อมีอัปเดตใหม่ =====
-let swRegistration = null;
+// ===== PWA: SERVICE WORKER + INSTALL PROMPT + อัปเดตอัตโนมัติทันทีเสมอ =====
 let swRefreshing = false;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' }).then(reg => {
-      swRegistration = reg;
       reg.update().catch(() => {});
-      if (reg.waiting) showUpdateBanner();
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner();
-          }
-        });
-      });
     }).catch(err => console.warn('SW register failed:', err));
 
+    // 🆕 พอเวอร์ชันใหม่เข้าควบคุมหน้าเว็บ (เกิดขึ้นอัตโนมัติทันที ไม่ต้องรอกดปุ่ม) ให้รีเฟรชหน้าเงียบๆ ครั้งเดียว
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (swRefreshing) return;
       swRefreshing = true;
-      window.location.reload();
+      showToast('🔄 กำลังอัปเดตเป็นเวอร์ชันล่าสุด...', 'info');
+      setTimeout(() => window.location.reload(), 600);
     });
 
+    // เช็คเวอร์ชันใหม่ทุกครั้งที่สลับกลับมาเปิดแอป (จากพื้นหลังหรือแอปอื่น)
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && swRegistration) swRegistration.update().catch(() => {});
+      if (document.visibilityState === 'visible') {
+        navigator.serviceWorker.getRegistration().then(reg => reg && reg.update().catch(() => {}));
+      }
     });
   });
 }
@@ -1661,26 +1654,6 @@ window.addEventListener('appinstalled', () => {
   if (btn) btn.style.display = 'none';
   showToast('✅ ติดตั้งแอปสำเร็จแล้ว', 'success');
 });
-
-function showUpdateBanner() {
-  if (document.getElementById('updateBanner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'updateBanner';
-  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9997;background:linear-gradient(135deg,var(--primary),var(--accent));color:white;padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,0.35)';
-  banner.innerHTML = `
-    <span>✨ มีเวอร์ชันใหม่ของแอปพร้อมใช้งาน</span>
-    <button onclick="applyAppUpdate()" style="background:white;color:var(--primary-dark);border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🔄 อัปเดตตอนนี้</button>
-    <button onclick="document.getElementById('updateBanner').remove()" style="background:rgba(255,255,255,0.22);border:none;color:white;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit">ไว้ทีหลัง</button>
-  `;
-  document.body.prepend(banner);
-}
-
-function applyAppUpdate() {
-  const btn = document.querySelector('#updateBanner button');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังอัปเดต...'; }
-  if (!swRegistration || !swRegistration.waiting) { window.location.reload(); return; }
-  swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-}
 
 // ===== THEME (LIGHT/DARK) =====
 function initTheme() {
