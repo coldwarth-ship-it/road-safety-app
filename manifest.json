@@ -1,7 +1,7 @@
 {
-  "name": "ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก",
-  "short_name": "Road Safety East",
-  "description": "ระบบแจ้งและติดตามจุดเสี่ยงอุบัติเหตุบนท้องถนนในภาคตะวันออก",
+  "name": "ระบบความปลอดภัยบนท้องถนน - ประเทศไทย",
+  "short_name": "Road Safety TH",
+  "description": "ระบบแจ้งและติดตามจุดเสี่ยงบนท้องถนนทั่วประเทศไทย",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
