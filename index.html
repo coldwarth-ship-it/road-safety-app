@@ -1,8 +1,9 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบความปลอดภัยบนท้องถนน - ภาคตะวันออก</title>
+<title>ระบบความปลอดภัยบนท้องถนน - ประเทศไทย</title>
 
 <!-- ===== PWA ===== -->
 <link rel="manifest" href="manifest.json">
@@ -13,7 +14,7 @@
 <!-- iOS: ทำให้เปิดแบบ standalone ไม่มีแถบ Safari -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Road Safety East">
+<meta name="apple-mobile-web-app-title" content="Road Safety Thailand">
 <link rel="apple-touch-icon" href="icon-192.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -878,6 +879,9 @@ function apiGet(sheetName) {
 }
 
 function apiPost(payload) {
+  if (['localhost', '127.0.0.1'].includes(location.hostname) || location.protocol === 'file:') {
+    return Promise.reject(new Error('โหมดทดสอบในเครื่อง: ปิดการส่งข้อมูลจริง'));
+  }
   return new Promise((resolve, reject) => {
     if (window.IS_GAS) {
       google.script.run
@@ -903,13 +907,23 @@ function apiPost(payload) {
 </script>
 </head>
 <body>
+<script>
+if (location.protocol === 'file:') {
+  window.addEventListener('DOMContentLoaded', () => {
+    const note=document.createElement('div');
+    note.textContent='กรุณาเปิดผ่าน START-PREVIEW.cmd ในชุดไฟล์ทดสอบ เพื่อให้แผนที่ส่งที่อยู่เว็บต้นทางได้';
+    note.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:10000;padding:16px;background:#7c2d12;color:white;text-align:center';
+    document.body.appendChild(note);
+  });
+}
+</script>
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="logo-area">
     <div class="logo-icon">🛡️</div>
     <div class="logo-title">ระบบความปลอดภัยบนท้องถนน</div>
-    <div class="logo-sub">ภาคตะวันออก • Eastern Road Safety</div>
+    <div class="logo-sub">ประเทศไทย • Thailand Road Safety</div>
   </div>
 
   <div class="nav-section">
@@ -993,19 +1007,19 @@ function apiPost(payload) {
           <div class="stat-change up" id="statZonesChange">ดึงข้อมูลจาก Google Sheet</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">อุบัติเหตุปีนี้ (ภาคตะวันออก)</div>
+          <div class="stat-label">อุบัติเหตุรวมตามข้อมูลในชีต</div>
           <div class="stat-value" id="totalAccidents">—</div>
-          <div class="stat-change up">↑ อัปเดตจากกรมทางหลวง</div>
+          <div class="stat-change up">ตามข้อมูลในชีตสถิติ</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">รายงานรอตรวจสอบ</div>
           <div class="stat-value" id="pendingCount">—</div>
-          <div class="stat-change">รายการใหม่วันนี้</div>
+          <div class="stat-change">รายงานทั้งหมดที่ยังรอตรวจสอบ</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">จังหวัดที่มีข้อมูล</div>
-          <div class="stat-value">8</div>
-          <div class="stat-change down">จังหวัดในภาคตะวันออก</div>
+          <div class="stat-value" id="provinceDataCount">—</div>
+          <div class="stat-change down">รองรับการแจ้งครบ 77 จังหวัด</div>
         </div>
       </div>
 
@@ -1029,8 +1043,8 @@ function apiPost(payload) {
         <div class="card">
           <div class="card-header">
             <div>
-              <div class="card-title">ระดับความเสี่ยงแต่ละจังหวัด</div>
-              <div class="card-sub">อิงตามจำนวนจุดเสี่ยง</div>
+              <div class="card-title">จังหวัดที่มีจุดเสี่ยงมากที่สุด</div>
+              <div class="card-sub">10 อันดับตามจำนวนจุดที่ตรวจสอบแล้ว</div>
             </div>
           </div>
           <div id="riskBars">
@@ -1041,7 +1055,7 @@ function apiPost(payload) {
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">📌 แผนที่จุดเสี่ยงในภาคตะวันออก</div>
+          <div class="card-title">📌 แผนที่จุดเสี่ยงในประเทศไทย</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-secondary btn-sm" onclick="locateMeOnDashboard()" id="dashLocateBtn">📍 ตำแหน่งของฉัน</button>
             <button class="btn btn-secondary btn-sm" onclick="openAllZonesInMaps()">เปิดใน Google Maps</button>
@@ -1148,16 +1162,11 @@ function apiPost(payload) {
           <div class="form-grid">
             <div class="form-group">
               <label>จังหวัด *</label>
-              <select id="rptProvince" onchange="updateAmphoe()">
-                <option value="">-- เลือกจังหวัด --</option>
-                <option>ชลบุรี</option><option>ระยอง</option><option>จันทบุรี</option>
-                <option>ตราด</option><option>ฉะเชิงเทรา</option><option>ปราจีนบุรี</option>
-                <option>สระแก้ว</option><option>นครนายก</option>
-              </select>
+              <select id="rptProvince" onchange="updateAmphoe()"><option value="">-- เลือกจังหวัด --</option><option value="กระบี่">กระบี่</option><option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กาญจนบุรี">กาญจนบุรี</option><option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ขอนแก่น">ขอนแก่น</option><option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี">ชลบุรี</option><option value="ชัยนาท">ชัยนาท</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="ชุมพร">ชุมพร</option><option value="เชียงราย">เชียงราย</option><option value="เชียงใหม่">เชียงใหม่</option><option value="ตรัง">ตรัง</option><option value="ตราด">ตราด</option><option value="ตาก">ตาก</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="นราธิวาส">นราธิวาส</option><option value="น่าน">น่าน</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="ปทุมธานี">ปทุมธานี</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ปัตตานี">ปัตตานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พะเยา">พะเยา</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบุรี">เพชรบุรี</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="แพร่">แพร่</option><option value="ภูเก็ต">ภูเก็ต</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option><option value="ยโสธร">ยโสธร</option><option value="ยะลา">ยะลา</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="ระนอง">ระนอง</option><option value="ระยอง">ระยอง</option><option value="ราชบุรี">ราชบุรี</option><option value="ลพบุรี">ลพบุรี</option><option value="ลำปาง">ลำปาง</option><option value="ลำพูน">ลำพูน</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระแก้ว">สระแก้ว</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อ่างทอง">อ่างทอง</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุตรดิตถ์">อุตรดิตถ์</option><option value="อุทัยธานี">อุทัยธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option></select>
             </div>
             <div class="form-group">
-              <label>อำเภอ *</label>
-              <select id="rptAmphoe"><option value="">-- เลือกอำเภอ --</option></select>
+              <label>อำเภอ / เขต *</label>
+              <select id="rptAmphoe"><option value="">-- เลือกอำเภอ / เขต --</option></select>
             </div>
             <div class="form-group full">
               <label>ชื่อจุดเสี่ยง / สถานที่ *</label>
@@ -1255,12 +1264,7 @@ function apiPost(payload) {
     <!-- ===== RISK ZONES ===== -->
     <div class="section" id="page-zones">
       <div class="filter-row">
-        <select id="filterProvince" style="min-width:150px" onchange="filterZones()">
-          <option value="">ทุกจังหวัด</option>
-          <option>ชลบุรี</option><option>ระยอง</option><option>จันทบุรี</option>
-          <option>ตราด</option><option>ฉะเชิงเทรา</option><option>ปราจีนบุรี</option>
-          <option>สระแก้ว</option><option>นครนายก</option>
-        </select>
+        <select id="filterProvince" style="min-width:150px" onchange="filterZones()"><option value="">ทุกจังหวัด</option><option value="กระบี่">กระบี่</option><option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กาญจนบุรี">กาญจนบุรี</option><option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ขอนแก่น">ขอนแก่น</option><option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี">ชลบุรี</option><option value="ชัยนาท">ชัยนาท</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="ชุมพร">ชุมพร</option><option value="เชียงราย">เชียงราย</option><option value="เชียงใหม่">เชียงใหม่</option><option value="ตรัง">ตรัง</option><option value="ตราด">ตราด</option><option value="ตาก">ตาก</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="นราธิวาส">นราธิวาส</option><option value="น่าน">น่าน</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="ปทุมธานี">ปทุมธานี</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ปัตตานี">ปัตตานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พะเยา">พะเยา</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบุรี">เพชรบุรี</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="แพร่">แพร่</option><option value="ภูเก็ต">ภูเก็ต</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option><option value="ยโสธร">ยโสธร</option><option value="ยะลา">ยะลา</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="ระนอง">ระนอง</option><option value="ระยอง">ระยอง</option><option value="ราชบุรี">ราชบุรี</option><option value="ลพบุรี">ลพบุรี</option><option value="ลำปาง">ลำปาง</option><option value="ลำพูน">ลำพูน</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระแก้ว">สระแก้ว</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อ่างทอง">อ่างทอง</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุตรดิตถ์">อุตรดิตถ์</option><option value="อุทัยธานี">อุทัยธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option></select>
         <select id="filterRisk" style="min-width:140px" onchange="filterZones()">
           <option value="">ทุกระดับความเสี่ยง</option>
           <option value="สูง">🔴 สูง</option>
@@ -1298,7 +1302,7 @@ function apiPost(payload) {
       <!-- ✅ DYNAMIC STAT CARDS — ดึงจาก Sheet "สถิติ" -->
       <div class="stat-grid" style="margin-bottom:20px">
         <div class="stat-card">
-          <div class="stat-label">อุบัติเหตุรวมภาคตะวันออก</div>
+          <div class="stat-label">อุบัติเหตุรวมตามข้อมูลในชีต</div>
           <div class="stat-value risk-high" id="statTotalAccidents">—</div>
           <div class="stat-change up" id="statAccidentsChange">กำลังโหลด...</div>
         </div>
@@ -1324,7 +1328,7 @@ function apiPost(payload) {
           <!-- ✅ DYNAMIC TABLE — ดึงจาก Sheet "สถิติ" -->
           <div class="card-header">
             <div>
-              <div class="card-title">สถิติรายจังหวัด (ภาคตะวันออก)</div>
+              <div class="card-title">สถิติรายจังหวัดที่มีข้อมูล</div>
               <div class="card-sub" id="statsYearLabel">จาก Google Sheet "สถิติ"</div>
             </div>
           </div>
@@ -1372,12 +1376,7 @@ function apiPost(payload) {
     <!-- ===== WEATHER ===== -->
     <div class="section" id="page-weather">
       <div class="filter-row">
-        <select id="weatherProvince" onchange="loadWeather()">
-          <option value="ชลบุรี">ชลบุรี</option><option value="ระยอง">ระยอง</option>
-          <option value="จันทบุรี">จันทบุรี</option><option value="ตราด">ตราด</option>
-          <option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ปราจีนบุรี">ปราจีนบุรี</option>
-          <option value="สระแก้ว">สระแก้ว</option><option value="นครนายก">นครนายก</option>
-        </select>
+        <select id="weatherProvince" onchange="loadWeather()"><option value="กระบี่">กระบี่</option><option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="กาญจนบุรี">กาญจนบุรี</option><option value="กาฬสินธุ์">กาฬสินธุ์</option><option value="กำแพงเพชร">กำแพงเพชร</option><option value="ขอนแก่น">ขอนแก่น</option><option value="จันทบุรี">จันทบุรี</option><option value="ฉะเชิงเทรา">ฉะเชิงเทรา</option><option value="ชลบุรี" selected>ชลบุรี</option><option value="ชัยนาท">ชัยนาท</option><option value="ชัยภูมิ">ชัยภูมิ</option><option value="ชุมพร">ชุมพร</option><option value="เชียงราย">เชียงราย</option><option value="เชียงใหม่">เชียงใหม่</option><option value="ตรัง">ตรัง</option><option value="ตราด">ตราด</option><option value="ตาก">ตาก</option><option value="นครนายก">นครนายก</option><option value="นครปฐม">นครปฐม</option><option value="นครพนม">นครพนม</option><option value="นครราชสีมา">นครราชสีมา</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="นครสวรรค์">นครสวรรค์</option><option value="นนทบุรี">นนทบุรี</option><option value="นราธิวาส">นราธิวาส</option><option value="น่าน">น่าน</option><option value="บึงกาฬ">บึงกาฬ</option><option value="บุรีรัมย์">บุรีรัมย์</option><option value="ปทุมธานี">ปทุมธานี</option><option value="ประจวบคีรีขันธ์">ประจวบคีรีขันธ์</option><option value="ปราจีนบุรี">ปราจีนบุรี</option><option value="ปัตตานี">ปัตตานี</option><option value="พระนครศรีอยุธยา">พระนครศรีอยุธยา</option><option value="พะเยา">พะเยา</option><option value="พังงา">พังงา</option><option value="พัทลุง">พัทลุง</option><option value="พิจิตร">พิจิตร</option><option value="พิษณุโลก">พิษณุโลก</option><option value="เพชรบุรี">เพชรบุรี</option><option value="เพชรบูรณ์">เพชรบูรณ์</option><option value="แพร่">แพร่</option><option value="ภูเก็ต">ภูเก็ต</option><option value="มหาสารคาม">มหาสารคาม</option><option value="มุกดาหาร">มุกดาหาร</option><option value="แม่ฮ่องสอน">แม่ฮ่องสอน</option><option value="ยโสธร">ยโสธร</option><option value="ยะลา">ยะลา</option><option value="ร้อยเอ็ด">ร้อยเอ็ด</option><option value="ระนอง">ระนอง</option><option value="ระยอง">ระยอง</option><option value="ราชบุรี">ราชบุรี</option><option value="ลพบุรี">ลพบุรี</option><option value="ลำปาง">ลำปาง</option><option value="ลำพูน">ลำพูน</option><option value="เลย">เลย</option><option value="ศรีสะเกษ">ศรีสะเกษ</option><option value="สกลนคร">สกลนคร</option><option value="สงขลา">สงขลา</option><option value="สตูล">สตูล</option><option value="สมุทรปราการ">สมุทรปราการ</option><option value="สมุทรสงคราม">สมุทรสงคราม</option><option value="สมุทรสาคร">สมุทรสาคร</option><option value="สระแก้ว">สระแก้ว</option><option value="สระบุรี">สระบุรี</option><option value="สิงห์บุรี">สิงห์บุรี</option><option value="สุโขทัย">สุโขทัย</option><option value="สุพรรณบุรี">สุพรรณบุรี</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option><option value="สุรินทร์">สุรินทร์</option><option value="หนองคาย">หนองคาย</option><option value="หนองบัวลำภู">หนองบัวลำภู</option><option value="อ่างทอง">อ่างทอง</option><option value="อำนาจเจริญ">อำนาจเจริญ</option><option value="อุดรธานี">อุดรธานี</option><option value="อุตรดิตถ์">อุตรดิตถ์</option><option value="อุทัยธานี">อุทัยธานี</option><option value="อุบลราชธานี">อุบลราชธานี</option></select>
         <button class="btn btn-secondary btn-sm" onclick="loadWeather()">🔄 รีเฟรช</button>
       </div>
       <div class="weather-grid">
@@ -1392,7 +1391,7 @@ function apiPost(payload) {
           </div>
         </div>
         <div class="forecast-card">
-          <div class="forecast-title">🗓️ พยากรณ์ 7 วันล่วงหน้า</div>
+          <div class="forecast-title">🗓️ พยากรณ์ตามข้อมูลที่ได้รับล่วงหน้า</div>
           <div id="forecast7day"><div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">กำลังโหลด...</div></div>
         </div>
       </div>
@@ -1400,14 +1399,14 @@ function apiPost(payload) {
         <div class="card-header">
           <div>
             <div class="card-title">⚠️ แจ้งเตือนสภาพอากาศที่กระทบการขับขี่</div>
-            <div class="card-sub">วันนี้ในภาคตะวันออก</div>
+            <div class="card-sub">ข้อควรระวังทั่วไป ไม่ใช่ประกาศอากาศสด</div>
           </div>
         </div>
         <div id="weatherAlerts">
           <div class="config-area">
-            🌧️ <strong>ฝนตกหนักถึงหนักมาก</strong> — ระยอง, จันทบุรี, ตราด — ระวังน้ำท่วมฉับพลัน ถนนลื่น มองเห็นน้อยลง<br>
-            ⚡ <strong>พายุฝนฟ้าคะนอง</strong> — ชลบุรี ตอนบน — ไม่ควรขับขี่ในช่วงพายุ หยุดพักใต้หลังคาที่ปลอดภัย<br>
-            🌫️ <strong>หมอกหนา</strong> — ปราจีนบุรี, สระแก้ว — ตอนเช้าตรู่ (04.00–07.00 น.) ทัศนวิสัยต่ำ
+            🌧️ <strong>ฝนตกหนักถึงหนักมาก</strong> — ระวังน้ำท่วมฉับพลัน ถนนลื่น มองเห็นน้อยลง<br>
+            ⚡ <strong>พายุฝนฟ้าคะนอง</strong> — ไม่ควรขับขี่ในช่วงพายุ หยุดพักใต้หลังคาที่ปลอดภัย<br>
+            🌫️ <strong>หมอกหนา</strong> — ตอนเช้าตรู่ (04.00–07.00 น.) ทัศนวิสัยต่ำ
           </div>
         </div>
       </div>
@@ -1433,7 +1432,7 @@ function apiPost(payload) {
     <div class="section" id="page-seasons">
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">🌦️ วิธีรับมือกับอันตรายแต่ละฤดูกาล</div>
-        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่รถจักรยานยนต์ในภาคตะวันออก</div>
+        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่รถจักรยานยนต์ในประเทศไทย</div>
       </div>
       <div class="season-grid">
         <div class="season-card hot"><div class="season-icon">☀️</div><div class="season-name" style="color:#FF7043">ฤดูร้อน</div><div class="season-months">มีนาคม – พฤษภาคม</div><ul class="season-tips"><li>ดื่มน้ำทุก 30–45 นาที หลีกเลี่ยงเครื่องดื่มชูกำลัง</li><li>สวมเสื้อแขนยาว ป้องกัน UV และความร้อนสะสม</li><li>ระวัง Heat Stroke — หยุดพักทันทีหากรู้สึกมึนงง</li><li>ตรวจลมยางบ่อยขึ้น อากาศร้อนทำให้แรงดันเพิ่ม</li><li>หลีกเลี่ยงขับช่วง 11.00–14.00 น. หากไม่จำเป็น</li></ul></div>
@@ -1446,7 +1445,7 @@ function apiPost(payload) {
     <div class="section" id="page-disease">
       <div style="margin-bottom:20px">
         <div style="font-size:18px;font-weight:700;margin-bottom:6px">💊 โรคที่มักพบในแต่ละฤดูและวิธีดูแล</div>
-        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่และประชาชนในภาคตะวันออก</div>
+        <div style="font-size:13px;color:var(--text3)">สำหรับผู้ขับขี่และประชาชนในประเทศไทย</div>
       </div>
       <div class="tabs">
         <button class="tab active" onclick="showDiseaseTab('hot',this)">☀️ ฤดูร้อน</button>
@@ -1606,7 +1605,7 @@ function apiPost(payload) {
 // ===== PWA: SERVICE WORKER + INSTALL PROMPT + อัปเดตอัตโนมัติทันทีเสมอ =====
 let swRefreshing = false;
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !['localhost','127.0.0.1'].includes(location.hostname)) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' }).then(reg => {
       reg.update().catch(() => {});
@@ -1813,6 +1812,7 @@ async function loadZones() {
 
 function updateDashboardStats(data) {
   document.getElementById('totalZones').textContent = data.length;
+  document.getElementById('provinceDataCount').textContent = new Set(data.map(z => z.จังหวัด).filter(Boolean)).size;
 }
 
 function updateLastSyncTime() {
@@ -1834,7 +1834,7 @@ function renderZonesTable(data) {
   const filtered = data.filter(d => {
     if (fp && d.จังหวัด !== fp) return false;
     if (fr && d.ระดับความเสี่ยง !== fr) return false;
-    if (fs && !d.ชื่อจุด.toLowerCase().includes(fs) && !(d.อำเภอ||'').toLowerCase().includes(fs)) return false;
+    if (fs && !String(d.ชื่อจุด||'').toLowerCase().includes(fs) && !(d.อำเภอ||'').toLowerCase().includes(fs)) return false;
     return true;
   });
   currentRenderedZones = filtered;
@@ -1868,42 +1868,120 @@ function showZoneDetail(i) {
   populateZoneDetailModal(d);
 }
 
-function populateZoneDetailModal(d) {
-  document.getElementById('zdTitle').textContent = '📍 ' + (d.ชื่อจุด || 'รายละเอียดจุดเสี่ยง');
-  document.getElementById('zdRiskBadge').innerHTML = riskBadge(d.ระดับความเสี่ยง);
-  document.getElementById('zdType').textContent = d.ประเภท || '—';
-  document.getElementById('zdLocation').textContent = `${d.จังหวัด||'—'} › ${d.อำเภอ||'—'}`;
-  const lat = d.ละติจูด, lng = d.ลองจิจูด;
-  const mapLink = document.getElementById('zdMapLink');
-  if (lat && lng) {
-    mapLink.href = `https://www.google.com/maps?q=${lat},${lng}`;
-    mapLink.style.display = 'inline-flex';
-    mapLink.textContent = `📍 ${parseFloat(lat).toFixed(5)}, ${parseFloat(lng).toFixed(5)}`;
-  } else {
-    mapLink.style.display = 'none';
+// Replace the existing populateZoneDetailModal function with this entire file.
+function riskImageSources(raw) {
+  const value = String(raw == null ? '' : raw).trim();
+  if (!value) return { sources: [], link: '' };
+  if (/^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(value)) {
+    return { sources: [value], link: '' };
   }
-  document.getElementById('zdDetail').textContent = d.รายละเอียด && d.รายละเอียด.trim() ? d.รายละเอียด : 'ไม่มีรายละเอียดเพิ่มเติม';
-  document.getElementById('zdReporter').textContent = d.ผู้แจ้ง && d.ผู้แจ้ง.trim() ? d.ผู้แจ้ง : 'ไม่ระบุ';
-  document.getElementById('zdDate').textContent = d.timestamp || '—';
-  const imgWrap = document.getElementById('zdImageWrap');
-  const img = document.getElementById('zdImage');
-  const imgFallback = document.getElementById('zdImageFallback');
-  const imgFallbackLink = document.getElementById('zdImageFallbackLink');
-  if (d.รูปภาพ) {
-    imgWrap.style.display = 'block';
-    img.style.display = 'block';
-    imgFallback.style.display = 'none';
-    img.onerror = () => {
-      img.style.display = 'none';
-      imgFallback.style.display = 'block';
-      imgFallbackLink.href = d.รูปภาพ;
+  let url;
+  try { url = new URL(value); } catch (_) { return { sources: [], link: '' }; }
+  if (url.protocol !== 'https:') return { sources: [], link: '' };
+  if (url.hostname === 'drive.google.com') {
+    const match = url.pathname.match(/^\/file\/d\/([A-Za-z0-9_-]+)/);
+    const id = match ? match[1] : url.searchParams.get('id');
+    if (!id || !/^[A-Za-z0-9_-]+$/.test(id)) return { sources: [], link: url.href };
+    const resourceKey = url.searchParams.get('resourcekey');
+    const suffix = resourceKey ? '&resourcekey=' + encodeURIComponent(resourceKey) : '';
+    return {
+      sources: [
+        'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w1200' + suffix,
+        'https://drive.google.com/uc?export=view&id=' + encodeURIComponent(id) + suffix
+      ],
+      link: url.href
     };
-    img.src = toDirectImageUrl(d.รูปภาพ);
-  } else {
-    imgWrap.style.display = 'none';
   }
-  document.getElementById('zoneDetailModal').classList.add('show');
+  return { sources: [url.href], link: url.href };
 }
+
+function populateZoneDetailModal(d) {
+  const text = value => String(value == null ? '' : value).trim();
+  const put = (id, value, fallback) => {
+    document.getElementById(id).textContent = text(value) || fallback;
+  };
+  put('zdTitle', '📍 ' + (text(d.ชื่อจุด) || 'รายละเอียดจุดเสี่ยง'), '');
+  document.getElementById('zdRiskBadge').innerHTML = riskBadge(d.ระดับความเสี่ยง);
+  put('zdType', d.ประเภท, '—');
+  put('zdLocation', (text(d.จังหวัด) || '—') + ' › ' + (text(d.อำเภอ) || '—'), '');
+  put('zdDetail', d.รายละเอียด, 'ไม่มีรายละเอียดเพิ่มเติม');
+  put('zdReporter', d.ผู้แจ้ง, 'ไม่ระบุ');
+  put('zdDate', d.timestamp, '—');
+  const lat = Number(d.ละติจูด), lng = Number(d.ลองจิจูด);
+  const valid = text(d.ละติจูด) && text(d.ลองจิจูด) &&
+    Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const map = document.getElementById('zdMapLink');
+  map.removeAttribute('href');
+  map.style.display = valid ? 'inline-flex' : 'none';
+  map.rel = 'noopener noreferrer';
+  if (valid) {
+    map.href = 'https://www.google.com/maps?q=' + lat + ',' + lng;
+    map.textContent = '📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+  }
+
+  const wrap = document.getElementById('zdImageWrap');
+  const previous = document.getElementById('zdImage');
+  // New element isolates late load/error events from a previously opened report.
+  previous.onload = previous.onerror = null;
+  if (previous._previewTimer) clearTimeout(previous._previewTimer);
+  const img = previous.cloneNode(false);
+  img.removeAttribute('src');
+  previous.replaceWith(img);
+  wrap.parentElement.insertBefore(wrap, wrap.parentElement.firstChild);
+  wrap.style.display = 'block';
+  img.style.display = 'none';
+  img.style.maxHeight = '360px';
+  img.style.objectFit = 'contain';
+  img.alt = 'รูปภาพประกอบ ' + (text(d.ชื่อจุด) || 'จุดเสี่ยง');
+
+  const fallback = document.getElementById('zdImageFallback');
+  const link = document.getElementById('zdImageFallbackLink');
+  link.removeAttribute('href');
+  link.style.display = 'none';
+  link.rel = 'noopener noreferrer';
+  let status = document.getElementById('zdImageStatus');
+  if (!status) {
+    status = document.createElement('div');
+    status.id = 'zdImageStatus';
+    status.setAttribute('role', 'status');
+    status.style.cssText = 'padding:10px 0;color:var(--text3)';
+    wrap.insertBefore(status, img);
+  }
+  const imageData = riskImageSources(d.รูปภาพ);
+  let index = 0;
+  fallback.style.display = 'none';
+  status.textContent = text(d.รูปภาพ) ? 'กำลังโหลดรูปภาพ…' : 'รายการนี้ไม่มีรูปภาพประกอบ';
+  function failed() {
+    clearTimeout(img._previewTimer);
+    img.onload = img.onerror = null;
+    img.style.display = 'none';
+    status.textContent = 'เปิดรูปตัวอย่างไม่ได้ โปรดตรวจสอบลิงก์และสิทธิ์เข้าถึงรูป';
+    fallback.style.display = 'block';
+    if (imageData.link) {
+      link.href = imageData.link;
+      link.style.display = 'inline-flex';
+    }
+  }
+  function next() {
+    clearTimeout(img._previewTimer);
+    if (!img.isConnected) return;
+    if (index >= imageData.sources.length) { failed(); return; }
+    img.src = imageData.sources[index++];
+    img._previewTimer = setTimeout(failed, 15000);
+  }
+  img.onload = () => {
+    clearTimeout(img._previewTimer);
+    img.style.display = 'block';
+    status.textContent = '';
+    fallback.style.display = 'none';
+  };
+  img.onerror = next;
+  if (imageData.sources.length) next();
+  else if (text(d.รูปภาพ)) failed();
+  document.getElementById('zoneDetailModal').classList.add('show');
+  document.querySelector('#zoneDetailModal .modal').scrollTop = 0;
+}
+
 
 function renderRecentZones(data) {
   const el = document.getElementById('recentZonesList');
@@ -2088,10 +2166,11 @@ function locateMeOnDashboard() {
 function ensureDashboardMap() {
   if (dashMap) return;
   const el = document.getElementById('dashboardMap'); if (!el) return;
-  dashMap = L.map('dashboardMap', { center:[13.0,101.5], zoom:8, zoomControl:true, scrollWheelZoom:false });
-  const dashStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap', subdomains:'abc', maxZoom:19 });
+  dashMap = L.map('dashboardMap', { center:[13,101], zoom:5, zoomControl:true, scrollWheelZoom:false });
+  const dashStreet = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>', referrerPolicy:'strict-origin-when-cross-origin', maxZoom:19 });
   const dashSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'&copy; Esri', maxZoom:19 });
   dashStreet.addTo(dashMap);
+  dashMap.fitBounds([[5.5,97.3],[20.6,105.7]],{padding:[20,20]});
   L.control.layers({ 'แผนที่ถนน': dashStreet, 'ภาพถ่ายดาวเทียม': dashSat }, null, { position:'topright' }).addTo(dashMap);
   dashMap.on('click', () => dashMap.scrollWheelZoom.enable());
   dashMap.on('mouseout', () => dashMap.scrollWheelZoom.disable());
@@ -2123,26 +2202,30 @@ function renderDashboardMap() {
 }
 
 function initRiskBars() {
-  const provinces = ['ชลบุรี','ระยอง','ฉะเชิงเทรา','จันทบุรี','ปราจีนบุรี','สระแก้ว','ตราด','นครนายก'];
-  const vals = [88,71,54,48,39,28,22,14];
-  const colors = ['#F85149','#F85149','#E3B341','#E3B341','#E3B341','#56D364','#56D364','#56D364'];
-  document.getElementById('riskBarsContent').innerHTML = provinces.map((p,i) => `
-    <div class="risk-bar-container">
-      <div class="risk-bar-label">${p}</div>
-      <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${vals[i]}%;background:${colors[i]}"></div></div>
-      <div class="risk-bar-val">${vals[i]}</div>
-    </div>`).join('');
+  const counts=new Map();
+  (zonesData||[]).forEach(z=>{if(THAI_PROVINCES.includes(z.จังหวัด))counts.set(z.จังหวัด,(counts.get(z.จังหวัด)||0)+1);});
+  const rows=[...counts].sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const host=document.getElementById('riskBarsContent');host.replaceChildren();
+  if(!rows.length){host.textContent='ยังไม่มีจุดเสี่ยงที่ตรวจสอบแล้ว';return;}
+  for(const [province,count] of rows){
+    const row=document.createElement('div');row.className='risk-bar-container';
+    const label=document.createElement('div');label.className='risk-bar-label';label.textContent=province;
+    const track=document.createElement('div');track.className='risk-bar-track';
+    const fill=document.createElement('div');fill.className='risk-bar-fill';fill.style.width=(count/rows[0][1]*100)+'%';fill.style.background='#FF7043';track.append(fill);
+    const value=document.createElement('div');value.className='risk-bar-val';value.textContent=count;
+    row.append(label,track,value);host.append(row);
+  }
 }
-
 // ===== REPORT MAP =====
 let rptMap, rptMarker, rptSelectedLat=null, rptSelectedLng=null, rptGeoTimer=null;
 
 function initReportMap() {
   if (rptMap) return;
-  rptMap = L.map('rptMap',{center:[13.0,101.5],zoom:8,zoomControl:true});
-  const rptStreet = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap', subdomains:'abc', maxZoom:19 });
+  rptMap = L.map('rptMap',{center:[13,101],zoom:5,zoomControl:true});
+  const rptStreet = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>', referrerPolicy:'strict-origin-when-cross-origin', maxZoom:19 });
   const rptSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'&copy; Esri', maxZoom:19 });
   rptStreet.addTo(rptMap);
+  rptMap.fitBounds([[5.5,97.3],[20.6,105.7]],{padding:[20,20]});
   L.control.layers({ 'แผนที่ถนน': rptStreet, 'ภาพถ่ายดาวเทียม': rptSat }, null, { position:'topright' }).addTo(rptMap);
   rptMap.on('click',e=>rptSetLocation(e.latlng.lat,e.latlng.lng));
 }
@@ -2152,6 +2235,10 @@ function rptPinIcon() {
 }
 
 function rptSetLocation(lat,lng) {
+  if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<5.5||lat>20.6||lng<97.3||lng>105.7){
+    if(rptMarker && rptSelectedLat!==null)rptMarker.setLatLng([rptSelectedLat,rptSelectedLng]);
+    showToast('กรุณาเลือกตำแหน่งในบริเวณประเทศไทย','warning');return;
+  }
   rptSelectedLat=parseFloat(lat.toFixed(6)); rptSelectedLng=parseFloat(lng.toFixed(6));
   if (rptMarker) rptMarker.setLatLng([rptSelectedLat,rptSelectedLng]);
   else { rptMarker=L.marker([rptSelectedLat,rptSelectedLng],{icon:rptPinIcon(),draggable:true}).addTo(rptMap); rptMarker.on('dragend',e=>{const p=e.target.getLatLng();rptSetLocation(p.lat,p.lng);}); }
@@ -2171,21 +2258,35 @@ function rptSetLocation(lat,lng) {
   const addrBox=document.getElementById('rptAddressBox'); const addrTxt=document.getElementById('rptAddressText');
   addrBox.style.display='flex'; addrTxt.innerHTML='<span style="font-size:12px;color:var(--text3)">กำลังค้นหาที่อยู่...</span>';
   clearTimeout(rptGeoTimer);
+  const lookupLat=rptSelectedLat, lookupLng=rptSelectedLng;
   rptGeoTimer=setTimeout(()=>{
-    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+rptSelectedLat+'&lon='+rptSelectedLng+'&accept-language=th,en&zoom=17')
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lookupLat+'&lon='+lookupLng+'&accept-language=th,en&zoom=17')
       .then(r=>r.json()).then(d=>{
+        if(lookupLat!==rptSelectedLat||lookupLng!==rptSelectedLng)return;
         if(d&&d.display_name){addrTxt.textContent=d.display_name.split(', ').slice(0,5).join(', ');if(d.address)rptAutoProvince(d.address);}
         else addrTxt.textContent=rptSelectedLat.toFixed(5)+', '+rptSelectedLng.toFixed(5);
       }).catch(()=>{addrTxt.textContent=rptSelectedLat.toFixed(5)+', '+rptSelectedLng.toFixed(5);});
-  },400);
+  },1100);
 }
 
+function normalizeProvinceName(value) {
+  const raw=String(value||'').trim().replace(/^จังหวัด\s*/, '').replace(/\s+Province$/i,'');
+  if (['กรุงเทพฯ','กรุงเทพ','Bangkok Metropolis'].includes(raw)) return 'กรุงเทพมหานคร';
+  return THAI_PROVINCE_ALIASES[raw] || THAI_PROVINCE_ALIASES[raw.toLowerCase().replace(/\s/g,'')] || '';
+}
 function rptAutoProvince(addr) {
-  const map={'Chon Buri':'ชลบุรี','Chonburi':'ชลบุรี','Rayong':'ระยอง','Chanthaburi':'จันทบุรี','Trat':'ตราด','Chachoengsao':'ฉะเชิงเทรา','Prachinburi':'ปราจีนบุรี','Sa Kaeo':'สระแก้ว','Nakhon Nayok':'นครนายก'};
-  const th=map[addr.state||addr.county||''];
-  if(th){const sel=document.getElementById('rptProvince');if(!sel.value){sel.value=th;updateAmphoe();}}
+  if (addr.country_code && addr.country_code.toLowerCase()!=='th') return;
+  const province=[addr.state,addr.province,addr.city,addr.county].map(normalizeProvinceName).find(Boolean);
+  if (!province) return;
+  const sel=document.getElementById('rptProvince');
+  if (!sel.value) { sel.value=province;updateAmphoe(); }
+  if (sel.value!==province) {showToast('ตำแหน่งอาจไม่ตรงกับจังหวัดที่เลือก กรุณาตรวจสอบ','warning');return;}
+  const clean=v=>String(v||'').replace(/^(อำเภอ|เขต)\s*/,'').trim();
+  const candidates=[addr.county,addr.city_district,addr.district].map(clean).filter(Boolean);
+  const district=(amphoeMap[province]||[]).find(n=>candidates.includes(clean(n)));
+  const districtEl=document.getElementById('rptAmphoe');
+  if(district && !districtEl.value) districtEl.value=district;
 }
-
 function rptGetMyLocation() {
   if(!navigator.geolocation){showToast('เบราว์เซอร์ไม่รองรับ GPS','warning');return;}
   const btn=document.getElementById('rptLocateBtn');
@@ -2208,7 +2309,7 @@ function rptResetLocation() {
   document.getElementById('rptLat').value=''; document.getElementById('rptLng').value='';
   document.getElementById('rptResetBtn').style.display='none'; document.getElementById('rptMapHint').style.opacity='1';
   document.getElementById('rptSubmitBtn').disabled=true; document.getElementById('rptSubmitHint').textContent='กรุณาเลือกตำแหน่งบนแผนที่ก่อน'; document.getElementById('rptSubmitHint').style.color='';
-  rptMap.setView([13.0,101.5],8,{animate:true});
+  rptMap.fitBounds([[5.5,97.3],[20.6,105.7]],{padding:[20,20]});
 }
 
 // ===== RISK SELECTOR =====
@@ -2291,7 +2392,7 @@ const RATE_LIMIT=20,RATE_WINDOW=3600000,COOLDOWN=30000; let lastSubmitTime=0;
 function checkRateLimit(){const now=Date.now();if(now-lastSubmitTime<COOLDOWN){showToast('⏳ กรุณารอ '+Math.ceil((COOLDOWN-(now-lastSubmitTime))/1000)+' วินาทีก่อนส่งอีกครั้ง','warning');return false;}const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const recent=history.filter(t=>now-t<RATE_WINDOW);if(recent.length>=RATE_LIMIT){showToast('⚠️ ส่งรายงานได้สูงสุด '+RATE_LIMIT+' ครั้งต่อชั่วโมง','warning');return false;}return true;}
 function recordSubmit(){lastSubmitTime=Date.now();const history=JSON.parse(localStorage.getItem('submitHistory')||'[]');const now=Date.now();const recent=history.filter(t=>now-t<RATE_WINDOW);recent.push(now);localStorage.setItem('submitHistory',JSON.stringify(recent));}
 function sanitize(str){if(!str)return '';return str.toString().replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;').substring(0,500);}
-function genTrackingNumber(){const y=new Date().getFullYear()+543;const n=String(Math.floor(Math.random()*9000)+1000);const prefix=['CHB','RYG','CTB','TRT','CCO','PRB','SKW','NNY'][Math.floor(Math.random()*8)];return `RPT-${y}-${prefix}-${n}`;}
+function genTrackingNumber(){const y=new Date().getFullYear()+543;const n=String(Math.floor(Math.random()*9000)+1000);const prefix='TH';return `RPT-${y}-${prefix}-${n}`;}
 
 // ===== OFFLINE QUEUE =====
 function initOfflineDetection(){function u(){const banner=document.getElementById('offlineBanner');if(!navigator.onLine){banner.style.display='block';}else{banner.style.display='none';flushOfflineQueue();}}window.addEventListener('online',u);window.addEventListener('offline',u);u();}
@@ -2339,8 +2440,12 @@ function clearForm() {
 }
 
 // ===== AMPHOE =====
-const amphoeMap={'ชลบุรี':['เมืองชลบุรี','บ้านบึง','หนองใหญ่','บางละมุง','พานทอง','พนัสนิคม','ศรีราชา','เกาะสีชัง','สัตหีบ','บ่อทอง','เกาะจันทร์'],'ระยอง':['เมืองระยอง','บ้านฉาง','แกลง','วังจันทร์','บ้านค่าย','ปลวกแดง','เขาชะเมา','นิคมพัฒนา'],'จันทบุรี':['เมืองจันทบุรี','ขลุง','ท่าใหม่','โป่งน้ำร้อน','มะขาม','แหลมสิงห์','สอยดาว','แก่งหางแมว','นายายอาม','เขาคิชฌกูฏ'],'ตราด':['เมืองตราด','คลองใหญ่','เขาสมิง','บ่อไร','ไม้รูด','เกาะกูด','เกาะช้าง'],'ฉะเชิงเทรา':['เมืองฉะเชิงเทรา','บ้านโพธิ์','แปลงยาว','บางน้ำเปรี้ยว','บางปะกง','บางคล้า','บางสาน','พนมสารคาม','ราชสาส์น','สนามชัยเขต','ท่าตะเกียบ'],'ปราจีนบุรี':['เมืองปราจีนบุรี','กบินทร์บุรี','นาดี','บ้านสร้าง','ประจันตคาม','ศรีมโหสถ','ศรีมหาโพธิ'],'สระแก้ว':['เมืองสระแก้ว','คลองหาด','ตาพระยา','วังน้ำเย็น','วัฒนานคร','อรัญประเทศ','เขาฉกรรจ์','โคกสูง','วังสมบูรณ์'],'นครนายก':['เมืองนครนายก','ปากพลี','บ้านนา','องครักษ์']};
-function updateAmphoe(){const p=document.getElementById('rptProvince').value;const sel=document.getElementById('rptAmphoe');sel.innerHTML='<option value="">-- เลือกอำเภอ --</option>';if(amphoeMap[p])amphoeMap[p].forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o);});}
+// Province/district snapshot: kongvut/thai-province-data (MIT).
+const THAI_PROVINCES = ["กระบี่","กรุงเทพมหานคร","กาญจนบุรี","กาฬสินธุ์","กำแพงเพชร","ขอนแก่น","จันทบุรี","ฉะเชิงเทรา","ชลบุรี","ชัยนาท","ชัยภูมิ","ชุมพร","เชียงราย","เชียงใหม่","ตรัง","ตราด","ตาก","นครนายก","นครปฐม","นครพนม","นครราชสีมา","นครศรีธรรมราช","นครสวรรค์","นนทบุรี","นราธิวาส","น่าน","บึงกาฬ","บุรีรัมย์","ปทุมธานี","ประจวบคีรีขันธ์","ปราจีนบุรี","ปัตตานี","พระนครศรีอยุธยา","พะเยา","พังงา","พัทลุง","พิจิตร","พิษณุโลก","เพชรบุรี","เพชรบูรณ์","แพร่","ภูเก็ต","มหาสารคาม","มุกดาหาร","แม่ฮ่องสอน","ยโสธร","ยะลา","ร้อยเอ็ด","ระนอง","ระยอง","ราชบุรี","ลพบุรี","ลำปาง","ลำพูน","เลย","ศรีสะเกษ","สกลนคร","สงขลา","สตูล","สมุทรปราการ","สมุทรสงคราม","สมุทรสาคร","สระแก้ว","สระบุรี","สิงห์บุรี","สุโขทัย","สุพรรณบุรี","สุราษฎร์ธานี","สุรินทร์","หนองคาย","หนองบัวลำภู","อ่างทอง","อำนาจเจริญ","อุดรธานี","อุตรดิตถ์","อุทัยธานี","อุบลราชธานี"];
+const amphoeMap = {"กรุงเทพมหานคร":["เขตพระนคร","เขตดุสิต","เขตหนองจอก","เขตบางรัก","เขตบางเขน","เขตบางกะปิ","เขตปทุมวัน","เขตป้อมปราบศัตรูพ่าย","เขตพระโขนง","เขตมีนบุรี","เขตลาดกระบัง","เขตยานนาวา","เขตสัมพันธวงศ์","เขตพญาไท","เขตธนบุรี","เขตบางกอกใหญ่","เขตห้วยขวาง","เขตคลองสาน","เขตตลิ่งชัน","เขตบางกอกน้อย","เขตบางขุนเทียน","เขตภาษีเจริญ","เขตหนองแขม","เขตราษฎร์บูรณะ","เขตบางพลัด","เขตดินแดง","เขตบึงกุ่ม","เขตสาทร","เขตบางซื่อ","เขตจตุจักร","เขตบางคอแหลม","เขตประเวศ","เขตคลองเตย","เขตสวนหลวง","เขตจอมทอง","เขตดอนเมือง","เขตราชเทวี","เขตลาดพร้าว","เขตวัฒนา","เขตบางแค","เขตหลักสี่","เขตสายไหม","เขตคันนายาว","เขตสะพานสูง","เขตวังทองหลาง","เขตคลองสามวา","เขตบางนา","เขตทวีวัฒนา","เขตทุ่งครุ","เขตบางบอน"],"สมุทรปราการ":["เมืองสมุทรปราการ","บางบ่อ","บางพลี","พระประแดง","พระสมุทรเจดีย์","บางเสาธง"],"นนทบุรี":["เมืองนนทบุรี","บางกรวย","บางใหญ่","บางบัวทอง","ไทรน้อย","ปากเกร็ด"],"ปทุมธานี":["เมืองปทุมธานี","คลองหลวง","ธัญบุรี","หนองเสือ","ลาดหลุมแก้ว","ลำลูกกา","สามโคก"],"พระนครศรีอยุธยา":["พระนครศรีอยุธยา","ท่าเรือ","นครหลวง","บางไทร","บางบาล","บางปะอิน","บางปะหัน","ผักไห่","ภาชี","ลาดบัวหลวง","วังน้อย","เสนา","บางซ้าย","อุทัย","มหาราช","บ้านแพรก"],"อ่างทอง":["เมืองอ่างทอง","ไชโย","ป่าโมก","โพธิ์ทอง","แสวงหา","วิเศษชัยชาญ","สามโก้"],"ลพบุรี":["เมืองลพบุรี","พัฒนานิคม","โคกสำโรง","ชัยบาดาล","ท่าวุ้ง","บ้านหมี่","ท่าหลวง","สระโบสถ์","โคกเจริญ","ลำสนธิ","หนองม่วง"],"สิงห์บุรี":["เมืองสิงห์บุรี","บางระจัน","ค่ายบางระจัน","พรหมบุรี","ท่าช้าง","อินทร์บุรี"],"ชัยนาท":["เมืองชัยนาท","มโนรมย์","วัดสิงห์","สรรพยา","สรรคบุรี","หันคา","หนองมะโมง","เนินขาม"],"สระบุรี":["เมืองสระบุรี","แก่งคอย","หนองแค","วิหารแดง","หนองแซง","บ้านหมอ","ดอนพุด","หนองโดน","พระพุทธบาท","เสาไห้","มวกเหล็ก","วังม่วง","เฉลิมพระเกียรติ"],"ชลบุรี":["เมืองชลบุรี","บ้านบึง","หนองใหญ่","บางละมุง","พานทอง","พนัสนิคม","ศรีราชา","เกาะสีชัง","สัตหีบ","บ่อทอง","เกาะจันทร์"],"ระยอง":["เมืองระยอง","บ้านฉาง","แกลง","วังจันทร์","บ้านค่าย","ปลวกแดง","เขาชะเมา","นิคมพัฒนา"],"จันทบุรี":["เมืองจันทบุรี","ขลุง","ท่าใหม่","โป่งน้ำร้อน","มะขาม","แหลมสิงห์","สอยดาว","แก่งหางแมว","นายายอาม","เขาคิชฌกูฏ"],"ตราด":["เมืองตราด","คลองใหญ่","เขาสมิง","บ่อไร่","แหลมงอบ","เกาะกูด","เกาะช้าง"],"ฉะเชิงเทรา":["เมืองฉะเชิงเทรา","บางคล้า","บางน้ำเปรี้ยว","บางปะกง","บ้านโพธิ์","พนมสารคาม","ราชสาส์น","สนามชัยเขต","แปลงยาว","ท่าตะเกียบ","คลองเขื่อน"],"ปราจีนบุรี":["เมืองปราจีนบุรี","กบินทร์บุรี","นาดี","บ้านสร้าง","ประจันตคาม","ศรีมหาโพธิ","ศรีมโหสถ"],"นครนายก":["เมืองนครนายก","ปากพลี","บ้านนา","องครักษ์"],"สระแก้ว":["เมืองสระแก้ว","คลองหาด","ตาพระยา","วังน้ำเย็น","วัฒนานคร","อรัญประเทศ","เขาฉกรรจ์","โคกสูง","วังสมบูรณ์"],"นครราชสีมา":["เมืองนครราชสีมา","ครบุรี","เสิงสาง","คง","บ้านเหลื่อม","จักราช","โชคชัย","ด่านขุนทด","โนนไทย","โนนสูง","ขามสะแกแสง","บัวใหญ่","ประทาย","ปักธงชัย","พิมาย","ห้วยแถลง","ชุมพวง","สูงเนิน","ขามทะเลสอ","สีคิ้ว","ปากช่อง","หนองบุญมาก","แก้งสนามนาง","โนนแดง","วังน้ำเขียว","เทพารักษ์","เมืองยาง","พระทองคำ","ลำทะเมนชัย","บัวลาย","สีดา","เฉลิมพระเกียรติ"],"บุรีรัมย์":["เมืองบุรีรัมย์","คูเมือง","กระสัง","นางรอง","หนองกี่","ละหานทราย","ประโคนชัย","บ้านกรวด","พุทไธสง","ลำปลายมาศ","สตึก","ปะคำ","นาโพธิ์","หนองหงส์","พลับพลาชัย","ห้วยราช","โนนสุวรรณ","ชำนิ","บ้านใหม่ไชยพจน์","โนนดินแดง","บ้านด่าน","แคนดง","เฉลิมพระเกียรติ"],"สุรินทร์":["เมืองสุรินทร์","ชุมพลบุรี","ท่าตูม","จอมพระ","ปราสาท","กาบเชิง","รัตนบุรี","สนม","ศีขรภูมิ","สังขะ","ลำดวน","สำโรงทาบ","บัวเชด","พนมดงรัก","ศรีณรงค์","เขวาสินรินทร์","โนนนารายณ์"],"ศรีสะเกษ":["เมืองศรีสะเกษ","ยางชุมน้อย","กันทรารมย์","กันทรลักษ์","ขุขันธ์","ไพรบึง","ปรางค์กู่","ขุนหาญ","ราษีไศล","อุทุมพรพิสัย","บึงบูรพ์","ห้วยทับทัน","โนนคูณ","ศรีรัตนะ","น้ำเกลี้ยง","วังหิน","ภูสิงห์","เมืองจันทร์","เบญจลักษ์","พยุห์","โพธิ์ศรีสุวรรณ","ศิลาลาด"],"อุบลราชธานี":["เมืองอุบลราชธานี","ศรีเมืองใหม่","โขงเจียม","เขื่องใน","เขมราฐ","เดชอุดม","นาจะหลวย","น้ำยืน","บุณฑริก","ตระการพืชผล","กุดข้าวปุ้น","ม่วงสามสิบ","วารินชำราบ","พิบูลมังสาหาร","ตาลสุม","โพธิ์ไทร","สำโรง","ดอนมดแดง","สิรินธร","ทุ่งศรีอุดม","นาเยีย","นาตาล","เหล่าเสือโก้ก","สว่างวีระวงศ์","น้ำขุ่น"],"ยโสธร":["เมืองยโสธร","ทรายมูล","กุดชุม","คำเขื่อนแก้ว","ป่าติ้ว","มหาชนะชัย","ค้อวัง","เลิงนกทา","ไทยเจริญ"],"ชัยภูมิ":["เมืองชัยภูมิ","บ้านเขว้า","คอนสวรรค์","เกษตรสมบูรณ์","หนองบัวแดง","จัตุรัส","บำเหน็จณรงค์","หนองบัวระเหว","เทพสถิต","ภูเขียว","บ้านแท่น","แก้งคร้อ","คอนสาร","ภักดีชุมพล","เนินสง่า","ซับใหญ่"],"อำนาจเจริญ":["เมืองอำนาจเจริญ","ชานุมาน","ปทุมราชวงศา","พนา","เสนางคนิคม","หัวตะพาน","ลืออำนาจ"],"หนองบัวลำภู":["เมืองหนองบัวลำภู","นากลาง","โนนสัง","ศรีบุญเรือง","สุวรรณคูหา","นาวัง"],"ขอนแก่น":["เมืองขอนแก่น","บ้านฝาง","พระยืน","หนองเรือ","ชุมแพ","สีชมพู","น้ำพอง","อุบลรัตน์","กระนวน","บ้านไผ่","เปือยน้อย","พล","แวงใหญ่","แวงน้อย","หนองสองห้อง","ภูเวียง","มัญจาคีรี","ชนบท","เขาสวนกวาง","ภูผาม่าน","ซำสูง","โคกโพธิ์ไชย","หนองนาคำ","บ้านแฮด","โนนศิลา","เวียงเก่า"],"อุดรธานี":["เมืองอุดรธานี","กุดจับ","หนองวัวซอ","กุมภวาปี","โนนสะอาด","หนองหาน","ทุ่งฝน","ไชยวาน","ศรีธาตุ","วังสามหมอ","บ้านดุง","บ้านผือ","น้ำโสม","เพ็ญ","สร้างคอม","หนองแสง","นายูง","พิบูลย์รักษ์","กู่แก้ว","ประจักษ์ศิลปาคม"],"เลย":["เมืองเลย","นาด้วง","เชียงคาน","ปากชม","ด่านซ้าย","นาแห้ว","ภูเรือ","ท่าลี่","วังสะพุง","ภูกระดึง","ภูหลวง","ผาขาว","เอราวัณ","หนองหิน"],"หนองคาย":["เมืองหนองคาย","ท่าบ่อ","โพนพิสัย","ศรีเชียงใหม่","สังคม","สระใคร","เฝ้าไร่","รัตนวาปี","โพธิ์ตาก"],"มหาสารคาม":["เมืองมหาสารคาม","แกดำ","โกสุมพิสัย","กันทรวิชัย","เชียงยืน","บรบือ","นาเชือก","พยัคฆภูมิพิสัย","วาปีปทุม","นาดูน","ยางสีสุราช","กุดรัง","ชื่นชม"],"ร้อยเอ็ด":["เมืองร้อยเอ็ด","เกษตรวิสัย","ปทุมรัตต์","จตุรพักตรพิมาน","ธวัชบุรี","พนมไพร","โพนทอง","โพธิ์ชัย","หนองพอก","เสลภูมิ","สุวรรณภูมิ","เมืองสรวง","โพนทราย","อาจสามารถ","เมยวดี","ศรีสมเด็จ","จังหาร","เชียงขวัญ","หนองฮี","ทุ่งเขาหลวง"],"กาฬสินธุ์":["เมืองกาฬสินธุ์","นามน","กมลาไสย","ร่องคำ","กุฉินารายณ์","เขาวง","ยางตลาด","ห้วยเม็ก","สหัสขันธ์","คำม่วง","ท่าคันโท","หนองกุงศรี","สมเด็จ","ห้วยผึ้ง","สามชัย","นาคู","ดอนจาน","ฆ้องชัย"],"สกลนคร":["เมืองสกลนคร","กุสุมาลย์","กุดบาก","พรรณานิคม","พังโคน","วาริชภูมิ","นิคมน้ำอูน","วานรนิวาส","คำตากล้า","บ้านม่วง","อากาศอำนวย","สว่างแดนดิน","ส่องดาว","เต่างอย","โคกศรีสุพรรณ","เจริญศิลป์","โพนนาแก้ว","ภูพาน"],"นครพนม":["เมืองนครพนม","ปลาปาก","ท่าอุเทน","บ้านแพง","ธาตุพนม","เรณูนคร","นาแก","ศรีสงคราม","นาหว้า","โพนสวรรค์","นาทม","วังยาง"],"มุกดาหาร":["เมืองมุกดาหาร","นิคมคำสร้อย","ดอนตาล","ดงหลวง","คำชะอี","หว้านใหญ่","หนองสูง"],"เชียงใหม่":["เมืองเชียงใหม่","จอมทอง","แม่แจ่ม","เชียงดาว","ดอยสะเก็ด","แม่แตง","แม่ริม","สะเมิง","ฝาง","แม่อาย","พร้าว","สันป่าตอง","สันกำแพง","สันทราย","หางดง","ฮอด","ดอยเต่า","อมก๋อย","สารภี","เวียงแหง","ไชยปราการ","แม่วาง","แม่ออน","ดอยหล่อ","กัลยาณิวัฒนา"],"ลำพูน":["เมืองลำพูน","แม่ทา","บ้านโฮ่ง","ลี้","ทุ่งหัวช้าง","ป่าซาง","บ้านธิ","เวียงหนองล่อง"],"ลำปาง":["เมืองลำปาง","แม่เมาะ","เกาะคา","เสริมงาม","งาว","แจ้ห่ม","วังเหนือ","เถิน","แม่พริก","แม่ทะ","สบปราบ","ห้างฉัตร","เมืองปาน"],"อุตรดิตถ์":["เมืองอุตรดิตถ์","ตรอน","ท่าปลา","น้ำปาด","ฟากท่า","บ้านโคก","พิชัย","ลับแล","ทองแสนขัน"],"แพร่":["เมืองแพร่","ร้องกวาง","ลอง","สูงเม่น","เด่นชัย","สอง","วังชิ้น","หนองม่วงไข่"],"น่าน":["เมืองน่าน","แม่จริม","บ้านหลวง","นาน้อย","ปัว","ท่าวังผา","เวียงสา","ทุ่งช้าง","เชียงกลาง","นาหมื่น","สันติสุข","บ่อเกลือ","สองแคว","ภูเพียง","เฉลิมพระเกียรติ"],"พะเยา":["เมืองพะเยา","จุน","เชียงคำ","เชียงม่วน","ดอกคำใต้","ปง","แม่ใจ","ภูซาง","ภูกามยาว"],"เชียงราย":["เมืองเชียงราย","เวียงชัย","เชียงของ","เทิง","พาน","ป่าแดด","แม่จัน","เชียงแสน","แม่สาย","แม่สรวย","เวียงป่าเป้า","พญาเม็งราย","เวียงแก่น","ขุนตาล","แม่ฟ้าหลวง","แม่ลาว","เวียงเชียงรุ้ง","ดอยหลวง"],"แม่ฮ่องสอน":["เมืองแม่ฮ่องสอน","ขุนยวม","ปาย","แม่สะเรียง","แม่ลาน้อย","สบเมย","ปางมะผ้า"],"นครสวรรค์":["เมืองนครสวรรค์","โกรกพระ","ชุมแสง","หนองบัว","บรรพตพิสัย","เก้าเลี้ยว","ตาคลี","ท่าตะโก","ไพศาลี","พยุหะคีรี","ลาดยาว","ตากฟ้า","แม่วงก์","แม่เปิน","ชุมตาบง"],"อุทัยธานี":["เมืองอุทัยธานี","ทัพทัน","สว่างอารมณ์","หนองฉาง","หนองขาหย่าง","บ้านไร่","ลานสัก","ห้วยคต"],"กำแพงเพชร":["เมืองกำแพงเพชร","ไทรงาม","คลองลาน","ขาณุวรลักษบุรี","คลองขลุง","พรานกระต่าย","ลานกระบือ","ทรายทองวัฒนา","ปางศิลาทอง","บึงสามัคคี","โกสัมพีนคร"],"ตาก":["เมืองตาก","บ้านตาก","สามเงา","แม่ระมาด","ท่าสองยาง","แม่สอด","พบพระ","อุ้มผาง","วังเจ้า"],"สุโขทัย":["เมืองสุโขทัย","บ้านด่านลานหอย","คีรีมาศ","กงไกรลาศ","ศรีสัชนาลัย","ศรีสำโรง","สวรรคโลก","ศรีนคร","ทุ่งเสลี่ยม"],"พิษณุโลก":["เมืองพิษณุโลก","นครไทย","ชาติตระการ","บางระกำ","บางกระทุ่ม","พรหมพิราม","วัดโบสถ์","วังทอง","เนินมะปราง"],"พิจิตร":["เมืองพิจิตร","วังทรายพูน","โพธิ์ประทับช้าง","ตะพานหิน","บางมูลนาก","โพทะเล","สามง่าม","ทับคล้อ","สากเหล็ก","บึงนาราง","ดงเจริญ","วชิรบารมี"],"เพชรบูรณ์":["เมืองเพชรบูรณ์","ชนแดน","หล่มสัก","หล่มเก่า","วิเชียรบุรี","ศรีเทพ","หนองไผ่","บึงสามพัน","น้ำหนาว","วังโป่ง","เขาค้อ"],"ราชบุรี":["เมืองราชบุรี","จอมบึง","สวนผึ้ง","ดำเนินสะดวก","บ้านโป่ง","บางแพ","โพธาราม","ปากท่อ","วัดเพลง","บ้านคา","ท้องถิ่นเทศบาลตำบลบ้านฆ้อง"],"กาญจนบุรี":["เมืองกาญจนบุรี","ไทรโยค","บ่อพลอย","ศรีสวัสดิ์","ท่ามะกา","ท่าม่วง","ทองผาภูมิ","สังขละบุรี","พนมทวน","เลาขวัญ","ด่านมะขามเตี้ย","หนองปรือ","ห้วยกระเจา"],"สุพรรณบุรี":["เมืองสุพรรณบุรี","เดิมบางนางบวช","ด่านช้าง","บางปลาม้า","ศรีประจันต์","ดอนเจดีย์","สองพี่น้อง","สามชุก","อู่ทอง","หนองหญ้าไซ"],"นครปฐม":["เมืองนครปฐม","กำแพงแสน","นครชัยศรี","ดอนตูม","บางเลน","สามพราน","พุทธมณฑล"],"สมุทรสาคร":["เมืองสมุทรสาคร","กระทุ่มแบน","บ้านแพ้ว"],"สมุทรสงคราม":["เมืองสมุทรสงคราม","บางคนที","อัมพวา"],"เพชรบุรี":["เมืองเพชรบุรี","เขาย้อย","หนองหญ้าปล้อง","ชะอำ","ท่ายาง","บ้านลาด","บ้านแหลม","แก่งกระจาน"],"ประจวบคีรีขันธ์":["เมืองประจวบคีรีขันธ์","กุยบุรี","ทับสะแก","บางสะพาน","บางสะพานน้อย","ปราณบุรี","หัวหิน","สามร้อยยอด"],"นครศรีธรรมราช":["เมืองนครศรีธรรมราช","พรหมคีรี","ลานสกา","ฉวาง","พิปูน","เชียรใหญ่","ชะอวด","ท่าศาลา","ทุ่งสง","นาบอน","ทุ่งใหญ่","ปากพนัง","ร่อนพิบูลย์","สิชล","ขนอม","หัวไทร","บางขัน","ถ้ำพรรณรา","จุฬาภรณ์","พระพรหม","นบพิตำ","ช้างกลาง","เฉลิมพระเกียรติ"],"กระบี่":["เมืองกระบี่","เขาพนม","เกาะลันตา","คลองท่อม","อ่าวลึก","ปลายพระยา","ลำทับ","เหนือคลอง"],"พังงา":["เมืองพังงา","เกาะยาว","กะปง","ตะกั่วทุ่ง","ตะกั่วป่า","คุระบุรี","ทับปุด","ท้ายเหมือง"],"ภูเก็ต":["เมืองภูเก็ต","กะทู้","ถลาง"],"สุราษฎร์ธานี":["เมืองสุราษฎร์ธานี","กาญจนดิษฐ์","ดอนสัก","เกาะสมุย","เกาะพะงัน","ไชยา","ท่าชนะ","คีรีรัฐนิคม","บ้านตาขุน","พนม","ท่าฉาง","บ้านนาสาร","บ้านนาเดิม","เคียนซา","เวียงสระ","พระแสง","พุนพิน","ชัยบุรี","วิภาวดี"],"ระนอง":["เมืองระนอง","ละอุ่น","กะเปอร์","กระบุรี","สุขสำราญ"],"ชุมพร":["เมืองชุมพร","ท่าแซะ","ปะทิว","หลังสวน","ละแม","พะโต๊ะ","สวี","ทุ่งตะโก"],"สงขลา":["เมืองสงขลา","สทิงพระ","จะนะ","นาทวี","เทพา","สะบ้าย้อย","ระโนด","กระแสสินธุ์","รัตภูมิ","สะเดา","หาดใหญ่","นาหม่อม","ควนเนียง","บางกล่ำ","สิงหนคร","คลองหอยโข่ง","ท้องถิ่นเทศบาลตำบลสำนักขาม"],"สตูล":["เมืองสตูล","ควนโดน","ควนกาหลง","ท่าแพ","ละงู","ทุ่งหว้า","มะนัง"],"ตรัง":["เมืองตรัง","กันตัง","ย่านตาขาว","ปะเหลียน","สิเกา","ห้วยยอด","วังวิเศษ","นาโยง","รัษฎา","หาดสำราญ"],"พัทลุง":["เมืองพัทลุง","กงหรา","เขาชัยสน","ตะโหมด","ควนขนุน","ปากพะยูน","ศรีบรรพต","ป่าบอน","บางแก้ว","ป่าพะยอม","ศรีนครินทร์"],"ปัตตานี":["เมืองปัตตานี","โคกโพธิ์","หนองจิก","ปะนาเระ","มายอ","ทุ่งยางแดง","สายบุรี","ไม้แก่น","ยะหริ่ง","ยะรัง","กะพ้อ","แม่ลาน"],"ยะลา":["เมืองยะลา","เบตง","บันนังสตา","ธารโต","ยะหา","รามัน","กาบัง","กรงปินัง"],"นราธิวาส":["เมืองนราธิวาส","ตากใบ","บาเจาะ","ยี่งอ","ระแงะ","รือเสาะ","ศรีสาคร","แว้ง","สุคิริน","สุไหงโก-ลก","สุไหงปาดี","จะแนะ","เจาะไอร้อง"],"บึงกาฬ":["เมืองบึงกาฬ","เซกา","โซ่พิสัย","พรเจริญ","ศรีวิไล","บึงโขงหลง","ปากคาด","บุ่งคล้า"]};
+const THAI_PROVINCE_ALIASES = {"กรุงเทพมหานคร":"กรุงเทพมหานคร","bangkok":"กรุงเทพมหานคร","สมุทรปราการ":"สมุทรปราการ","samutprakan":"สมุทรปราการ","นนทบุรี":"นนทบุรี","nonthaburi":"นนทบุรี","ปทุมธานี":"ปทุมธานี","pathumthani":"ปทุมธานี","พระนครศรีอยุธยา":"พระนครศรีอยุธยา","phranakhonsiayutthaya":"พระนครศรีอยุธยา","อ่างทอง":"อ่างทอง","angthong":"อ่างทอง","ลพบุรี":"ลพบุรี","lopburi":"ลพบุรี","สิงห์บุรี":"สิงห์บุรี","singburi":"สิงห์บุรี","ชัยนาท":"ชัยนาท","chainat":"ชัยนาท","สระบุรี":"สระบุรี","saraburi":"สระบุรี","ชลบุรี":"ชลบุรี","chonburi":"ชลบุรี","ระยอง":"ระยอง","rayong":"ระยอง","จันทบุรี":"จันทบุรี","chanthaburi":"จันทบุรี","ตราด":"ตราด","trat":"ตราด","ฉะเชิงเทรา":"ฉะเชิงเทรา","chachoengsao":"ฉะเชิงเทรา","ปราจีนบุรี":"ปราจีนบุรี","prachinburi":"ปราจีนบุรี","นครนายก":"นครนายก","nakhonnayok":"นครนายก","สระแก้ว":"สระแก้ว","sakaeo":"สระแก้ว","นครราชสีมา":"นครราชสีมา","nakhonratchasima":"นครราชสีมา","บุรีรัมย์":"บุรีรัมย์","buriram":"บุรีรัมย์","สุรินทร์":"สุรินทร์","surin":"สุรินทร์","ศรีสะเกษ":"ศรีสะเกษ","sisaket":"ศรีสะเกษ","อุบลราชธานี":"อุบลราชธานี","ubonratchathani":"อุบลราชธานี","ยโสธร":"ยโสธร","yasothon":"ยโสธร","ชัยภูมิ":"ชัยภูมิ","chaiyaphum":"ชัยภูมิ","อำนาจเจริญ":"อำนาจเจริญ","amnatcharoen":"อำนาจเจริญ","หนองบัวลำภู":"หนองบัวลำภู","nongbualamphu":"หนองบัวลำภู","ขอนแก่น":"ขอนแก่น","khonkaen":"ขอนแก่น","อุดรธานี":"อุดรธานี","udonthani":"อุดรธานี","เลย":"เลย","loei":"เลย","หนองคาย":"หนองคาย","nongkhai":"หนองคาย","มหาสารคาม":"มหาสารคาม","mahasarakham":"มหาสารคาม","ร้อยเอ็ด":"ร้อยเอ็ด","roiet":"ร้อยเอ็ด","กาฬสินธุ์":"กาฬสินธุ์","kalasin":"กาฬสินธุ์","สกลนคร":"สกลนคร","sakonnakhon":"สกลนคร","นครพนม":"นครพนม","nakhonphanom":"นครพนม","มุกดาหาร":"มุกดาหาร","mukdahan":"มุกดาหาร","เชียงใหม่":"เชียงใหม่","chiangmai":"เชียงใหม่","ลำพูน":"ลำพูน","lamphun":"ลำพูน","ลำปาง":"ลำปาง","lampang":"ลำปาง","อุตรดิตถ์":"อุตรดิตถ์","uttaradit":"อุตรดิตถ์","แพร่":"แพร่","phrae":"แพร่","น่าน":"น่าน","nan":"น่าน","พะเยา":"พะเยา","phayao":"พะเยา","เชียงราย":"เชียงราย","chiangrai":"เชียงราย","แม่ฮ่องสอน":"แม่ฮ่องสอน","maehongson":"แม่ฮ่องสอน","นครสวรรค์":"นครสวรรค์","nakhonsawan":"นครสวรรค์","อุทัยธานี":"อุทัยธานี","uthaithani":"อุทัยธานี","กำแพงเพชร":"กำแพงเพชร","kamphaengphet":"กำแพงเพชร","ตาก":"ตาก","tak":"ตาก","สุโขทัย":"สุโขทัย","sukhothai":"สุโขทัย","พิษณุโลก":"พิษณุโลก","phitsanulok":"พิษณุโลก","พิจิตร":"พิจิตร","phichit":"พิจิตร","เพชรบูรณ์":"เพชรบูรณ์","phetchabun":"เพชรบูรณ์","ราชบุรี":"ราชบุรี","ratchaburi":"ราชบุรี","กาญจนบุรี":"กาญจนบุรี","kanchanaburi":"กาญจนบุรี","สุพรรณบุรี":"สุพรรณบุรี","suphanburi":"สุพรรณบุรี","นครปฐม":"นครปฐม","nakhonpathom":"นครปฐม","สมุทรสาคร":"สมุทรสาคร","samutsakhon":"สมุทรสาคร","สมุทรสงคราม":"สมุทรสงคราม","samutsongkhram":"สมุทรสงคราม","เพชรบุรี":"เพชรบุรี","phetchaburi":"เพชรบุรี","ประจวบคีรีขันธ์":"ประจวบคีรีขันธ์","prachuapkhirikhan":"ประจวบคีรีขันธ์","นครศรีธรรมราช":"นครศรีธรรมราช","nakhonsithammarat":"นครศรีธรรมราช","กระบี่":"กระบี่","krabi":"กระบี่","พังงา":"พังงา","phangnga":"พังงา","ภูเก็ต":"ภูเก็ต","phuket":"ภูเก็ต","สุราษฎร์ธานี":"สุราษฎร์ธานี","suratthani":"สุราษฎร์ธานี","ระนอง":"ระนอง","ranong":"ระนอง","ชุมพร":"ชุมพร","chumphon":"ชุมพร","สงขลา":"สงขลา","songkhla":"สงขลา","สตูล":"สตูล","satun":"สตูล","ตรัง":"ตรัง","trang":"ตรัง","พัทลุง":"พัทลุง","phatthalung":"พัทลุง","ปัตตานี":"ปัตตานี","pattani":"ปัตตานี","ยะลา":"ยะลา","yala":"ยะลา","นราธิวาส":"นราธิวาส","narathiwat":"นราธิวาส","บึงกาฬ":"บึงกาฬ","buengkan":"บึงกาฬ"};
+
+function updateAmphoe(){const p=document.getElementById('rptProvince').value;const sel=document.getElementById('rptAmphoe');sel.innerHTML='<option value="">-- เลือกอำเภอ / เขต --</option>';if(amphoeMap[p])amphoeMap[p].forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;sel.appendChild(o);});}
 
 // ===== WEATHER =====
 const THAI_DAYS=['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
@@ -2359,7 +2464,7 @@ async function loadWeather() {
     const wd=json.data;
     document.getElementById('wTemp').textContent=wd.current.temp+'°C'; document.getElementById('wDesc').textContent=wd.current.desc;
     document.getElementById('wHumidity').textContent=wd.current.humidity+'%'; document.getElementById('wWind').textContent=wd.current.wind+' กม/ชม.';
-    const uv=8; document.getElementById('wUV').textContent=uv+' '+(uv>=8?'🔴สูงมาก':uv>=6?'🟠สูง':'🟡ปานกลาง');
+    document.getElementById('wUV').textContent='ไม่มีข้อมูล';
     document.getElementById('forecast7day').innerHTML=wd.forecast.map(f=>{
       const d=new Date(f.dateIso); const today=new Date(); const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
       const isToday=d.toDateString()===today.toDateString(); const isTomorrow=d.toDateString()===tomorrow.toDateString();
@@ -2387,7 +2492,7 @@ function renderDiseaseTab(season) {
 
 // ===== SYNC =====
 function syncData(){showToast('🔄 กำลังซิงค์ข้อมูล...','info');loadZones();setTimeout(()=>showToast('✅ ซิงค์ข้อมูลเรียบร้อย','success'),1200);}
-function openAllZonesInMaps(){const valid=(zonesData||[]).filter(z=>z['ละติจูด']&&z['ลองจิจูด']);if(!valid.length){window.open('https://www.google.com/maps/search/ภาคตะวันออก+ประเทศไทย','_blank');return;}const z=valid[0];window.open(`https://www.google.com/maps?q=${z['ละติจูด']},${z['ลองจิจูด']}`,'_blank');}
+function openAllZonesInMaps(){const valid=(zonesData||[]).filter(z=>z['ละติจูด']&&z['ลองจิจูด']);if(!valid.length){window.open('https://www.google.com/maps/search/ประเทศไทย+ประเทศไทย','_blank');return;}const z=valid[0];window.open(`https://www.google.com/maps?q=${z['ละติจูด']},${z['ลองจิจูด']}`,'_blank');}
 
 // ===== MODALS =====
 function closeModal(id){document.getElementById(id).classList.remove('show');}
