@@ -1,0 +1,10 @@
+Province boundary data: geoBoundaries gbOpen THA ADM1
+Boundary ID: THA-ADM1-36821470; represented year: 2017
+Source: OpenStreetMap / Wambacher, distributed by geoBoundaries
+License: Open Data Commons Open Database License 1.0 (ODbL)
+https://opendatacommons.org/licenses/odbl/1-0/
+https://www.openstreetmap.org/copyright
+Metadata: https://www.geoboundaries.org/api/current/gbOpen/THA/ADM1/
+Source download: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/THA/ADM1/geoBoundaries-THA-ADM1_simplified.geojson
+Modification: Added name_th properties matching the application's 77 province names; geometry unchanged. This derived boundary database is available under ODbL 1.0.
+Indicative simplified boundaries, not authoritative survey boundaries.
