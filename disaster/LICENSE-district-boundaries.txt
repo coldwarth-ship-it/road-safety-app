@@ -1,0 +1,11 @@
+District geometry: geoBoundaries THA-ADM2-78962969, reference year 2019, 928 units.
+Source: Royal Thai Survey Department / OCHA ROAP, via geoBoundaries.
+License: Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO)
+https://creativecommons.org/licenses/by/3.0/igo/
+https://data.humdata.org/dataset/thailand-administrative-boundaries
+https://www.geoboundaries.org/api/current/gbOpen/THA/ADM2/
+Download: https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/THA/ADM2/geoBoundaries-THA-ADM2_simplified.geojson
+Adaptation: replaced feature properties with matched Thai province/district names and sourceName, added bounding boxes. Geometry unchanged.
+Thai names: kongvut/thai-province-data (MIT), matching existing application names. Existing MIT license is retained in website.
+Ambiguous source names Bang Sai (Bang Sai / Bang Sai, Ayutthaya) intentionally have empty district; choose manually.
+No endorsement by data providers. Simplified historical geometry is not a current legal boundary.
