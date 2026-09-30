@@ -42,7 +42,7 @@
     if(key==='flood'){
      if(data.status!=='ok'||!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(data.image||'')||JSON.stringify(data.bbox)!==JSON.stringify(b))throw Error('flood');
      if(floodLayer)map.removeLayer(floodLayer);floodLayer=L.imageOverlay(data.image,[[b[1],b[0]],[b[3],b[2]]],{opacity:.6,attribution:'พื้นที่น้ำท่วม © GISTDA'}).addTo(map);
-     setStatus(key,'ย้อนหลัง 1 วัน · ดึง '+time(data.fetchedAt)+' · เวลาสำรวจรายภาพยังไม่ยืนยัน');
+     setStatus(key,'รับภาพย้อนหลัง 1 วัน · ดึง '+time(data.fetchedAt)+' · ยังไม่ยืนยันพื้นที่น้ำท่วมในภาพ/เวลาสำรวจ');
     }else{if(!Array.isArray(data.items))throw Error('schema');stores[key]=data;draw(key);}lastFetch[key]=Date.now();
    }catch(error){if(version!==versions[key]||!enabled[key])return;if(key!=='flood'&&stores[key]){stores[key].status='error';stores[key].message='โหลดครั้งใหม่ไม่สำเร็จ';draw(key);}else setStatus(key,key==='flood'?'โหลดภาพน้ำท่วมไม่ได้ · ภาพเดิมถ้ามีไม่ใช่ข้อมูลล่าสุด':'โหลดไม่ได้ กรุณาตรวจการติดตั้งหลังบ้านหรืออินเทอร์เน็ต',true);
    }finally{clearTimeout(timeout);}
