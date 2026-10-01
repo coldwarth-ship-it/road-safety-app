@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>แชทสถานการณ์ · เฝ้าภัย THAILAND</title>
+  <meta name="description" content="ห้องสนทนาสถานการณ์ภัยพิบัติทั่วประเทศไทย แบ่งปันข้อความและรูปจากพื้นที่ของคุณ">
+  <link rel="stylesheet" href="chat.css?v=20261001-chat1">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" integrity="sha384-sLWJsCmP+Z4Qn+HgF7Hi64Djta4fZMu0fcgi3uUL3GFV/ubx2G86LPOuMf7+ZIyX" crossorigin="anonymous"></script>
+  <script defer src="chat-config.js?v=20261001-chat1"></script>
+  <script defer src="chat.js?v=20261001-chat1"></script>
+</head>
+<body>
+  <div class="chat-app">
+    <header class="chat-header">
+      <a class="back-link" href="index.html" aria-label="กลับแผนที่เฝ้าภัย">← <span>แผนที่</span></a>
+      <div class="chat-brand"><strong>เฝ้าภัย <span>THAILAND</span></strong><p>ทุกพื้นที่ ทุกสถานการณ์</p></div>
+      <button id="nameBtn" class="name-button" type="button">ตั้งชื่อ</button>
+    </header>
+    <main class="chat-main">
+      <aside class="room-sidebar" aria-label="เลือกห้องสนทนา">
+        <div class="sidebar-heading"><span class="eyebrow">ร่วมติดตามภัยใกล้ตัว</span><h1>แชทสถานการณ์</h1><p>แบ่งปันสิ่งที่พบในพื้นที่ของคุณ</p></div>
+        <label class="room-search"><span>ค้นหาห้อง</span><input id="roomSearch" type="search" placeholder="ค้นหาจังหวัด…" autocomplete="off"></label>
+        <nav id="roomList" class="room-list" aria-label="ห้องรวมและห้องจังหวัด"></nav>
+        <p class="room-foot">ข้อความและรูปในห้องเปิดให้ทุกคนอ่านได้</p>
+      </aside>
+      <section class="conversation" aria-labelledby="roomHeading">
+        <header class="conversation-header">
+          <div class="room-avatar" aria-hidden="true">💬</div>
+          <div class="conversation-title"><h2 id="roomHeading">ห้องรวมประเทศไทย</h2><p id="connectionStatus" role="status">กำลังเชื่อมต่อ…</p></div>
+          <button id="refreshChatBtn" class="icon-button" type="button" aria-label="โหลดข้อความใหม่">↻</button>
+        </header>
+        <div class="mobile-room-picker"><label for="roomSelect">ห้องสนทนา</label><select id="roomSelect" disabled><option value="all">ห้องรวมประเทศไทย</option></select></div>
+        <div class="conversation-note"><span aria-hidden="true">ⓘ</span> ข้อมูลจากผู้ใช้ · ตรวจสอบเวลาและแหล่งที่มาก่อนนำไปใช้</div>
+        <div id="chatError" class="chat-error" role="alert" hidden></div>
+        <div id="messageViewport" class="message-viewport" tabindex="0" aria-label="ข้อความในห้องสนทนา">
+          <div id="emptyState" class="empty-state"><div aria-hidden="true">💬</div><strong>กำลังโหลดห้องสนทนา</strong><p>รอสักครู่…</p></div>
+          <div id="messages" class="messages" role="log" aria-label="ข้อความล่าสุด" aria-live="off"></div>
+        </div>
+        <button id="newMessagesBtn" class="new-messages" type="button" hidden>↓ มีข้อความใหม่</button>
+        <div class="composer-area">
+          <p id="identityNote" class="identity-note">อ่านได้ทันที · ตั้งชื่อก่อนส่งข้อความหรือรูป</p>
+          <button id="joinChatBtn" class="join-button" type="button">ตั้งชื่อเพื่อเข้าร่วมสนทนา</button>
+          <form id="messageForm" hidden>
+            <div id="attachmentPreview" class="attachment-preview" hidden><img id="attachmentImg" alt="รูปที่เตรียมส่ง"><div><strong>รูปประกอบสถานการณ์</strong><small id="attachmentSize"></small></div><button id="removeAttachmentBtn" class="icon-button" type="button" aria-label="นำรูปที่เลือกออก">×</button></div>
+            <div class="composer-row">
+              <button id="attachBtn" class="attach-button" type="button" aria-label="แนบรูป"><span aria-hidden="true">＋</span><span class="attach-label">รูป</span></button>
+              <input id="chatImageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <label class="sr-only" for="messageInput">ข้อความ</label><textarea id="messageInput" rows="1" maxlength="1500" placeholder="บอกสถานที่ เวลา และสิ่งที่พบ…"></textarea>
+              <button id="sendBtn" class="send-button" type="submit" disabled>ส่ง <span aria-hidden="true">↑</span></button>
+            </div>
+            <div class="composer-foot"><span>ครั้งละ 1 รูป · ระบบย่อรูปก่อนส่ง</span><span id="charCount">0 / 1500</span></div>
+            <p id="sendStatus" class="send-status" role="status"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+  <dialog id="nameDialog" class="name-dialog">
+    <form id="nameForm">
+      <div class="dialog-heading"><h2>เข้าร่วมสนทนา</h2><button id="closeNameBtn" class="icon-button" type="button" aria-label="ปิดหน้าตั้งชื่อ">×</button></div>
+      <p>เลือกชื่อที่จะแสดงกับข้อความและรูปของคุณ</p>
+      <label for="displayNameInput">ชื่อที่แสดง</label><input id="displayNameInput" minlength="2" maxlength="40" required placeholder="เช่น ชาวชลบุรี" autocomplete="nickname">
+      <small>ชื่อเป็นชื่อที่ผู้ใช้ตั้งเอง ไม่ใช่การยืนยันตัวบุคคล<br>เปลี่ยนเครื่องหรือล้างข้อมูลเบราว์เซอร์ จะต้องตั้งชื่อใหม่</small>
+      <p id="nameError" class="form-error" role="alert"></p>
+      <button id="saveNameBtn" class="join-button" type="submit">เข้าห้องแชท</button>
+    </form>
+  </dialog>
+  <dialog id="imageDialog" class="image-dialog" aria-label="ดูรูปประกอบสถานการณ์">
+    <button id="closeImageBtn" class="image-close" type="button" aria-label="ปิดรูป">×</button><img id="fullImage" alt="รูปประกอบสถานการณ์">
+  </dialog>
+  <div id="chatAnnouncement" class="sr-only" role="status" aria-live="polite"></div>
+</body>
+</html>

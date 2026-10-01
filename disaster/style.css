@@ -8,3 +8,6 @@
 .boundary-status{top:90px}@media(max-width:680px){.boundary-status{top:145px}}
 
 .road-return{color:#334155;text-decoration:none;font-size:12px;white-space:nowrap;padding:8px 7px;border:1px solid #e2e8f0;border-radius:10px}.road-return:hover,.road-sidebar-link:hover{background:#f1f5f9}.road-sidebar-link{display:block;text-decoration:none;color:#334155;padding:13px 20px;border-bottom:1px solid #edf0f4;font-size:13px}@media(max-width:680px){.road-return{font-size:11px;padding:7px 5px}.header-right{gap:3px}.topbar .mode{display:none}}
+.action-buttons{display:flex;align-items:center;justify-content:center;gap:8px}.action-buttons>.primary{padding:16px 28px;border-radius:40px;font-size:17px;box-shadow:0 8px 30px #bf303035}.chat-link{display:inline-flex;align-items:center;justify-content:center;border-radius:30px;padding:15px 20px;white-space:nowrap;text-decoration:none;box-shadow:var(--shadow)}@media(max-width:680px){.action-buttons{width:100%;padding:0 10px;gap:7px}.action-buttons>.primary{font-size:13px;padding:14px 17px}.chat-link{padding:14px 14px;font-size:13px}#mobileListBtn{padding:14px 15px;font-size:13px}}
+
+@media(max-width:360px){.action-buttons{gap:5px}.action-buttons .primary{padding:12px 10px;font-size:12px}.action-buttons .chat-link{padding:12px 10px;font-size:12px}.action-buttons #mobileListBtn{padding:12px 10px;font-size:12px}}
