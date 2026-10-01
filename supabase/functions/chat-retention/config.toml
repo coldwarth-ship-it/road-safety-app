@@ -1,0 +1,5 @@
+# Merge this block into supabase/config.toml for CLI deployments.
+# In the Dashboard, turn OFF "Verify JWT" for this function.
+# The handler authenticates callers using withSupabase({ auth: 'secret' }).
+[functions.chat-retention]
+verify_jwt = false
