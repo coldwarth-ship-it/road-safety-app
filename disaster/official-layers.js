@@ -6,7 +6,7 @@
   if(started||!window.L||typeof map==='undefined'||!map)return;started=true;
   const enabled={earthquake:false,flood:false,water:false},stores={},requests={},versions={earthquake:0,flood:0,water:0},lastFetch={},states={};
   const groups={earthquake:L.layerGroup(),water:L.layerGroup()};let floodLayer=null,floodTimer;
-  const names={earthquake:'แผ่นดินไหว · กรมอุตุนิยมวิทยา',flood:'น้ำท่วมดาวเทียม · GISTDA',water:'ระดับน้ำ / ฝน · ThaiWater'};
+  const names={earthquake:'แผ่นดินไหว · กรมอุตุนิยมวิทยา',flood:'น้ำท่วมย้อนหลัง 3 วัน · GISTDA',water:'ระดับน้ำ / ฝน · ThaiWater'};
   const sourceUrls={earthquake:'https://earthquake.tmd.go.th/',flood:'https://disaster.gistda.or.th/services/open-api',water:'https://www.thaiwater.net/'};
   const style=document.createElement('style');style.textContent='.official-control{background:white;color:#243744;border-radius:14px;box-shadow:0 4px 22px #0002;width:290px;padding:12px;font:13px "Noto Sans Thai",sans-serif;max-height:60vh;overflow:auto}.official-control summary{cursor:pointer;font-weight:600}.official-control label{display:flex;gap:8px;align-items:center;padding-top:10px}.official-control input{width:16px;height:16px}.official-control small{display:block;color:#64748b;font-size:11px;line-height:1.5;margin:4px 0}.official-control a{color:#1769aa}.official-control button{background:#f0f5fa;border:1px solid #d4dfe8;border-radius:8px;padding:7px;margin-top:8px;cursor:pointer}.official-popup{line-height:1.65;max-width:260px}.official-popup p{margin:4px 0}.official-control .official-error{color:#b45309}@media(max-width:680px){.official-control{width:235px;max-height:45vh}.leaflet-top.leaflet-right:has(.official-control){top:140px}}';document.head.append(style);
   style.textContent+=' .leaflet-top.leaflet-right:has(.official-control){top:140px}@media(min-width:681px){.official-control{width:min(290px,calc(100vw - 450px))}}';
@@ -32,7 +32,44 @@
    setStatus(key,(stale?'ข้อมูลเดิม/ขัดข้อง · ':'')+count+' จุดในกรอบแผนที่ · ดึง '+time(data.fetchedAt)+(data.message?' · '+data.message:''),stale);
   }
   function floodBounds(){const b=map.getBounds();const west=Math.max(97,Math.floor(b.getWest()*10)/10),south=Math.max(5,Math.floor(b.getSouth()*10)/10),east=Math.min(106,Math.ceil(b.getEast()*10)/10),north=Math.min(21,Math.ceil(b.getNorth()*10)/10);return west<east&&south<north?[west,south,east,north]:null;}
-  async function load(key,force=false){if(!enabled[key]||document.hidden)return;if(!force&&Date.now()-(lastFetch[key]||0)<(key==='flood'?3600000:300000))return;
+
+  async function loadFloodGeo(force=false){
+   if(!enabled.flood||document.hidden)return;
+   const b=floodBounds();
+   requests.flood?.abort();const version=++versions.flood;
+   if(!b||b[2]-b[0]>3||b[3]-b[1]>3){if(floodLayer)map.removeLayer(floodLayer);floodLayer=null;setStatus('flood',b?'ซูมเข้าเพื่อดูพื้นที่น้ำท่วมย้อนหลัง 3 วัน':'กรอบแผนที่อยู่นอกประเทศไทย');return;}
+   if(!force&&JSON.stringify(stores.flood?.bbox)===JSON.stringify(b)&&Date.now()-(lastFetch.flood||0)<600000)return;
+   if(!window.DISASTER_CONFIG?.apiUrl){setStatus('flood','รอตั้งค่า URL Apps Script',true);return;}
+   const controller=new AbortController();requests.flood=controller;
+   const features=[];let offset=0,next=null,fetchedAt=null,matched=null;
+   function valid(){return version===versions.flood&&enabled.flood&&!document.hidden;}
+   function render(partial){if(!valid())return;if(floodLayer)map.removeLayer(floodLayer);
+    floodLayer=L.geoJSON({type:'FeatureCollection',features},{renderer:L.canvas(),style:{color:'#0284c7',weight:1,fillColor:'#38bdf8',fillOpacity:.45},attribution:'พื้นที่น้ำท่วมย้อนหลัง 3 วัน © GISTDA',onEachFeature:(f,l)=>{
+     const p=f.properties||{},box=node('div',undefined,'official-popup');box.append(node('strong','พื้นที่น้ำท่วมย้อนหลัง 3 วัน · GISTDA'));
+     for(const k of ['pv_tn','ap_tn','tb_tn'])if(p[k])box.append(node('p',String(p[k])));
+     box.append(node('p','ดึงข้อมูล '+time(fetchedAt)),node('small','ข้อมูลดาวเทียมย้อนหลัง ไม่ใช่การยืนยันสภาพน้ำท่วมขณะนี้'));
+     l.bindPopup(box);
+    }}).addTo(map);
+    stores.flood={bbox:b,fetchedAt};
+    setStatus('flood',(partial?'โหลดได้บางส่วน · ':'')+features.length+' พื้นที่'+(matched===null?'':' / '+matched+' รายการที่พบ')+' · ย้อนหลัง 3 วัน · ดึง '+time(fetchedAt)+(partial?' · ซูมเข้าแล้วตรวจข้อมูลใหม่':''),partial);
+   }
+   try{
+    for(let page=0;page<12;page++){
+     if(!valid())return;setStatus('flood','กำลังโหลดน้ำท่วมย้อนหลัง 3 วัน… '+features.length+' พื้นที่');
+     const url=new URL(window.DISASTER_CONFIG.apiUrl);url.searchParams.set('official','flood');url.searchParams.set('bbox',b.join(','));url.searchParams.set('offset',String(offset));
+     const timeout=setTimeout(()=>controller.abort(),30000);let data;
+     try{const r=await fetch(url,{signal:controller.signal});if(!r.ok)throw Error('HTTP');data=await r.json();}finally{clearTimeout(timeout);}
+     if(!valid())return;
+     if(data.status!=='ok')throw Error(data.message||'โหลดข้อมูลไม่สำเร็จ');
+     if(data.type!=='FeatureCollection'||!Array.isArray(data.features)||data.features.length>500||data.periodDays!==3||JSON.stringify(data.bbox)!==JSON.stringify(b)||data.offset!==offset)throw Error('ต้อง Deploy Apps Script รุ่น GeoJSON ย้อนหลัง 3 วัน');
+     features.push(...data.features);fetchedAt=data.fetchedAt;matched=data.numberMatched;next=data.nextOffset;
+     if(next===null){render(false);lastFetch.flood=Date.now();return;}
+     if(next!==offset+500||next>10000)throw Error('ลำดับข้อมูลไม่ถูกต้อง');offset=next;
+    }
+    render(true);
+   }catch(error){if(!valid())return;if(features.length)render(true);else{if(floodLayer)map.removeLayer(floodLayer);floodLayer=null;setStatus('flood',error.message==='HTTP'?'โหลดข้อมูลน้ำท่วมไม่ได้ กรุณาลองใหม่':error.name==='AbortError'?'โหลดข้อมูลนานเกินไป กรุณาซูมเข้าแล้วลองใหม่':error.message,true);}}
+  }
+  async function load(key,force=false){if(key==='flood'){return loadFloodGeo(force);}if(!enabled[key]||document.hidden)return;if(!force&&Date.now()-(lastFetch[key]||0)<(key==='flood'?3600000:300000))return;
    if(!window.DISASTER_CONFIG?.apiUrl){setStatus(key,'รอตั้งค่า URL Apps Script ของเว็บนี้',true);return;}
    const version=++versions[key];requests[key]?.abort();const controller=new AbortController();requests[key]=controller;const timeout=setTimeout(()=>controller.abort(),30000);
    let b;try{const url=new URL(window.DISASTER_CONFIG.apiUrl);url.searchParams.set('official',key);if(key==='flood'){b=floodBounds();if(!b){setStatus(key,'กรอบแผนที่อยู่นอกขอบเขตประเทศไทย');if(floodLayer)map.removeLayer(floodLayer);floodLayer=null;return;}url.searchParams.set('bbox',b.join(','));}
@@ -53,3 +90,4 @@
  }
  window.addEventListener('disaster-ready',start,{once:true});if(typeof map!=='undefined'&&map&&typeof regions!=='undefined'&&regions.length)start();
 })();
+
