@@ -854,6 +854,24 @@
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
   }
+body.incident-map-active .content {padding:0}
+body.incident-map-active {overflow:hidden}
+#page-incidentmap {position:relative;height:calc(100dvh - 56px)}
+#incidentMap {height:100%;width:100%;background:var(--bg3)}
+.incident-panel {position:absolute;top:12px;right:12px;width:310px;max-width:calc(100% - 70px);max-height:calc(100% - 30px);overflow:auto;z-index:800;background:var(--bg2);color:var(--text);border:1px solid var(--border2);border-radius:12px;padding:14px;box-shadow:var(--shadow);font-size:13px}
+.incident-panel summary {cursor:pointer;font-weight:600;padding:4px 0}
+.incident-panel label {display:block;margin:14px 0;cursor:pointer}
+.incident-panel input {margin-right:8px;accent-color:var(--primary)}
+.incident-panel p {font-size:12px;line-height:1.6;margin:8px 0;color:var(--text2)}
+.incident-panel button {margin:3px 0}
+.incident-pin {width:36px;height:36px;border:3px solid white;border-radius:50%;display:grid;place-items:center;font:bold 14px Sarabun,sans-serif;box-shadow:0 2px 8px #0008}
+.incident-swatch {display:inline-block;width:12px;height:12px;border:1px solid #999;border-radius:50%;margin-right:6px}
+.incident-popup {font-family:Sarabun,sans-serif;max-height:320px;overflow:auto;color:#161b22}
+.incident-popup p {margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.incident-popup details {border-top:1px solid #ddd;padding:8px 0}
+.incident-popup summary {cursor:pointer;font-weight:600}
+@media(max-width:600px){body.incident-map-active .topbar-right .btn-primary{display:none}.incident-panel{width:260px}}
+
 </style>
 
 <script>
@@ -931,6 +949,7 @@ if (location.protocol === 'file:') {
     <button class="nav-item active" onclick="showPage('dashboard')">
       <span class="nav-icon">📊</span> ภาพรวม Dashboard
     </button>
+    <button class="nav-item" onclick="showPage('incidentmap')"><span class="nav-icon">🗺️</span> แผนที่จุดเสี่ยง / อุบัติเหตุจริง</button>
     <button class="nav-item" onclick="showPage('report')">
       <span class="nav-icon">📍</span> แจ้งพื้นที่เสี่ยง
       <span class="nav-badge" id="pendingBadge">0</span>
@@ -1005,6 +1024,21 @@ if (location.protocol === 'file:') {
   </header>
 
   <div class="content">
+
+<div class="section" id="page-incidentmap">
+  <div id="incidentMap" aria-label="แผนที่จุดเสี่ยงและอุบัติเหตุจริง"></div>
+  <details class="incident-panel" open>
+    <summary>🗂️ ชั้นข้อมูลและคำอธิบาย</summary>
+    <label><input type="checkbox" id="incidentZonesToggle" checked onchange="renderIncidentMap()"> รายงานจุดเสี่ยง <span id="incidentZoneCount">0</span> จุด</label>
+    <label><input type="checkbox" id="incidentEventsToggle" checked onchange="renderIncidentMap()"> อุบัติเหตุจริง <span id="incidentEventCount">0</span> ครั้ง</label>
+    <p id="incidentStatus" role="status">ยังไม่ได้โหลดข้อมูลอุบัติเหตุ</p>
+    <button class="btn btn-secondary btn-sm" onclick="loadIncidentEvents()">🔄 โหลดอุบัติเหตุใหม่</button>
+    <button class="btn btn-secondary btn-sm" onclick="fitIncidentMap()">ดูทุกจุดที่เปิดอยู่</button>
+    <details style="margin-top:12px"><summary>สีระดับการบาดเจ็บ</summary><div id="incidentLegend"></div></details>
+    <p style="margin-top:12px">หมุดกลม = อุบัติเหตุจริง ตัวเลข = จำนวนครั้ง<br>สี = ระดับสูงสุดของจุดนั้น<br>หมุดหยดน้ำ = รายงานจุดเสี่ยง</p>
+    <p>จุดอุบัติเหตุรวมด้วยรหัสจุดเดียวกัน หรือพิกัดตรงกันเมื่อไม่มีรหัส ไม่รวมจุดใกล้กันโดยอัตโนมัติ</p>
+  </details>
+</div>
 
     <!-- ===== DASHBOARD ===== -->
     <div class="section active" id="page-dashboard">
@@ -1738,12 +1772,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ===== NAVIGATION =====
 const pageTitles = {
+  incidentmap:'แผนที่จุดเสี่ยงและอุบัติเหตุจริง',
   dashboard:'ภาพรวม Dashboard', report:'แจ้งพื้นที่เสี่ยง', zones:'จุดเสี่ยงทั้งหมด',
   accidents:'สถิติอุบัติเหตุ', weather:'พยากรณ์อากาศ', prevention:'การป้องกันอุบัติเหตุ (ไรเดอร์)',
   seasons:'รับมือแต่ละฤดู', disease:'โรคประจำฤดู', settings:'ตั้งค่า Google Sheet',
 };
 
 function showPage(id) {
+  document.body.classList.toggle('incident-map-active', id === 'incidentmap');
+  if (id === 'incidentmap') setTimeout(openIncidentMap, 80);
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
@@ -1802,7 +1839,7 @@ async function loadZones() {
       zonesData = (json.data || []).filter(r => String(r['สถานะ']||'').trim() === 'ตรวจสอบแล้ว');
       renderZonesTable(zonesData); renderRecentZones(zonesData.slice(0,4));
       updateDashboardStats(zonesData); initRiskBars(); renderDashboardMap();
-      updateLastSyncTime();
+      updateLastSyncTime(); renderIncidentMap();
       try {
         const pendingJson = await apiGet('pending');
         if (pendingJson && pendingJson.status === 'ok') {
@@ -2499,7 +2536,7 @@ function renderDiseaseTab(season) {
 }
 
 // ===== SYNC =====
-function syncData(){showToast('🔄 กำลังซิงค์ข้อมูล...','info');loadZones();setTimeout(()=>showToast('✅ ซิงค์ข้อมูลเรียบร้อย','success'),1200);}
+function syncData(){if(document.getElementById('page-incidentmap').classList.contains('active')) loadIncidentEvents();showToast('🔄 กำลังซิงค์ข้อมูล...','info');loadZones();setTimeout(()=>showToast('✅ ซิงค์ข้อมูลเรียบร้อย','success'),1200);}
 function openAllZonesInMaps(){const valid=(zonesData||[]).filter(z=>z['ละติจูด']&&z['ลองจิจูด']);if(!valid.length){window.open('https://www.google.com/maps/search/ประเทศไทย+ประเทศไทย','_blank');return;}const z=valid[0];window.open(`https://www.google.com/maps?q=${z['ละติจูด']},${z['ลองจิจูด']}`,'_blank');}
 
 // ===== MODALS =====
@@ -2510,5 +2547,145 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('clic
 let toastTimer;
 function showToast(msg,type='info'){const t=document.getElementById('toast');const colors={success:'#56D364',warning:'#E3B341',error:'#F85149',info:'#58A6FF'};t.style.display='flex';t.style.borderLeftColor=colors[type]||colors.info;t.innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:${colors[type]};flex-shrink:0"></span> ${msg}`;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',3500);}
 </script>
+<script>
+// Public map: use approved, anonymous event records only.
+const INCIDENT_LEVELS = [
+  {name:'Lessthan',color:'#238636',description:'ไม่บาดเจ็บ หรือบาดเจ็บแต่ไม่หยุดงาน'},
+  {name:'Level 1',color:'#e3b341',description:'บาดเจ็บหยุดงานไม่เกิน 3 วัน'},
+  {name:'Level 2',color:'#f0883e',description:'บาดเจ็บหยุดงานมากกว่า 3–10 วัน'},
+  {name:'Level 3',color:'#da3633',description:'บาดเจ็บหยุดงานมากกว่า 10 วัน'},
+  {name:'Serious case',color:'#8957e5',description:'บาดเจ็บหนัก หรือทุพพลภาพ'},
+  {name:'Fatalities',color:'#161b22',description:'เสียชีวิต'}
+];
+let incidentMap = null, incidentZoneLayer = null, incidentEventLayer = null;
+let incidentEvents = [], incidentBounds = [], incidentLoading = false, incidentLoaded = false;
+
+function incidentLevelIndex(value) {
+  const v = String(value || '').trim().toLowerCase().replace(/\s+/g,' ');
+  if (v === 'serius case') return 4;
+  return INCIDENT_LEVELS.findIndex(l => l.name.toLowerCase() === v);
+}
+function incidentCoordinate(value, limit) {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && Math.abs(n) <= limit ? n : null;
+}
+function normalizeIncidentEvents(rows) {
+  const seen = new Set();
+  return rows.flatMap(row => {
+    if (String(row['สถานะ'] || '').trim() !== 'เผยแพร่') return [];
+    const id = String(row['รหัสเหตุ'] || '').trim();
+    const lat = incidentCoordinate(row['ละติจูด'],90), lng = incidentCoordinate(row['ลองจิจูด'],180);
+    const level = incidentLevelIndex(row['Level']);
+    if (!id || seen.has(id) || lat === null || lng === null || level < 0) return [];
+    seen.add(id);
+    // Explicit projection: never retain rider identity, contact or photo columns.
+    return [{id,pointId:String(row['รหัสจุด']||'').trim(),lat,lng,level,
+      name:String(row['ชื่อจุด']||'จุดเกิดอุบัติเหตุ'),province:String(row['จังหวัด']||''),
+      district:String(row['อำเภอ']||''),detail:String(row['รายละเอียดโดยประมาณ']||''),
+      cause:String(row['สาเหตุ']||''),prevention:String(row['การป้องกัน']||'')}];
+  });
+}
+function groupIncidentEvents(events) {
+  const groups = new Map();
+  for (const event of events) {
+    const key = event.pointId ? 'id:' + event.pointId : 'coord:' + event.lat + ',' + event.lng;
+    if (!groups.has(key)) groups.set(key,{...event,events:[],highest:-1});
+    const group = groups.get(key);
+    group.events.push(event); group.highest = Math.max(group.highest,event.level);
+  }
+  return [...groups.values()];
+}
+function incidentText(parent,tag,value) {
+  const el = document.createElement(tag); el.textContent = value; parent.appendChild(el); return el;
+}
+function incidentPopup(group) {
+  const host = document.createElement('div'); host.className = 'incident-popup';
+  incidentText(host,'h3',group.name);
+  incidentText(host,'p',[group.province,group.district].filter(Boolean).join(' · '));
+  incidentText(host,'p','เกิดอุบัติเหตุ ' + group.events.length + ' ครั้ง • ระดับสูงสุด ' + INCIDENT_LEVELS[group.highest].name);
+  for (const event of group.events) {
+    const entry = document.createElement('details'); host.appendChild(entry);
+    incidentText(entry,'summary',event.id + ' — ' + INCIDENT_LEVELS[event.level].name);
+    incidentText(entry,'p','การบาดเจ็บ: ' + INCIDENT_LEVELS[event.level].description);
+    incidentText(entry,'p','รายละเอียดโดยประมาณ: ' + (event.detail || 'ไม่ได้ระบุ'));
+    incidentText(entry,'p','สาเหตุ: ' + (event.cause || 'ไม่ได้ระบุ'));
+    incidentText(entry,'p','การป้องกัน: ' + (event.prevention || 'ไม่ได้ระบุ'));
+  }
+  const link = document.createElement('a'); link.textContent = 'เปิดจุดนี้ใน Google Maps';
+  link.href = 'https://www.google.com/maps?q=' + group.lat + ',' + group.lng;
+  link.target = '_blank'; link.rel = 'noopener noreferrer'; host.appendChild(link);
+  return host;
+}
+function ensureIncidentMap() {
+  if (incidentMap) { incidentMap.invalidateSize(); return; }
+  incidentMap = L.map('incidentMap',{center:[13,101],zoom:6});
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',maxZoom:19
+  }).addTo(incidentMap);
+  incidentZoneLayer = L.layerGroup().addTo(incidentMap);
+  incidentEventLayer = L.layerGroup().addTo(incidentMap);
+  const legend = document.getElementById('incidentLegend');
+  INCIDENT_LEVELS.forEach(level => {
+    const line = incidentText(legend,'p',level.name + ' — ' + level.description);
+    const swatch = document.createElement('span'); swatch.className = 'incident-swatch';
+    swatch.style.background = level.color; line.prepend(swatch);
+  });
+}
+function renderIncidentMap() {
+  if (!incidentMap) return;
+  incidentZoneLayer.clearLayers(); incidentEventLayer.clearLayers(); incidentBounds = [];
+  const showZones = document.getElementById('incidentZonesToggle').checked;
+  const showEvents = document.getElementById('incidentEventsToggle').checked;
+  let zoneCount = 0;
+  (zonesData || []).forEach(zone => {
+    const lat = incidentCoordinate(zone['ละติจูด'],90), lng = incidentCoordinate(zone['ลองจิจูด'],180);
+    if (lat === null || lng === null) return;
+    zoneCount++;
+    if (!showZones) return;
+    const marker = L.marker([lat,lng],{icon:dashPinIcon(zone['ระดับความเสี่ยง'])}).addTo(incidentZoneLayer);
+    const popup = document.createElement('div');
+    incidentText(popup,'h3',String(zone['ชื่อจุด']||'จุดเสี่ยง'));
+    incidentText(popup,'p','ความเสี่ยง: ' + String(zone['ระดับความเสี่ยง']||'ไม่ได้ระบุ'));
+    incidentText(popup,'p',String(zone['รายละเอียด']||''));
+    marker.bindPopup(popup); incidentBounds.push([lat,lng]);
+  });
+  if (showEvents) groupIncidentEvents(incidentEvents).forEach(group => {
+    const level = INCIDENT_LEVELS[group.highest];
+    const icon = L.divIcon({className:'',iconSize:[36,36],iconAnchor:[18,18],
+      html:'<div class="incident-pin" style="background:' + level.color + ';color:' + (group.highest===1?'#161b22':'white') + '">' + group.events.length + '</div>'});
+    L.marker([group.lat,group.lng],{icon,zIndexOffset:300,title:level.name + ' · ' + group.events.length + ' ครั้ง'})
+      .addTo(incidentEventLayer).bindPopup(incidentPopup(group),{maxWidth:340});
+    incidentBounds.push([group.lat,group.lng]);
+  });
+  document.getElementById('incidentZoneCount').textContent = zoneCount;
+  document.getElementById('incidentEventCount').textContent = incidentEvents.length;
+}
+function fitIncidentMap() {
+  if (incidentMap && incidentBounds.length) incidentMap.fitBounds(incidentBounds,{padding:[45,45],maxZoom:14});
+}
+async function loadIncidentEvents() {
+  if (incidentLoading) return;
+  incidentLoading = true;
+  const status = document.getElementById('incidentStatus'); status.textContent = 'กำลังโหลดอุบัติเหตุจริง…';
+  try {
+    const result = await apiGet('rider_incidents');
+    // Require a contract marker: old GAS endpoints may silently return zones for unknown sheets.
+    if (!result || result.status !== 'ok' || result.dataset !== 'rider_incidents' || !Array.isArray(result.data))
+      throw new Error('ยังไม่ได้เชื่อมตัวอ่านแท็บอุบัติเหตุจริงใน Apps Script');
+    incidentEvents = normalizeIncidentEvents(result.data); incidentLoaded = true;
+    status.textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'}) + ' น. • ' + incidentEvents.length + ' เหตุที่เผยแพร่และมีพิกัด/ระดับถูกต้อง';
+    renderIncidentMap();
+  } catch (error) {
+    status.textContent = (incidentLoaded ? 'โหลดใหม่ไม่สำเร็จ กำลังแสดงข้อมูลครั้งก่อน: ' : 'ยังแสดงอุบัติเหตุจริงไม่ได้: ') + error.message;
+  } finally { incidentLoading = false; }
+}
+function openIncidentMap() {
+  ensureIncidentMap(); renderIncidentMap();
+  if (!incidentLoaded) loadIncidentEvents();
+}
+
+</script>
 </body>
 </html>
+
