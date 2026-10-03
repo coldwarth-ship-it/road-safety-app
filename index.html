@@ -870,7 +870,18 @@ body.incident-map-active {overflow:hidden}
 .incident-popup p {margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .incident-popup details {border-top:1px solid #ddd;padding:8px 0}
 .incident-popup summary {cursor:pointer;font-weight:600}
-@media(max-width:600px){body.incident-map-active .topbar-right .btn-primary{display:none}.incident-panel{width:260px}}
+.incident-panel:not([open]){width:fit-content;padding:8px 12px}
+.incident-panel:not([open])>summary{white-space:nowrap}
+@media(max-width:600px){
+body.incident-map-active .topbar-right .btn-primary{display:none}
+.incident-panel{top:8px;right:8px;width:230px;padding:10px;max-height:45dvh}
+.incident-panel summary{font-size:13px}
+.incident-panel label{display:flex;align-items:center;min-height:44px;margin:2px 0;font-size:12px}
+.incident-panel input{flex-shrink:0}
+.incident-panel p{font-size:11px;margin:5px 0}
+.incident-panel .btn{font-size:12px;padding:8px 10px}
+.incident-panel:not([open]){padding:6px 10px}
+}
 
 
 .community-dialog{width:min(560px,calc(100% - 24px));max-height:88dvh;overflow:auto;border:1px solid var(--border2);border-radius:16px;padding:20px;background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
@@ -1033,8 +1044,8 @@ if (location.protocol === 'file:') {
 
 <div class="section" id="page-incidentmap">
   <div id="incidentMap" aria-label="แผนที่จุดเสี่ยงและอุบัติเหตุจริง"></div>
-  <details class="incident-panel" open>
-    <summary>🗂️ ชั้นข้อมูลและคำอธิบาย</summary>
+  <details class="incident-panel" id="incidentLayerPanel" open>
+    <summary>🗂️ ชั้นข้อมูล</summary>
     <label><input type="checkbox" id="incidentZonesToggle" checked onchange="renderIncidentMap()"> รายงานจุดเสี่ยง <span id="incidentZoneCount">0</span> จุด</label>
     <label><input type="checkbox" id="incidentEventsToggle" checked onchange="renderIncidentMap()"> อุบัติเหตุจริง <span id="incidentEventCount">0</span> ครั้ง</label>
     <button class="btn btn-primary" onclick="openIncidentEntry()">➕ บันทึกอุบัติเหตุจริง</button>
@@ -2690,7 +2701,12 @@ async function loadIncidentEvents() {
     status.textContent = (incidentLoaded ? 'โหลดใหม่ไม่สำเร็จ กำลังแสดงข้อมูลครั้งก่อน: ' : 'ยังแสดงอุบัติเหตุจริงไม่ได้: ') + error.message;
   } finally { incidentLoading = false; }
 }
+let incidentPanelInitialized = false;
 function openIncidentMap() {
+  if (!incidentPanelInitialized) {
+    document.getElementById('incidentLayerPanel').open = !window.matchMedia('(max-width:600px)').matches;
+    incidentPanelInitialized = true;
+  }
   ensureIncidentMap(); renderIncidentMap();
   if (!incidentLoaded) loadIncidentEvents();
 }
