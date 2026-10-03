@@ -867,9 +867,9 @@ body.incident-map-active {overflow:hidden}
 .incident-panel button {margin:3px 0}
 .incident-pin {width:36px;height:36px;border:3px solid white;border-radius:50%;display:grid;place-items:center;font:bold 14px Sarabun,sans-serif;box-shadow:0 2px 8px #0008}
 .incident-swatch {display:inline-block;width:12px;height:12px;border:1px solid #999;border-radius:50%;margin-right:6px}
-.incident-popup {font-family:Sarabun,sans-serif;max-height:320px;overflow:auto;color:#161b22}
+.incident-popup {font-family:Sarabun,sans-serif;max-height:320px;overflow:auto;color:var(--text)}
 .incident-popup p {margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
-.incident-popup details {border-top:1px solid #ddd;padding:8px 0}
+.incident-popup details {border-top:1px solid var(--border2);padding:8px 0}
 .incident-popup summary {cursor:pointer;font-weight:600}
 .incident-panel:not([open]){width:fit-content;padding:8px 12px}
 .incident-panel:not([open])>summary{white-space:nowrap}
@@ -890,6 +890,9 @@ body.incident-map-active .topbar-right .btn-primary{display:none}
 .community-dialog p{font-size:13px;line-height:1.6}.community-dialog label{display:block;margin:12px 0;font-size:14px}.community-dialog input,.community-dialog select,.community-dialog textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--border2);border-radius:8px;background:var(--bg3);color:var(--text);font:inherit;margin-top:5px}.community-dialog textarea{min-height:75px;resize:vertical}.community-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #roadChatLaunch{position:fixed;right:18px;bottom:18px;z-index:900;border-radius:30px;box-shadow:var(--shadow)}.chat-dialog{width:min(420px,calc(100% - 24px))}#roadChatMessages{height:240px;overflow:auto;margin:12px 0;padding:10px;background:var(--bg3);border-radius:10px}.chat-message{border-bottom:1px solid var(--border2);padding:10px 0;white-space:pre-wrap;overflow-wrap:anywhere}.chat-message small{display:block;color:var(--text2)}
 
+.leaflet-popup-content{color:var(--text)}
+.incident-popup h3,.incident-popup p,.incident-popup summary{color:var(--text)}
+#zdChatButton[hidden]{display:none}
 </style>
 
 <script>
@@ -1634,6 +1637,7 @@ if (location.protocol === 'file:') {
       </div>
     </div>
     <div class="modal-footer">
+      <button id="zdChatButton" class="btn btn-secondary" hidden>💬 แชทจุดนี้</button>
       <button class="btn btn-secondary" onclick="closeModal('zoneDetailModal')">ปิด</button>
     </div>
   </div>
@@ -1963,6 +1967,12 @@ function populateZoneDetailModal(d) {
   const text = value => String(value == null ? '' : value).trim();
   const put = (id, value, fallback) => {
     document.getElementById(id).textContent = text(value) || fallback;
+  };
+  const chatButton = document.getElementById('zdChatButton');
+  chatButton.hidden = !document.body.classList.contains('incident-map-active');
+  chatButton.onclick = () => {
+    closeModal('zoneDetailModal');
+    openRoadChat(pointChatRoom(String(d['รหัสจุด']||d['ID']||''),d.ละติจูด,d.ลองจิจูด),text(d.ชื่อจุด)||'จุดเสี่ยง');
   };
   put('zdTitle', '📍 ' + (text(d.ชื่อจุด) || 'รายละเอียดจุดเสี่ยง'), '');
   document.getElementById('zdRiskBadge').innerHTML = riskBadge(d.ระดับความเสี่ยง);
@@ -2665,12 +2675,8 @@ function renderIncidentMap() {
     zoneCount++;
     if (!showZones) return;
     const marker = L.marker([lat,lng],{icon:dashPinIcon(zone['ระดับความเสี่ยง'])}).addTo(incidentZoneLayer);
-    const popup = document.createElement('div');
-    incidentText(popup,'h3',String(zone['ชื่อจุด']||'จุดเสี่ยง'));
-    incidentText(popup,'p','ความเสี่ยง: ' + String(zone['ระดับความเสี่ยง']||'ไม่ได้ระบุ'));
-    incidentText(popup,'p',String(zone['รายละเอียด']||''));
-    addPointChatButton(popup,pointChatRoom(String(zone['รหัสจุด']||zone['ID']||''),lat,lng),String(zone['ชื่อจุด']||'จุดเสี่ยง'));
-    marker.bindPopup(popup); incidentBounds.push([lat,lng]);
+    marker.on('click', () => populateZoneDetailModal(zone));
+    incidentBounds.push([lat,lng]);
   });
   if (showEvents) groupIncidentEvents(incidentEvents).forEach(group => {
     const level = INCIDENT_LEVELS[group.highest];
