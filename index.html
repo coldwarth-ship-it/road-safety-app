@@ -20,6 +20,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" integrity="sha384-sLWJsCmP+Z4Qn+HgF7Hi64Djta4fZMu0fcgi3uUL3GFV/ubx2G86LPOuMf7+ZIyX" crossorigin="anonymous"></script>
 <style>
   :root {
     --primary: #D84315;
@@ -2748,7 +2749,7 @@ let entryRequestId = '', entryPicking = false, entryPickMarker = null;
 let roadChatRoom = 'general', roadChatTimer = null, roadChatLoading = false, roadChatGeneration = 0, roadChatRequestId = '';
 function communityRequestId(){return crypto.randomUUID();}
 function communityBadWords(value){const clean=String(value).normalize('NFKC').toLowerCase().replace(/[\s\u200B-\u200D\uFEFF._*\-]+/g,'');return /ควย|เย็ด|เหี้ย|สัส|ไอ้สัตว์|fuck|shit|bitch/.test(clean);}
-function closeCommunityDialog(id){document.getElementById(id).close();if(id==='roadChatDialog'){clearInterval(roadChatTimer);roadChatTimer=null;roadChatGeneration++;}}
+function closeCommunityDialog(id){document.getElementById(id).close();if(id==='roadChatDialog')disconnectRoadChat();}
 function incidentPointChoices(){const points=[];zonesData.forEach(z=>{const lat=incidentCoordinate(z['ละติจูด'],90),lng=incidentCoordinate(z['ลองจิจูด'],180);if(lat===null||lng===null)return;points.push({pointId:String(z['รหัสจุด']||z['ID']||''),name:String(z['ชื่อจุด']||'จุดเสี่ยง'),province:String(z['จังหวัด']||''),district:String(z['อำเภอ']||''),lat,lng});});groupIncidentEvents(incidentEvents).forEach(g=>points.push({pointId:g.events[0].pointId||'',name:g.name,province:g.province,district:g.district,lat:g.lat,lng:g.lng}));return points;}
 let entryPoints=[];
 function openIncidentEntry(){ensureIncidentMap();entryPoints=incidentPointChoices();const select=document.getElementById('entryExisting');select.replaceChildren(new Option('จุดใหม่ / ระบุเอง',''));entryPoints.forEach((p,i)=>select.add(new Option(p.name+' · '+p.province,String(i))));const levels=document.getElementById('entryLevel');if(!levels.options.length){levels.add(new Option('เลือกระดับ',''));INCIDENT_LEVELS.forEach(l=>levels.add(new Option(l.name+' — '+l.description,l.name)));}if(!entryRequestId)entryRequestId=communityRequestId();document.getElementById('incidentEntryDialog').showModal();}
@@ -2758,10 +2759,44 @@ function setupIncidentPicking(){incidentMap.on('click',e=>{if(!entryPicking)retu
 async function submitIncidentEntry(event){event.preventDefault();const form=event.target,status=document.getElementById('entryStatus'),button=document.getElementById('entrySubmit');if(button.disabled)return;const data=Object.fromEntries(new FormData(form));if(communityBadWords([data.name,data.detail,data.cause,data.prevention].join(' '))){status.textContent='กรุณาแก้ไขคำไม่สุภาพก่อนส่ง';return;}button.disabled=true;status.textContent='กำลังส่ง…';try{const result=await apiPost({action:'submit_rider_incident',requestId:entryRequestId,...data});if(result.status!=='ok'||result.dataset!=='rider_incident_submission')throw Error(result.message||'ระบบยังไม่พร้อมรับบันทึก');status.textContent='บันทึกสำเร็จ รหัสเหตุ '+result.id+' • รอตรวจสอบก่อนเผยแพร่';form.reset();entryRequestId=communityRequestId();if(entryPickMarker){entryPickMarker.remove();entryPickMarker=null;}}catch(error){status.textContent='ยังยืนยันการบันทึกไม่ได้: '+error.message+' สามารถกดส่งซ้ำได้โดยไม่สร้างเหตุซ้ำ';}finally{button.disabled=false;}}
 function addPointChatButton(host,room,label){const button=document.createElement('button');button.className='btn btn-secondary btn-sm';button.textContent='💬 คุยสถานการณ์จุดนี้';button.onclick=()=>openRoadChat(room,label);host.appendChild(button);}
 function pointChatRoom(pointId,lat,lng){return pointId?'point:'+pointId:'coord:'+Number(lat)+','+Number(lng);}
-function openRoadChat(room,label){roadChatRoom=room;roadChatGeneration++;document.getElementById('roadChatTitle').textContent='💬 '+label;document.getElementById('roadChatMessages').replaceChildren();document.getElementById('roadChatNickname').value=localStorage.getItem('roadChatNickname')||'';const dialog=document.getElementById('roadChatDialog');if(!dialog.open)dialog.showModal();clearInterval(roadChatTimer);loadRoadChat();roadChatTimer=setInterval(()=>{if(!document.hidden)loadRoadChat();},15000);}
-async function loadRoadChat(){if(roadChatLoading)return;roadChatLoading=true;const room=roadChatRoom,generation=roadChatGeneration,status=document.getElementById('roadChatStatus');try{const r=await apiGet('road_chat&room='+encodeURIComponent(room));if(generation!==roadChatGeneration)return;if(r.status!=='ok'||r.dataset!=='road_chat'||!Array.isArray(r.data))throw Error(r.message||'ระบบแชทยังไม่พร้อม');const host=document.getElementById('roadChatMessages'),atBottom=host.scrollHeight-host.scrollTop-host.clientHeight<50;host.replaceChildren();if(!r.data.length)incidentText(host,'p','ยังไม่มีข้อความ เริ่มแจ้งสภาพถนนได้เลย');r.data.forEach(m=>{const row=document.createElement('div');row.className='chat-message';incidentText(row,'strong',m.nickname);incidentText(row,'small',new Date(m.time).toLocaleString('th-TH',{timeZone:'Asia/Bangkok'}));incidentText(row,'p',m.message);host.appendChild(row);});if(atBottom)host.scrollTop=host.scrollHeight;status.textContent='อัปเดตข้อความแล้ว • โหลดใหม่ทุก 15 วินาที';}catch(e){if(generation===roadChatGeneration)status.textContent='โหลดแชทไม่ได้: '+e.message;}finally{roadChatLoading=false;if(generation!==roadChatGeneration&&document.getElementById('roadChatDialog').open)loadRoadChat();}}
-async function sendRoadChat(event){event.preventDefault();const button=document.getElementById('roadChatSend'),status=document.getElementById('roadChatStatus'),nickname=document.getElementById('roadChatNickname').value.trim(),message=document.getElementById('roadChatMessage').value.trim();if(button.disabled)return;if(communityBadWords(nickname+' '+message)){status.textContent='พบคำไม่สุภาพ กรุณาแก้ไขก่อนส่ง';return;}if(!roadChatRequestId)roadChatRequestId=communityRequestId();button.disabled=true;try{const r=await apiPost({action:'send_road_chat',requestId:roadChatRequestId,room:roadChatRoom,nickname,message});if(r.status!=='ok'||r.dataset!=='road_chat_submission')throw Error(r.message||'ระบบแชทยังไม่พร้อม');localStorage.setItem('roadChatNickname',nickname);document.getElementById('roadChatMessage').value='';roadChatRequestId='';await loadRoadChat();}catch(e){status.textContent='ส่งข้อความไม่ได้: '+e.message;}finally{button.disabled=false;}}
-document.addEventListener('DOMContentLoaded',()=>document.getElementById('roadChatDialog').addEventListener('close',()=>{clearInterval(roadChatTimer);roadChatTimer=null;roadChatGeneration++;}));
+let roadSupabase=null,roadChatChannel=null;
+function roadChatClient(){
+ if(!roadSupabase){
+  if(!window.supabase?.createClient)throw Error('โหลดระบบแชทไม่สำเร็จ กรุณารีเฟรชเว็บ');
+  roadSupabase=window.supabase.createClient('https://selohymkkwvldhtohtbm.supabase.co','sb_publishable_mj_tdZov0SpOqkJb5r3ePQ_dtGCpmPT',{auth:{storageKey:'road-safety-chat-session-v1',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+ }return roadSupabase;
+}
+function disconnectRoadChat(){clearInterval(roadChatTimer);roadChatTimer=null;if(roadChatChannel){roadChatClient().removeChannel(roadChatChannel);roadChatChannel=null;}roadChatGeneration++;}
+function openRoadChat(room,label){
+ disconnectRoadChat();roadChatRoom=room;document.getElementById('roadChatTitle').textContent='💬 '+label;document.getElementById('roadChatMessages').replaceChildren();document.getElementById('roadChatNickname').value=localStorage.getItem('roadChatNickname')||'';
+ const dialog=document.getElementById('roadChatDialog');if(!dialog.open)dialog.showModal();
+ document.getElementById('roadChatStatus').textContent='กำลังเชื่อมต่อ Supabase…';
+ try{const client=roadChatClient(),generation=roadChatGeneration;
+ roadChatChannel=client.channel('road-room-'+crypto.randomUUID()).on('postgres_changes',{event:'*',schema:'public',table:'road_chat_messages',filter:'room=eq.'+room},()=>{if(generation===roadChatGeneration)loadRoadChat();}).subscribe(status=>{if(generation!==roadChatGeneration)return;if(status==='SUBSCRIBED')loadRoadChat();if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')document.getElementById('roadChatStatus').textContent='Realtime ขัดข้อง กำลังตรวจข้อความทุก 30 วินาที';});
+ loadRoadChat();roadChatTimer=setInterval(()=>{if(!document.hidden)loadRoadChat();},30000);
+ }catch(e){document.getElementById('roadChatStatus').textContent=e.message;}
+}
+async function loadRoadChat(){
+ if(roadChatLoading)return;roadChatLoading=true;const generation=roadChatGeneration,room=roadChatRoom,status=document.getElementById('roadChatStatus');
+ try{const {data,error}=await roadChatClient().from('road_chat_messages').select('id,nickname,message,created_at').eq('room',room).eq('hidden',false).gte('created_at',new Date(Date.now()-30*86400000).toISOString()).order('created_at',{ascending:false}).limit(100);
+ if(error)throw error;if(generation!==roadChatGeneration)return;
+ const host=document.getElementById('roadChatMessages'),atBottom=host.scrollHeight-host.scrollTop-host.clientHeight<50;host.replaceChildren();
+ if(!data.length)incidentText(host,'p','ยังไม่มีข้อความ เริ่มแจ้งสภาพถนนได้เลย');
+ data.reverse().forEach(m=>{const row=document.createElement('div');row.className='chat-message';incidentText(row,'strong',m.nickname);incidentText(row,'small',new Date(m.created_at).toLocaleString('th-TH',{timeZone:'Asia/Bangkok'}));incidentText(row,'p',m.message);host.appendChild(row);});
+ if(atBottom)host.scrollTop=host.scrollHeight;status.textContent='เชื่อมต่อ Supabase แล้ว • รับข้อความใหม่แบบ Realtime';
+ }catch(e){if(generation===roadChatGeneration)status.textContent='โหลดแชทไม่ได้: '+e.message;}
+ finally{roadChatLoading=false;if(generation!==roadChatGeneration&&document.getElementById('roadChatDialog').open)loadRoadChat();}
+}
+async function sendRoadChat(event){
+ event.preventDefault();const button=document.getElementById('roadChatSend'),status=document.getElementById('roadChatStatus'),nickname=document.getElementById('roadChatNickname').value.trim(),message=document.getElementById('roadChatMessage').value.trim();if(button.disabled)return;
+ if(communityBadWords(nickname+' '+message)){status.textContent='พบคำไม่สุภาพ กรุณาแก้ไขก่อนส่ง';return;}
+ if(!roadChatRequestId)roadChatRequestId=communityRequestId();button.disabled=true;const room=roadChatRoom;
+ try{const client=roadChatClient();let {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){const signIn=await client.auth.signInAnonymously();if(signIn.error)throw signIn.error;}
+ const result=await client.rpc('send_road_chat',{p_id:roadChatRequestId,p_room:room,p_nickname:nickname,p_message:message});if(result.error)throw result.error;
+ localStorage.setItem('roadChatNickname',nickname);document.getElementById('roadChatMessage').value='';roadChatRequestId='';await loadRoadChat();
+ }catch(e){status.textContent='ส่งข้อความไม่ได้: '+e.message;}finally{button.disabled=false;}
+}
+document.addEventListener('DOMContentLoaded',()=>document.getElementById('roadChatDialog').addEventListener('close',disconnectRoadChat));
 
 </script>
 </body>
