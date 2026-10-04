@@ -16,6 +16,12 @@ const palette=['#5685a5','#bd665a','#dec079','#80a590','#d4d7da','#597386'];
 function resize(){const priorH=H,w=innerWidth,h=innerHeight;W=480;H=clamp(480*h/w,320,960);z+=(priorH-H)*.25;scale=w/W;cv.width=Math.round(w*Math.min(devicePixelRatio||1,2));cv.height=Math.round(h*Math.min(devicePixelRatio||1,2));g.setTransform(cv.width/W,0,0,cv.height/H,0,0);if(mode==='play')pauseGame();}
 addEventListener('resize',resize);
 function road(d){const block=Math.floor(d/1500),t=mod(d,1500),widths=[180,300,180,230,300,180],a=widths[mod(block,widths.length)],b=widths[mod(block+1,widths.length)],width=t>1250?lerp(a,b,smooth((t-1250)/250)):a;const m=240+25*Math.sin(d/620)+12*Math.sin(d/1100);return {m,width,left:m-width/2,right:m+width/2,lanes:width>265?4:2,bridge:mod(block,6)===3&&t>250&&t<1050};}
+function medianAt(d){const r=road(d),t=mod(d,1500);return r.lanes===4&&!r.bridge&&t>280&&t<1160&&!events.some(e=>['uturn','junction','merge','signal','rightturn','school'].includes(e.kind)&&Math.abs(e.d-d)<110)}
+function encounterPose(e){const r=road(e.d),t=e.timer;
+ if(e.kind==='rightturn'){const q=smooth(clamp((t-1)/2.2,0,1));return {x:lerp(laneX(e.d,'same',r.lanes===4?1:0),r.right+70,q),d:e.d+65-Math.sin(q*Math.PI)*65,angle:q*Math.PI/2,opposite:false};}
+ if(e.kind==='oncoming'){const q=clamp(t/5,0,1);return {x:r.m+r.width*.25-(r.width*.25+35)*Math.sin(q*Math.PI),d:e.d+200-t*85,angle:0,opposite:true};}
+ const q=clamp((t-1)/4,0,1);return {x:lerp(r.m+38,r.m-38,smooth(q)),d:e.d-Math.sin(q*Math.PI)*65+Math.max(0,t-5)*75,angle:Math.PI*q,opposite:true};
+}
 function laneX(d,side,lane=0){const r=road(d);return r.m+(side==='same'?-1:1)*r.width*(r.lanes===4?(lane===0?.375:.125):.25)}
 function weather(){if(sessionType==='mission'&&!tutorial)return STAGES[selectedStage].weather;const stage=Math.floor(z/3600);return stage%3===1?'rain':stage%3===2?'night':'day'}
 function score(){return Math.max(0,Math.floor(travelled/16)+points-penalty)}
@@ -32,12 +38,14 @@ function collision(reason){if(inv||mode!=='play'||tutorial)return;stats.crashes+
 function risk(e,key,amount,message){if(e[key])return;e[key]=true;e.failed=true;penalty+=amount;say(message+' • −'+amount,3)}
 function award(e,amount){if(e.awarded||e.failed)return;e.awarded=true;points+=amount;stats.safe++;if(e.kind==='school')stats.school++;if(e.kind==='signal')stats.signals++;if(e.wait>.6)stats.stops++;say(e.kind==='school'?'หยุดให้เด็กข้าม +50':e.kind==='signal'?'ตรวจทางแยกก่อนออก +60':e.kind==='puddle'||e.kind==='broken'?'ผ่านพื้นผิวเสี่ยงโดยไม่กดเร่ง +25':'คาดการณ์และผ่านอย่างปลอดภัย +25')}
 function spawnEvent(d){
- const sequence=['school','signal','dog','door','merge','junction','pothole','cone','broken'];
- const choices=sessionType==='mission'?STAGES[selectedStage].hazards:sequence;let kind=choices[eventsMade++%choices.length];if(weather()==='rain'&&eventsMade%3===0)kind='puddle';
+ const sequence=['rightturn','school','oncoming','junction','uturn','merge','signal','dog','junction','door','merge','pothole','cone','broken'];
+ const choices=sessionType==='mission'?[...STAGES[selectedStage].hazards,'rightturn','oncoming','junction','merge','uturn']:sequence;let kind=choices[eventsMade++%choices.length];if(weather()==='rain'&&eventsMade%3===0)kind='puddle';
  // Reserve a distinct encounter area, including moving vehicles already on their way.
  const lastEvent=events.reduce((m,e)=>Math.max(m,e.d),-Infinity);d=Math.max(d,lastEvent+620);
- while(cars.some(c=>Math.abs(c.d-d)<260))d+=180;
- if(mission&&Math.abs(d-mission.d)<430)return mission.d+500;events.push({kind,d,state:'idle',timer:0,wait:0,failed:false,side:Math.random()<.5?-1:1,crossX:0,phase:0,truckX:0});return d;
+ while(cars.some(c=>Math.abs(c.d-d)<330))d+=180;
+ if(kind==='uturn'){while(road(d).lanes!==4||road(d).bridge||mod(d,1500)<350||mod(d,1500)>1050||cars.some(c=>Math.abs(c.d-d)<330))d+=80;}
+ if(kind==='oncoming'&&road(d).lanes===4)kind='junction';
+ if(mission&&d>mission.d-430)return mission.d+500;events.push({kind,d,state:'idle',timer:0,wait:0,failed:false,side:Math.random()<.5?-1:1,crossX:0,phase:0,truckX:0,present:kind!=='uturn'||Math.random()<.6});return d;
 }
 let eventsMade=0;
 const resetBase=reset;reset=function(train=false){eventsMade=0;resetBase(train)};
@@ -46,7 +54,7 @@ function carPosition(c){let base=laneX(c.d,c.side,c.lane);if(c.side==='same')for
 function spawnTraffic(d){const side=Math.random()<.52?'same':'opposite',r=road(d),lane=r.lanes===4?(Math.random()<.5?0:1):0;if(mission&&Math.abs(d-mission.d)<400)return;if(events.some(e=>Math.abs(e.d-d)<330))return;if(cars.some(c=>c.side===side&&Math.abs(carPosition(c)-laneX(d,side,lane))<52&&Math.abs(c.d-d)<170))return;cars.push({d,side,lane,v:side==='same'?65+Math.random()*35:75+Math.random()*45,color:palette[Math.floor(Math.random()*palette.length)],brake:false,clock:0,trigger:4+Math.random()*5,blink:Math.random()<.3})}
 function updateEvents(dt,oldD,pd){
  for(const e of events){const gap=e.d-pd,r=road(e.d),stop=e.d-75;const trafficClearing=cars.some(c=>Math.abs(c.d-e.d)<135);
-  if(e.state==='idle'&&gap<390){e.state='active';e.timer=0;e.crossX=e.side<0?r.left-45:r.right+45;e.truckX=r.left-130;if(e.kind==='school')say('โรงเรียน • เด็กอาจออกจากหลังรถจอด');else if(e.kind==='signal')say('ไฟแดง • หยุดหลังเส้น');else if(e.kind==='door')say('รถจอด • เผื่อระยะประตูเปิด');else if(e.kind==='merge')say('ทางร่วม • ระวังรถรวมเข้าช่องทาง');else if(e.kind==='junction')say('ทางแยกไม่มีสัญญาณ • ชะลอและมองซ้ายขวา');else if(e.kind==='dog')say('ริมทางมีสุนัข • เตรียมเบรก');else if(e.kind==='puddle')say('น้ำขังบนถนน • ไม่กดเร่งขณะผ่าน เพื่อรับโบนัส');else if(e.kind==='broken')say('ถนนชำรุด • ไม่กดเร่งขณะผ่าน เพื่อรับโบนัส')}
+  if(e.state==='idle'&&gap<390){e.state='active';e.timer=0;e.crossX=e.side<0?r.left-45:r.right+45;e.truckX=r.left-130;if(e.kind==='school')say('โรงเรียน • เด็กอาจออกจากหลังรถจอด');else if(e.kind==='signal')say('ไฟแดง • หยุดหลังเส้น');else if(e.kind==='door')say('รถจอด • เผื่อระยะประตูเปิด');else if(e.kind==='merge')say('ทางร่วม • ระวังรถรวมเข้าช่องทาง');else if(e.kind==='junction')say('ทางแยกไม่มีสัญญาณ • ชะลอและมองซ้ายขวา');else if(e.kind==='dog')say('ริมทางมีสุนัข • เตรียมเบรก');else if(e.kind==='rightturn')say('รถหน้าเปิดไฟเลี้ยวขวา • เตรียมเบรก');else if(e.kind==='oncoming')say('รถสวนกินเลน • ชะลอและเผื่อช่องหนี');else if(e.kind==='uturn')say('จุดกลับรถ • มองรถรอกลับและเตรียมเบรก');else if(e.kind==='puddle')say('น้ำขังบนถนน • ไม่กดเร่งขณะผ่าน เพื่อรับโบนัส');else if(e.kind==='broken')say('ถนนชำรุด • ไม่กดเร่งขณะผ่าน เพื่อรับโบนัส')}
   if(e.state==='idle'||e.state==='done')continue;
   if(speed<2&&gap>80&&gap<300)e.wait+=dt;
   if(e.kind==='school'){
@@ -81,6 +89,13 @@ function updateEvents(dt,oldD,pd){
    if((gap<300||e.timer>0)&&(!trafficClearing||e.timer>0))e.timer+=dt;e.crossX=r.right+90-e.timer*100;
    if(e.timer>0&&Math.abs(gap)<36&&Math.abs(x-e.crossX)<64&&!e.failed){e.failed=true;collision('รถข้ามทางแยก')}
    if(e.crossX<r.left-100)e.state='done';
+  }else if(['rightturn','oncoming','uturn'].includes(e.kind)){
+   if(e.kind==='uturn'&&!e.present){if(gap< -130)e.state='done';continue;}
+   const trigger=e.kind==='oncoming'?370:e.kind==='uturn'?240:160;
+   if((gap<trigger||e.timer>0)&&(!trafficClearing||e.timer>0))e.timer+=dt;
+   const pose=encounterPose(e);e.crossX=pose.x;e.carD=pose.d;
+   if(e.timer>0&&Math.abs(pose.d-pd)<52&&Math.abs(pose.x-x)<36&&!e.contacted){e.contacted=true;e.failed=true;collision(e.kind==='oncoming'?'รถสวนกินเลน':e.kind==='uturn'?'รถกลับรถตัดหน้า':'รถหน้าเลี้ยวขวาตัดแนวทาง');}
+   if(e.timer>(e.kind==='rightturn'?4.5:e.kind==='oncoming'?5.5:8)){e.state='done';if(!e.failed)award(e,25);}
   }else if(e.kind==='puddle'||e.kind==='broken'){
    const hx=laneX(e.d,'same',0),inside=Math.abs(gap)<(e.kind==='puddle'?70:60)&&Math.abs(x-hx)<(e.kind==='puddle'?42:38);
    if(inside){e.surfaceTouched=true;if(input.accel||keys.ArrowUp){e.surfaceBoosted=true}}
@@ -94,6 +109,7 @@ function eventBlocksTraffic(e){
  if(e.kind==='school')return e.state==='active'&&e.timer<6;
  if(e.kind==='signal')return e.state==='active'&&(e.phase===0||e.truckX<road(e.d).right+140);
  if(e.kind==='dog')return e.state==='active';
+ if(['rightturn','oncoming','uturn'].includes(e.kind))return e.state==='active'&&(e.kind!=='uturn'||e.present);
  if(e.kind==='junction')return e.state==='active';
  if(e.kind==='merge')return e.state==='active'&&e.timer<6;
  if(e.kind==='door')return e.state==='active'&&e.timer<3.8;
@@ -104,7 +120,7 @@ function updateTraffic(dt,np){
   const dir=side==='same'?1:-1,ordered=cars.filter(c=>c.side===side).sort((a,b)=>dir*(b.d-a.d));
   for(let i=0;i<ordered.length;i++){
    const c=ordered[i];c.clock+=dt;const old=c.d;
-   const inJunction=events.some(e=>['signal','junction','merge'].includes(e.kind)&&Math.abs(e.d-old)<210);
+   const inJunction=events.some(e=>['signal','junction','merge','rightturn','oncoming','uturn'].includes(e.kind)&&Math.abs(e.d-old)<210);
    let target=c.v;c.brake=!inJunction&&c.clock>c.trigger&&c.clock<c.trigger+2.6;if(c.brake)target=Math.max(15,c.v-65);
    let limit=dir===1?Infinity:-Infinity;
    for(const e of events){
@@ -143,6 +159,7 @@ function update(dt){
  }
  const deliverySafe=mission&&Math.abs(np-mission.d)<80&&x>=r.left-56&&x<=r.left+5;
  if((x-13<r.left||x+13>r.right)&&!deliverySafe){offTime+=dt;if(offTime>.65&&!inv){collision(r.bridge?'ชนราวสะพาน':'หลุดถนน');x=laneX(np,'same');offTime=0}}else offTime=0;
+ if(medianAt(np)&&Math.abs(x-r.m)<17&&!inv){collision('ชนเกาะกลางถนน');x=laneX(np,'same',1);}
  if(x>r.m+10){wrongTime+=dt;if(wrongTime>1.5){stats.wrong++;penalty+=20;wrongTime=0;say('เข้าฝั่งรถสวน • −20')}}else wrongTime=0;
  // Spawn hazards with at least enough approach distance to stop, even at the highest density.
  if(np+H*.75+120>nextEvent){nextEvent=spawnEvent(nextEvent)+lerp(1100,620,difficulty())}
@@ -157,7 +174,7 @@ function ellipse(x,y,rx,ry,color){g.fillStyle=color;g.beginPath();g.ellipse(x,y,
 function line(x1,y1,x2,y2,color,width=2){g.strokeStyle=color;g.lineWidth=width;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke()}
 function drawRoad(){const night=weather()==='night',rain=weather()==='rain';g.fillStyle=night?'#304740':'#74955f';g.fillRect(0,0,W,H);
  for(let y=0;y<H;y+=5){const d=playerD()+H*.75-y,r=road(d);if(r.bridge){g.fillStyle='#458998';g.fillRect(0,y,W,5);g.fillStyle='#a5c5c6';g.fillRect(r.left-8,y,r.width+16,5)}
-  g.fillStyle=rain?'#46565b':'#555d60';g.fillRect(r.left,y,r.width,6);g.fillStyle='#f2e9c6';g.fillRect(r.m-3,y,2,6);g.fillRect(r.m+1,y,2,6);g.fillStyle='#dce4da';g.fillRect(r.left+3,y,2,6);g.fillRect(r.right-5,y,2,6);
+  g.fillStyle=rain?'#46565b':'#555d60';g.fillRect(r.left,y,r.width,6);g.fillStyle='#f2e9c6';g.fillRect(r.m-3,y,2,6);g.fillRect(r.m+1,y,2,6);if(medianAt(d)){g.fillStyle=mod(d,40)<20?'#ede2a0':'#626768';g.fillRect(r.m-10,y,20,6);g.fillStyle='#597749';g.fillRect(r.m-6,y,12,6);}g.fillStyle='#dce4da';g.fillRect(r.left+3,y,2,6);g.fillRect(r.right-5,y,2,6);
   if(r.lanes===4&&mod(d,70)<35){g.fillRect(r.m-r.width/4-1,y,2,5);g.fillRect(r.m+r.width/4-1,y,2,5)}
   if(r.bridge&&mod(d,45)<7){g.fillStyle='#506e7a';g.fillRect(r.left-10,y,10,6);g.fillRect(r.right,y,10,6)}
  }
@@ -185,25 +202,29 @@ function scenery(){
  const cell=190;for(let k=Math.floor((playerD()-H*.25)/cell)-1;k<Math.floor((playerD()+H*.75)/cell)+2;k++){
   const d=k*cell,r=road(d),y=sy(d);if(r.bridge)continue;
   // Keep roadside structures away from side-road mouths and school buildings.
-  if(events.some(e=>['signal','junction','merge','school'].includes(e.kind)&&Math.abs(e.d-d)<190))continue;
+  if(events.some(e=>['signal','junction','merge','school','rightturn','oncoming','uturn'].includes(e.kind)&&Math.abs(e.d-d)<190))continue;
   for(const side of[-1,1]){const seed=sceneHash(k*73+(side===1?937:23)),district=sessionType==='mission'?STAGES[selectedStage].theme:mod(Math.floor(d/1400),6),types=[['mall','market','building'],['village','park','building'],['market','station','building'],['park','village','building'],['station','mall','building'],['building','market','village']][district],type=types[seed%types.length];
    const w=64+seed%25,bx=side<0?r.left-w-14:r.right+14;
    if(seed%7===0)tree(side<0?r.left-36:r.right+40,y-20,seed);else landmark(bx,y-80,w,type,seed);
   }
  }
 }
-function car(cx,cy,color,reverse=false,braking=false,blink=false,truck=false,angle=0){g.save();g.translate(cx,cy);g.rotate(angle+(reverse?Math.PI:0));const w=truck?52:42,h=truck?105:78;rr(-w/2+4,-h/2+7,w,h,9,'#0005');rr(-w/2-3,-h/2+12,7,17,3,'#17242a');rr(w/2-4,-h/2+12,7,17,3,'#17242a');rr(-w/2-3,h/2-29,7,17,3,'#17242a');rr(w/2-4,h/2-29,7,17,3,'#17242a');rr(-w/2,-h/2,w,h,8,color);if(truck){rr(-w/2+4,-h/2+35,w-8,h-40,3,'#ddd5bc');for(let i=0;i<5;i++)line(-w/2+5,-h/2+42+i*11,w/2-5,-h/2+42+i*11,'#b5aa94',1)}else{rr(-w/2+5,-h/2+22,w-10,h*.42,7,'#c1d9df');rr(-w/2+6,-h/2+37,w-12,22,4,color)}rr(-w/2+5,-h/2+7,w-10,14,3,'#7babbc');rr(-w/2+4,-h/2+2,9,4,2,'#fff1b4');rr(w/2-13,-h/2+2,9,4,2,'#fff1b4');rr(-w/2+4,h/2-7,9,4,2,braking?'#ff2424':'#b52a3a');rr(w/2-13,h/2-7,9,4,2,braking?'#ff2424':'#b52a3a');if(braking){ellipse(-w/2+8,h/2+1,10,5,'#ff343445');ellipse(w/2-8,h/2+1,10,5,'#ff343445')}if(blink&&Math.sin(time*9)>0)rr(-w/2-1,h/2-13,6,6,2,'#ffb32c');g.restore()}
+function car(cx,cy,color,reverse=false,braking=false,blink=false,truck=false,angle=0,blinkSide=-1){g.save();g.translate(cx,cy);g.rotate(angle+(reverse?Math.PI:0));const w=truck?52:42,h=truck?105:78;rr(-w/2+4,-h/2+7,w,h,9,'#0005');rr(-w/2-3,-h/2+12,7,17,3,'#17242a');rr(w/2-4,-h/2+12,7,17,3,'#17242a');rr(-w/2-3,h/2-29,7,17,3,'#17242a');rr(w/2-4,h/2-29,7,17,3,'#17242a');rr(-w/2,-h/2,w,h,8,color);if(truck){rr(-w/2+4,-h/2+35,w-8,h-40,3,'#ddd5bc');for(let i=0;i<5;i++)line(-w/2+5,-h/2+42+i*11,w/2-5,-h/2+42+i*11,'#b5aa94',1)}else{rr(-w/2+5,-h/2+22,w-10,h*.42,7,'#c1d9df');rr(-w/2+6,-h/2+37,w-12,22,4,color)}rr(-w/2+5,-h/2+7,w-10,14,3,'#7babbc');rr(-w/2+4,-h/2+2,9,4,2,'#fff1b4');rr(w/2-13,-h/2+2,9,4,2,'#fff1b4');rr(-w/2+4,h/2-7,9,4,2,braking?'#ff2424':'#b52a3a');rr(w/2-13,h/2-7,9,4,2,braking?'#ff2424':'#b52a3a');if(braking){ellipse(-w/2+8,h/2+1,10,5,'#ff343445');ellipse(w/2-8,h/2+1,10,5,'#ff343445')}if(blink&&Math.sin(time*9)>0)rr(blinkSide>0?w/2-5:-w/2-1,h/2-13,6,6,2,'#ffb32c');g.restore()}
 function dog(dx,dy,dir,t){g.save();g.translate(dx,dy);g.scale(dir,1);const gait=Math.sin(t*17);ellipse(0,10,25,10,'#0003');line(-15,-3,-28,-14,'#a96f45',5);for(let i=0;i<4;i++){const ax=i<2?-13:10,shift=(i%2?1:-1)*gait*9;line(ax,4,ax+shift,19,'#7c4f33',5)}ellipse(-2,-1,22,10,'#b68252');ellipse(21,-6,11,11,'#c5945e');ellipse(23,-15,5,9,'#805137');ellipse(31,-4,8,5,'#c5945e');ellipse(36,-5,3,3,'#202627');ellipse(25,-9,2,2,'#191e23');g.restore()}
 function person(px,py,t){const gait=Math.sin(t*10)*7;ellipse(px,py+15,11,6,'#0003');line(px-4,py+7,px-7+gait,py+19,'#304b79',5);line(px+4,py+7,px+7-gait,py+19,'#304b79',5);line(px-6,py-7,px-13-gait*.4,py+3,'#d7a781',4);line(px+6,py-7,px+13+gait*.4,py+3,'#d7a781',4);rr(px-8,py-11,16,22,5,'#f3c541');ellipse(px,py-17,8,9,'#d7a781');ellipse(px,py-22,8,5,'#38332e')}
 function crossing(e,y,r){g.fillStyle='#eeeeda';for(let a=r.left+8;a<r.right-10;a+=19)g.fillRect(a,y-23,11,46);g.fillRect(r.left,y+75,r.width/2,5)}
 function drawEvents(){for(const e of events){const y=sy(e.d),r=road(e.d);if(y<-180||y>H+220)continue;
- if(['signal','junction','merge'].includes(e.kind)){g.fillStyle='#535d61';if(e.kind==='merge'){g.beginPath();g.moveTo(0,y+100);g.lineTo(r.left+15,y+45);g.lineTo(r.left+15,y-45);g.lineTo(0,y+10);g.fill();line(0,y+96,r.left,y+43,'#deded1',3)}else{g.fillRect(0,y-51,W,102);line(0,y,r.left,y,'#e0d9aa',2);line(r.right,y,W,y,'#e0d9aa',2)}}
+ if(['signal','junction','merge','rightturn'].includes(e.kind)){g.fillStyle='#535d61';if(e.kind==='merge'){g.beginPath();g.moveTo(0,y+100);g.lineTo(r.left+15,y+45);g.lineTo(r.left+15,y-45);g.lineTo(0,y+10);g.fill();line(0,y+96,r.left,y+43,'#deded1',3)}else{g.fillRect(0,y-51,W,102);line(0,y,r.left,y,'#e0d9aa',2);line(r.right,y,W,y,'#e0d9aa',2)}}
  if(e.kind==='school'){crossing(e,y,r);building(r.left-102,y-150,82,90,2,3);car(r.left-10,y-48,'#65859b');rr(r.left-36,y+60,25,25,3,'#367fc0');g.fillStyle='#fff';g.font='bold 15px sans-serif';g.textAlign='center';g.fillText('ช้า',r.left-23,y+78);if(e.timer>0&&e.state!=='done')for(let i=0;i<5;i++)person(e.crossX-i*24,y+(i%2?10:-8),e.timer+i)}
  else if(e.kind==='signal'){g.fillStyle='#e8e8d9';g.fillRect(r.left,y+75,r.width/2,5);rr(r.left-30,y+70,24,66,5,'#202b2e');for(let i=0;i<3;i++)ellipse(r.left-18,y+82+i*21,7,7,i===0&&e.phase===0?'#ff3535':i===2&&e.phase===1?'#58ed8e':'#49545b');if(e.phase===1&&e.state!=='done')car(e.truckX,y,'#c58343',false,false,false,true,Math.PI/2)}
  else if(e.kind==='dog'){if(e.timer>0&&e.state!=='done')dog(e.crossX,y,e.side<0?1:-1,e.timer);else dog(e.side<0?r.left-28:r.right+28,y,e.side<0?1:-1,0)}
  else if(e.kind==='door'){car(r.left+27,y,'#6b8b9e');if(e.timer>.6&&e.timer<3.8){g.save();g.translate(r.left+48,y-11);g.rotate(-.7);rr(0,0,44,11,3,'#7298af');line(4,1,39,1,'#b8d1de',3);g.restore()}}
  else if(e.kind==='merge'){if(e.timer>0&&e.state!=='done')car(e.crossX,sy(e.carD||e.d),'#c3b27b',false,false,true,false,-.4*(1-clamp(e.timer/3.5,0,1)))}
  else if(e.kind==='junction'){if(e.timer>0&&e.state!=='done')car(e.crossX,y,'#6a89b2',false,false,false,false,-Math.PI/2);rr(r.left-30,y+75,25,25,4,'#d8bd43');g.fillStyle='#262c2e';g.textAlign='center';g.font='bold 18px sans-serif';g.fillText('+',r.left-17,y+94)}
+ else if(['rightturn','oncoming','uturn'].includes(e.kind)){
+  if(e.kind==='uturn'){rr(r.m-12,y-100,24,200,3,'#555d60');rr(r.right+14,y+55,32,34,4,'#367fc0');g.fillStyle='#fff';g.font='bold 24px sans-serif';g.textAlign='center';g.fillText('↶',r.right+30,y+81);}
+  if(e.state!=='done'&&(e.kind!=='uturn'||e.present)){const pose=encounterPose(e);car(pose.x,sy(pose.d),e.kind==='oncoming'?'#bd665a':e.kind==='uturn'?'#dec079':'#80a590',pose.opposite,e.timer<1,true,false,pose.angle,1);}
+ }
  else if(e.kind==='puddle'){const hx=laneX(e.d,'same',0);ellipse(hx,y,44,70,'#334d5b');ellipse(hx-3,y-3,38,64,'#7599a9b8');for(let i=0;i<5;i++){const py=y-45+i*23;line(hx-24,py,hx+18,py-3,'#c7e3e877',2)}line(hx-23,y+29,hx+21,y+24,'#d1edf480',2)}
  else if(e.kind==='broken'){const hx=laneX(e.d,'same',0);rr(hx-39,y-62,78,124,9,'#8b8376');for(let i=0;i<9;i++){const a=hx-30+mod(i*23,58),b=y-52+i*13;line(a,b,a+13,b+8,'#373f40',3);line(a+13,b+8,a+6,b+15,'#373f40',2);ellipse(a-4,b+6,3,2,'#b0a693')}}
  else if(e.kind==='pothole'){const hx=laneX(e.d,'same',0);ellipse(hx,y,33,20,'#a3a096');ellipse(hx,y-1,27,15,'#272f33');ellipse(hx-5,y+2,17,8,'#131e25')}
