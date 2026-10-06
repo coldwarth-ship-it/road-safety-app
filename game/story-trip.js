@@ -43,7 +43,7 @@ async function accountScreen(){
  if(CLOUD_CONFIG)try{await getCloud();if(cloudUser){const data=await cloudCall('progress');if(data.profile){profile={...blankProfile(),...data.profile};storeProfile()}if($('accountStatus'))$('accountStatus').textContent=cloudStatus()}}catch{if($('accountStatus'))$('accountStatus').textContent='ติดต่อระบบไม่ได้ • ผลในเครื่องยังอยู่'}
 }
 const originalReset=reset;
-reset=function(train=false){trip=null;ambulance=null;nextAmbulance=playerD()+3500;originalReset(train);if(!train){if(sessionType==='free')trip={route:'community',distance:{community:0,highway:0},next:1500,station:null,recovered:0,completed:false};showStory(0,resumeDriving)}nextAmbulance=playerD()+3500};
+reset=function(train=false){trip=null;ambulance=null;nextAmbulance=playerD()+3500;originalReset(train);if(!train){if(sessionType==='free')trip={route:'community',distance:{community:0,highway:0},next:1500,station:null,recovered:0,completed:false};updateMissionText();if(trip)say('📦 นำพัสดุปริศนาไปเมืองเซลตี้ • ขับปลอดภัยและพักทุก 1,500 คะแนน',5);showStory(0,resumeDriving)}nextAmbulance=playerD()+3500};
 const originalScore=score;
 score=function(){return trip?Math.min(TRIP_LIMIT,Math.max(0,Math.floor(Math.floor(trip.distance.community)/4+Math.floor(trip.distance.highway)/8)+points-penalty)):originalScore()};
 difficulty=function(){return clamp(score()/(trip?9000:1800),0,1)};
