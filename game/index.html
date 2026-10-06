@@ -151,7 +151,7 @@ function updateTraffic(dt,np){
 function update(dt){
  if(mode==='countdown'){countdown-=dt;if(countdown<=0){mode='play';say('ไปต่ออย่างปลอดภัย',2)}return}if(mode!=='play')return;
  time+=dt;inv=Math.max(0,inv-dt);toastTime-=dt;
- const pd=playerD(),oldRoad=road(pd),wet=weather()==='rain',br=input.brake||keys.ArrowDown||keys[' '],ac=input.accel||keys.ArrowUp;
+ const pd=playerD(),oldRoad=road(pd),wet=roadIsWet(),br=input.brake||keys.ArrowDown||keys[' '],ac=input.accel||keys.ArrowUp;
  if(br)speed=Math.max(0,speed-(wet?190:310)*dt);else speed=lerp(speed,ac?210:95,Math.min(1,dt*1.4));
  const stopAt=tripStopLimit();if(stopAt!==null){const remaining=stopAt-pd;speed=Math.min(speed,Math.sqrt(Math.max(0,2*(wet?190:310)*remaining)));}
  if(input.left||keys.ArrowLeft||keys.a||keys.A)x-=155*dt;if(input.right||keys.ArrowRight||keys.d||keys.D)x+=155*dt;x=clamp(x,10,W-10);
@@ -285,7 +285,7 @@ async function bootstrapCloud(){if(!CLOUD_CONFIG)return;try{await getCloud();if(
 if(typeof window.addEventListener==='function')window.addEventListener('online',()=>syncOutbox());
 
 $('game').addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea'))e.preventDefault()});
-</script><script src="story-trip.js?v=6"></script><script src="safety.js?v=6"></script><script>
+</script><script src="story-trip.js?v=7"></script><script src="safety.js?v=7"></script><script>
 loadProfile();resize();menu();bootstrapCloud();function loop(t){let dt=Math.min(.06,(t-last)/1000);last=t;while(dt>0){const step=Math.min(dt,.016);update(step);dt-=step}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 // Local test hook: no network, personal data or telemetry.
 </script></body></html>

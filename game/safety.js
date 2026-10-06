@@ -1,7 +1,11 @@
 /* Continuous world coordinates; encounters never remove visible traffic to make room. */
 'use strict';
 let deviceMode=storage('ssar_device','phone'),warningPriority=0,lastAnimal=0;
-const baseResize=resize,baseRoad=road,baseMedian=medianAt,baseSay=say;
+const baseResize=resize,baseRoad=road,baseMedian=medianAt,baseSay=say,baseWeather=weather;
+function roadSurfaceWeather(d=playerD()){const w=baseWeather();if(sessionType==='mission')return w;return ['day','rain','afterRain'][mod(Math.floor((d-H*.25)/3600),3)]}
+function roadIsWet(){return ['rain','afterRain'].includes(roadSurfaceWeather())}
+function movementDistance(v=speed){const decel=roadIsWet()?190:310;return clamp(v*1.1+v*v/(2*decel)+30,150,430)}
+function motionReady(e,gap){if(e.moving||e.timer>0)return true;const trafficNear=cars.some(c=>c.side==='same'&&c.d>playerD()&&e.d-c.d>=0&&e.d-c.d<=movementDistance(c.actualV||c.v));if(gap<=movementDistance()||trafficNear){e.moving=true;e.startGap=gap;return true}return false}
 const VEHICLES={door:{w:44,h:11},sedan:{w:42,h:78},pickup:{w:42,h:82},van:{w:44,h:90},truck:{w:52,h:105},ufo:{w:46,h:64}};
 function bindDeviceSettings(){
  $('deviceMode').value=deviceMode;
@@ -20,7 +24,7 @@ laneX=function(d,side,lane=0){const r=road(d),four=smooth(clamp((r.width-230)/70
 function warningLevel(s){return /หัวใจ|ชน|หลุด|−1/.test(s)?3:/พยาบาล|ไฟแดง|ไฟเขียว|ระวัง|เตรียม|ข้าม|ถอย|กลับรถ|อุกกาบาต|จุดพัก|จอด/.test(s)?2:/\+\d/.test(s)?0:1}
 say=function(s,d=3,priority=warningLevel(s)){if(toastTime>0&&priority<warningPriority)return;warningPriority=priority;baseSay(s,d);$('tips').dataset.priority=String(priority)};
 collision=function(reason){if(inv||mode!=='play'||tutorial)return;stats.crashes++;lives--;penalty+=35;inv=2;speed=Math.min(speed,30);say(reason+' • −1 หัวใจ • −35 คะแนน',4,3);soundCue('hit');if(prefs.vibration&&navigator.vibrate)navigator.vibrate(90);if(lives<=0)finish()};
-function approachDistance(){const reaction=speed*2.4,braking=speed*speed/(2*(weather()==='rain'?190:310));return Math.max(390,reaction+braking+90)}
+function approachDistance(){const reaction=speed*2.4,braking=speed*speed/(2*(roadIsWet()?190:310));return Math.max(390,reaction+braking+90)}
 function braking(){return input.brake||keys.ArrowDown||keys[' ']}
 function movingKind(e){return ['school','signal','dog','cat','snake','reverse','uturn','rightturn','oncoming','junction','merge'].includes(e.kind)}
 function busyEncounter(except=null){return events.some(e=>e!==except&&e.state==='active'&&movingKind(e)&&e.d>playerD()-150&&e.d<playerD()+approachDistance())}
@@ -32,21 +36,21 @@ function vehicleContact(pose,type='sedan'){
 carPosition=function(c){return Number.isFinite(c.x)?c.x:laneX(c.d,c.side,c.lane)};
 function makeTraffic(d,side,lane,extra={}){return {d,side,lane,x:laneX(d,side,lane),v:side==='same'?70+Math.random()*25:75+Math.random()*30,actualV:0,color:palette[Math.floor(Math.random()*palette.length)],type:vehicleType(),clock:0,trigger:4+Math.random()*5,brake:false,blink:false,...extra}}
 spawnTraffic=function(d){
- if(ambulance||playerD()>nextAmbulance||trip?.station&&Math.abs(d-trip.station.d)<900)return;
+ if(trip?.station&&Math.abs(d-trip.station.d)<900)return;
  d=Math.max(d,playerD()+H*.75+130);const r=road(d),side=Math.random()<.52?'same':'opposite',lane=r.lanes===4?(Math.random()<.5?0:1):0;
  if(mission&&Math.abs(d-mission.d)<420||events.some(e=>Math.abs(e.d-d)<400)||cars.some(c=>Math.abs(c.d-d)<190&&Math.abs(carPosition(c)-laneX(d,side,lane))<60))return;
  cars.push(makeTraffic(d,side,lane));
 };
 spawnEvent=function(d){
- if(ambulance||playerD()>nextAmbulance)return playerD()+H*.75+900;
- const sequence=['rightturn','school','oncoming','junction','uturn','reverse','signal','dog','cat','door','merge','snake','pothole','cone','broken'];
+ const sequence=['dog','rightturn','cat','school','oncoming','snake','junction','dog','uturn','reverse','cat','signal','door','snake','merge','pothole','cone','broken'];
  const choices=sessionType==='mission'?[...STAGES[selectedStage].hazards,'reverse','cat','snake','rightturn','oncoming','junction','merge','uturn']:sequence;
- let kind=choices[eventsMade++%choices.length];if(weather()==='rain'&&eventsMade%4===0)kind='puddle';
+ let kind=choices[eventsMade++%choices.length];
  d=Math.max(d,playerD()+H*.75+140,...events.map(e=>e.d+700));
  if(trip?.station&&d<trip.station.d+900)return trip.station.d+1100;
  while(cars.some(c=>Math.abs(c.d-d)<420))d+=190;
  if(kind==='uturn')while(road(d).lanes!==4||road(d).bridge||mod(d,1500)<350||mod(d,1500)>1050)d+=80;
  if(mission&&d>mission.d-430)return mission.d+500;
+ const surfaceWeather=roadSurfaceWeather(d);if(['rain','afterRain'].includes(surfaceWeather)&&eventsMade%3===0&&!['dog','cat','snake'].includes(kind))kind=eventsMade%6===0?'pothole':'puddle';
  events.push({kind,d,state:'idle',timer:0,wait:0,failed:false,side:Math.random()<.5?-1:1,crossX:0,phase:0,truckX:0,present:kind!=='uturn'||Math.random()<.6,type:vehicleType(),peopleSeed:eventsMade,variant:eventsMade%4});return d;
 };
 updateTraffic=function(dt,np){
@@ -63,7 +67,6 @@ updateTraffic=function(dt,np){
    c.x=oldX+roadShift+(c.lateralCue>.9?clamp(lateral,-24*dt,24*dt):0);
    let available=Infinity,target=c.v;if(side==='same'&&np>old&&Math.abs(c.x-x)<60)available=Math.max(0,np-old-24-VEHICLES[c.type].h/2-25);
    for(const e of events)if(eventBlocksTraffic(e)&&dir*(e.d-dir*145-old)>=0)available=Math.min(available,dir*(e.d-dir*145-old));
-   if(trip?.station){const edge=trip.station.d-dir*330;if(dir*(edge-old)>=0)available=Math.min(available,dir*(edge-old))}
    for(let j=0;j<i;j++){const lead=ordered[j],futureD=old+dir*target*1.5,mergeGap=Math.abs(laneX(futureD,side,c.lane)-laneX(futureD,side,lead.lane));if(Math.abs(carPosition(lead)-c.x)<60||mergeGap<60){const gap=dir*(lead.d-old);if(gap>=0)available=Math.min(available,Math.max(0,gap-(VEHICLES[c.type].h+VEHICLES[lead.type||'sedan'].h)/2-25))}}
    const desired=Math.min(target,Math.sqrt(Math.max(0,2*160*available))),v0=c.actualV===undefined?c.v:c.actualV;
    c.actualV=clamp(desired,Math.max(0,v0-180*dt),v0+65*dt);const movement=Math.min(c.actualV*dt,Math.max(0,available));c.d=old+dir*movement;c.brake=c.actualV<c.v*.8;
@@ -90,11 +93,11 @@ function animalContact(e,p){const dy=-(playerD()-p.d),dx=x-p.x;let nodes;
 }
 updateEvents=function(dt,oldD,pd){
  for(const e of events){const gap=e.d-pd,r=road(e.d);
-  if(e.state==='idle'&&gap<approachDistance()&&!ambulance&&!busyEncounter(e)){e.state='active';e.timer=0;eventWarn(e)}
+  if(e.state==='idle'&&gap<approachDistance()&&!busyEncounter(e)){e.state='active';e.timer=0;eventWarn(e)}
   if(e.state!=='active')continue;
   if(speed<2&&gap>80&&gap<300)e.wait+=dt;
   if(e.kind==='school'){
-   e.timer+=dt;
+   if(motionReady(e,gap))e.timer+=dt;
    if(e.timer>0){e.crossX=lerp(r.left-45,r.right+170,clamp(e.timer/6,0,1));if(e.timer<6&&e.wait>.6&&speed>12&&gap>34&&gap<260&&!e.early){stats.early++;risk(e,'early',25,'ออกตัวก่อนคนข้ามพ้นถนน')}
     if(e.timer<6&&oldD<e.d-34&&pd>=e.d-34&&speed>2&&!e.crossViolation){stats.early++;risk(e,'crossViolation',25,'ผ่านทางม้าลายก่อนคนข้ามเสร็จ')}
     for(let i=0;i<5;i++){const dx=e.crossX-i*24,dd=e.d-(i%2?10:-8);if(Math.abs(pd-dd)<43&&Math.abs(x-dx)<20&&!e.contacted){e.contacted=true;e.failed=true;collision('ชนคนข้ามถนน')}}
@@ -108,22 +111,22 @@ updateEvents=function(dt,oldD,pd){
     if(e.truckX>W+90){e.state='done';if(e.wait>.6)award(e,60)}
    }
   }else if(['dog','cat','snake'].includes(e.kind)){
-   e.timer+=dt;const p=animalPosition(e);e.crossX=p.x;if(e.timer>0&&animalContact(e,p)&&!e.contacted){e.contacted=true;e.failed=true;collision(e.kind==='cat'?'ชนแมว':e.kind==='snake'?'ชนงู':'ชนสุนัข')}
+   if(motionReady(e,gap))e.timer+=dt;const p=animalPosition(e);e.crossX=p.x;if(e.timer>0&&animalContact(e,p)&&!e.contacted){e.contacted=true;e.failed=true;collision(e.kind==='cat'?'ชนแมว':e.kind==='snake'?'ชนงู':'ชนสุนัข')}
    if(p.x< -70||p.x>W+70){e.state='done';award(e,25)}
   }else if(e.kind==='door'){
-   e.timer+=dt;const cx=r.left-1;
+   if(motionReady(e,gap))e.timer+=dt;const cx=r.left-1;
    const body=vehicleContact({x:cx,d:e.d},'sedan'),door=e.timer>.8&&e.timer<4.5&&vehicleContact({x:cx+39,d:e.d+11,angle:-.7},'door');
    if((body||door)&&!e.contacted){e.contacted=true;e.failed=true;collision('ชนรถจอดหรือประตูรถ')}
   }else if(['reverse','uturn','rightturn','oncoming'].includes(e.kind)){
-   if(e.kind==='uturn'&&!e.present){e.state='done';continue}e.timer+=dt;
+   if(e.kind==='uturn'&&!e.present){e.state='done';continue}if(motionReady(e,gap))e.timer+=dt;
    const pose=encounterPose(e);e.crossX=pose.x;e.carD=pose.d;if(vehicleContact(pose,e.type||'sedan')&&!e.contacted){e.contacted=true;e.failed=true;collision(e.kind==='reverse'?'ชนรถถอยกลับรถ':e.kind==='oncoming'?'ชนรถสวนกินเลน':e.kind==='uturn'?'ชนรถกลับรถ':'ชนรถเลี้ยวขวา')}
    if(e.kind==='reverse'&&e.timer>=7.3)handoff(e,pose,'opposite',0);else if(e.kind==='uturn'&&e.timer>=5.5)handoff(e,pose,'same',1);else if(e.kind==='oncoming'&&e.timer>=5.2)handoff(e,pose,'opposite',0);else if(e.kind==='rightturn'&&pose.x>W+80){e.state='done';award(e,25)}
   }else if(e.kind==='merge'){
-   e.timer+=dt;const q=smooth(clamp((e.timer-1.2)/3.5,0,1));e.crossX=lerp(r.left-100,laneX(e.d,'same',0),q);e.carD=e.d+Math.max(0,e.timer-4.7)*65;
+   if(motionReady(e,gap))e.timer+=dt;const q=smooth(clamp((e.timer-1.2)/3.5,0,1));e.crossX=lerp(r.left-100,laneX(e.d,'same',0),q);e.carD=e.d+Math.max(0,e.timer-4.7)*65;
    if(vehicleContact({x:e.crossX,d:e.carD,angle:-.4*(1-q)},e.type||'sedan')&&!e.contacted){e.contacted=true;e.failed=true;collision('ชนรถจากทางร่วม')}
    if(e.timer>=4.7)handoff(e,{x:e.crossX,d:e.carD},'same',0);
   }else if(e.kind==='junction'){
-   e.timer+=dt;e.crossX=W+70-Math.max(0,e.timer-1.3)*105;
+   if(motionReady(e,gap))e.timer+=dt;e.crossX=W+70-Math.max(0,e.timer-1.3)*105;
    if(vehicleContact({x:e.crossX,d:e.d,angle:-Math.PI/2},e.type||'sedan')&&!e.contacted){e.contacted=true;e.failed=true;collision('ชนรถข้ามแยก')}
    if(e.crossX< -80){e.state='done';award(e,25)}
   }else if(e.kind==='puddle'||e.kind==='broken'){
@@ -154,21 +157,21 @@ updateMission=function(dt){
 };
 updateAmbulance=function(dt){
  const pd=playerD();
- if(!ambulance&&pd>nextAmbulance&&!trip?.station&&!busyEncounter()&&!events.some(e=>e.state!=='done'&&Math.abs(e.d-pd)<1250)&&!cars.some(c=>Math.abs(c.d-pd)<800)){
+ if(!ambulance&&pd>nextAmbulance&&!trip?.station&&!busyEncounter()&&!events.some(e=>e.state==='active'&&Math.abs(e.d-pd)<380)&&!cars.some(c=>Math.abs(c.d-pd)<220)){
   const r=road(pd),lane=r.lanes===4&&Math.random()<.5?1:0,offset=r.lanes===4?laneX(pd,'same',lane)-r.m:-18;
-  ambulance={d:pd-450,t:0,lane,offset,x:r.m+offset,failed:false,blocked:0,actualV:0};nextEvent=Math.max(nextEvent,pd+H*.75+1700);nextTraffic=Math.max(nextTraffic,pd+H*.75+1700);nextAmbulance=pd+4800;
+  ambulance={d:pd-300,t:0,lane,offset,x:r.m+offset,failed:false,blocked:0,actualV:0};nextAmbulance=pd+4800;
   say('🚑 ด้านหลัง '+(r.lanes===4?(lane===0?'เลนซ้าย ⬅ หลบทางขวาในฝั่งเรา':'เลนขวา ➡ หลบชิดซ้าย'):'เลนขวาใกล้เส้นกลาง ➡ หลบชิดซ้าย'),7,2);
  }
  const a=ambulance;if(!a)return;a.t+=dt;
- // Hold one announced lateral offset; narrow sections may slow it but never teleport it.
- const own=road(a.d),target=own.m+clamp(a.offset,-own.width/2+26,-18);a.x+=clamp(target-a.x,-25*dt,25*dt);
- if(a.t<5){a.d+=Math.max(0,speed)*dt;return}
- const gap=pd-a.d,blocked=gap>65&&gap<150&&Math.abs(x-a.x)<45;
- const desired=blocked?Math.max(0,speed):Math.max(120,speed+55);a.actualV=lerp(a.actualV,desired,Math.min(1,dt*2));
- if(blocked){a.blocked+=dt;if(a.blocked>2&&!a.blockedOnce){a.blockedOnce=true;a.failed=true;penalty+=25;say('กีดขวางรถพยาบาล • −25 คะแนน • ให้ทางเมื่อปลอดภัย',4,2)}}
- a.d+=Math.min(a.actualV*dt,blocked?Math.max(0,gap-75):Infinity);
- if(vehicleContact({x:a.x,d:a.d},'truck')&&!a.contacted){a.contacted=true;a.failed=true;collision('ชนรถพยาบาล')}
+ // Keep the announced corridor, following road bends continuously even while overtaking.
+ const own=road(a.d),four=smooth(clamp((own.width-230)/70,0,1)),corridor=a.offset< -40?lerp(-own.width/2+26,-own.width*.375,four):lerp(-18,-own.width*.125,four),target=own.m+corridor;a.x+=clamp(target-a.x,-25*dt,25*dt);
  if(prefs.sound&&Math.floor(a.t*2)!==a.beat){a.beat=Math.floor(a.t*2);soundCue(a.beat%2?'sirenHi':'sirenLo')}
+ if(a.t<3){a.d+=Math.max(0,speed)*dt;a.x+=road(a.d).m-own.m;return}
+ const gap=pd-a.d,blocked=gap>65&&gap<150&&Math.abs(x-a.x)<45;
+ const desired=Math.max(340,speed+260);a.actualV=desired;
+ if(blocked){a.blocked+=dt;if(a.blocked>.3&&!a.blockedOnce){a.blockedOnce=true;a.failed=true;penalty+=25;say('กีดขวางรถพยาบาล • −25 คะแนน • ให้ทางเมื่อปลอดภัย',4,2)}}
+ a.d+=a.actualV*dt;a.x+=road(a.d).m-own.m;
+ if(vehicleContact({x:a.x,d:a.d},'truck')&&!a.contacted){a.contacted=true;a.failed=true;collision('ชนรถพยาบาล')}
  if(a.d-pd>H*.75+120){if(!a.failed){points+=25;stats.safe++;say('ให้ทางรถพยาบาลอย่างปลอดภัย +25',4,0)}ambulance=null}
 };
 function drawVehicle(pose,type,color,brake=false,blink=false,blinkSide=1){
@@ -206,6 +209,6 @@ drawEvents=function(){
 drawClues=function(){for(const e of events){if(trip&&score()>4000&&e.kind==='broken'){const y=sy(e.d),r=road(e.d);ellipse(laneX(e.d,'same'),y,33,36,'#423746');ellipse(laneX(e.d,'same')-5,y-6,15,14,'#e68647');line(r.right+20,y-135,r.right+50,y-170,'#ffc577',4)}}for(const e of events){if(e.state!=='active'||e.d-playerD()<80)continue;if(['dog','cat','snake'].includes(e.kind)&&e.timer===0){const r=road(e.d),px=e.side<0?r.left-50:r.right+50;line(px-10,sy(e.d)-28,px-4,sy(e.d)-36,'#ffe09a',2)}}};
 drawDelivery=function(){originalDrawDelivery();const a=stationArea();if(!a)return;const y=sy(a.d);if(y<-350||y>H+350)return;rr(a.x-a.w/2,y-a.h/2,a.w,a.h,12,'#315f69');g.strokeStyle='#fff4b7';g.lineWidth=4;g.strokeRect(a.x-a.w/2+10,y-a.h/2+10,a.w-20,a.h-20);rr(a.x-145,y-145,290,35,6,'#ffcf65');g.textAlign='center';g.font='bold 15px sans-serif';g.fillStyle='#173039';g.fillText(trip.station.final?'📦 เมืองเซลตี้ • ต้องหยุดส่งพัสดุ':'⛽ จุดพักบังคับ • หยุด 2 วินาที',a.x,y-121);g.fillStyle='#fff';g.font='bold 17px sans-serif';g.fillText('กดเบรกค้าง • อ่านเรื่อง',a.x,y+12);line(a.x-140,y+100,a.x+140,y+100,'#fff1b7',7);if(trip.station.hold>0){g.fillStyle='#ffcf65';g.fillRect(a.x-a.w/2,y+a.h/2+5,a.w*clamp(trip.station.hold/2,0,1),8)}};
 const safetyUpdateBase=update,safetyResetBase=reset,safetyDrawBase=draw;
-reset=function(train=false){warningPriority=0;lastAnimal=0;safetyResetBase(train)};
-update=function(dt){if(toastTime<=0)warningPriority=0;safetyUpdateBase(dt);if(mode==='play'&&ambulance&&toastTime<1)say('🚑 รถพยาบาลด้านหลัง • '+(ambulance.offset< -40?'⬅ เลนซ้าย หลบทางขวาในฝั่งเรา':'➡ เลนขวา หลบชิดซ้าย'),2,2)};
+reset=function(train=false){warningPriority=0;lastAnimal=0;safetyResetBase(train);nextAmbulance=playerD()+2400};
+update=function(dt){if(toastTime<=0)warningPriority=0;safetyUpdateBase(dt);if(mode==='play'&&roadSurfaceWeather()==='afterRain'&&toastTime<=0)$('tips').textContent='หลังฝนตก • ถนนยังเปียก ระวังหลุมและน้ำขัง';if(mode==='play'&&ambulance&&toastTime<1)say('🚑 รถพยาบาลด้านหลัง • '+(ambulance.offset< -40?'⬅ เลนซ้าย หลบทางขวาในฝั่งเรา':'➡ เลนขวา หลบชิดซ้าย'),2,2)};
 draw=function(){g.save();g.setTransform(1,0,0,1,0,0);g.fillStyle='#10221e';g.fillRect(0,0,cv.width,cv.height);g.restore();g.save();g.beginPath();g.rect(0,0,W,H);g.clip();safetyDrawBase();g.restore()};

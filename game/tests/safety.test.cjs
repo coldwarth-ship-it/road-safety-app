@@ -9,7 +9,7 @@ function fresh(){run("sessionType='free';reset(false);mode='play';events=[];cars
 test('continuous lanes across narrowing',()=>{fresh();assert(run(`(()=>{let max=0;for(let d=0;d<12000;d+=.5)max=Math.max(max,Math.abs(laneX(d,'same',0)-laneX(d+.5,'same',0)));return max<1})()`))});
 test('traffic never moves backwards to resolve spacing',()=>{fresh();assert(run(`(()=>{cars=[makeTraffic(800,'same',0,{actualV:80}),makeTraffic(780,'same',0,{actualV:80})];const old=cars.map(c=>c.d);updateTraffic(.016,playerD());return cars.every((c,i)=>c.d>=old[i])})()`))});
 test('ambulance keeps actors and moves continuously',()=>{fresh();assert(run(`(()=>{events=[{kind:'cone',d:1000,state:'idle'}];cars=[makeTraffic(1100,'same',0)];ambulance={d:playerD()-450,t:0,lane:0,offset:-100,x:road(playerD()-450).m-100,actualV:0};const xx=ambulance.x;updateAmbulance(.016);return events.length===1&&cars.length===1&&Math.abs(ambulance.x-xx)<=.401})()`))});
-test('ambulance reserves a quiet interval without deleting obstacles',()=>{fresh();assert(run(`(()=>{nextAmbulance=0;events=[{kind:'cone',d:1000,state:'idle'}];const n=events.length;spawnEvent(1200);spawnTraffic(1300);return events.length===n&&cars.length===0})()`))});
+test('ambulance scheduling does not leave the road empty',()=>{fresh();assert(run(`(()=>{nextAmbulance=0;events=[{kind:'cone',d:1000,state:'idle'}];const n=events.length;spawnEvent(1200);spawnTraffic(1300);return events.length===n+1})()`))});
 test('reverse encounter joins oncoming traffic at its actual position',()=>{fresh();assert(run(`(()=>{const e={kind:'reverse',d:1000,state:'active',timer:7.29,wait:0,type:'sedan'};events=[e];updateEvents(.02);return e.state==='done'&&cars.length===1&&cars[0].side==='opposite'&&Math.abs(cars[0].d-encounterPose(e).d)<1})()`))});
 test('station is centered, wide and cannot be skipped',()=>{fresh();assert(run(`(()=>{trip.station={d:playerD()+1,hold:0,final:false,index:1};const a=stationArea();input.brake=false;speed=0;updateMission(3);return a.x===240&&a.w>=300&&mode==='play'&&tripStopLimit()===trip.station.d})()`))});
 test('station story requires braking and manual departure',()=>{fresh();assert(run(`(()=>{trip.station={d:playerD()+1,hold:0,final:false,index:1};x=240;input.brake=true;speed=0;updateMission(2.1);if(mode!=='story')return false;$('storyNext').onclick();if(mode!=='route')return false;const d=playerD();$('depart').onclick();return mode==='countdown'&&playerD()===d&&trip.next===3000})()`))});
@@ -17,23 +17,27 @@ test('vehicle contact uses rotated shape and rejects distant vehicles',()=>{fres
 test('danger warning is not replaced by score bonus',()=>{fresh();run("toastTime=0;say('⚠️ รถพยาบาลด้านหลัง',5,2);say('หลบผ่าน +25',3,0)");assert.equal(elements.get('tips').dataset.priority,'2')});
 test('phone and desktop layouts resize without changing world position',()=>{fresh();assert(run(`(()=>{const pd=playerD();deviceMode='desktop';innerWidth=1440;innerHeight=900;resize();const ok=H>=640&&scale<=620/480&&Math.abs(playerD()-pd)<.01;deviceMode='phone';innerWidth=390;innerHeight=844;resize();return ok&&Math.abs(playerD()-pd)<.01})()`))});
 test('all render paths include cats, snakes, UFOs and road encounters',()=>{fresh();run("events=['cat','snake','signal','reverse','uturn','oncoming','rightturn','merge','junction','door','broken'].map((kind,i)=>({kind,d:playerD()+150+i*3,state:'active',timer:2,wait:0,side:1,present:true,truckX:0,crossX:100,carD:500,variant:i}));draw();drawVehicle({x:100,d:500},'ufo','#fff')")});
+test('ambulance clears the view quickly even at full boost and never removes actors',()=>{for(const v of [95,210]){fresh();assert(run(`(()=>{speed=${v};const pd=playerD(),r=road(pd);ambulance={d:pd-300,t:0,lane:0,offset:-18,x:road(pd-300).m-18,actualV:0,failed:false,blocked:0};events=[{kind:'cone',d:pd+1400,state:'idle'}];cars=[makeTraffic(pd+1500,'opposite',0)];let elapsed=0;while(ambulance&&elapsed<9){z+=speed*.016;x=road(playerD()).left+16;updateAmbulance(.016);elapsed+=.016}return !ambulance&&elapsed<8.5&&events.length===1&&cars.length===1})()`))}});
+test('animals wait for approach distance, then keep crossing when the rider brakes',()=>{fresh();assert(run(`(()=>{speed=95;const e={kind:'dog',d:playerD()+350,state:'idle',timer:0,wait:0,side:-1};events=[e];updateEvents(.016,playerD(),playerD());if(e.state!=='active'||e.timer!==0)return false;z+=210;updateEvents(.016,playerD(),playerD());const t=e.timer;speed=0;updateEvents(.016,playerD(),playerD());return t>0&&e.timer>t})()`))});
+test('motion distance increases with speed and wet braking distance',()=>{fresh();assert(run(`movementDistance(210)>movementDistance(95)+100&&approachDistance()>movementDistance(95)`))});
+test('animal events make up one third of the regular route sequence',()=>{fresh();assert(run(`(()=>{eventsMade=0;let animals=0;for(let i=0;i<18;i++){spawnEvent(playerD()+800);if(['dog','cat','snake'].includes(events.at(-1).kind))animals++;events=[]}return animals===6})()`))});
+test('puddles and potholes spawn during rain and after rain',()=>{fresh();assert(run(`(()=>{for(const phase of [1,2])for(const count of [8,11]){events=[];eventsMade=count;const d=H*.25+phase*3600+1200;spawnEvent(d);if(events[0].kind!==(count===8?'puddle':'pothole'))return false}return roadSurfaceWeather(H*.25+8000)==='afterRain'})()`))});
+
 for(const device of ['phone','desktop'])test('complete 9000 trip with mandatory stories: '+device,()=>{
  fresh();const result=run(`(()=>{Math.random=(()=>{let seed=42;return ()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296)})();
- deviceMode='${device}';innerWidth=deviceMode==='desktop'?1440:390;innerHeight=deviceMode==='desktop'?900:844;resize();sessionType='free';reset(false);name='ทดสอบระบบ';$('storyNext').onclick();let frames=0,rests=0,stories=1;
- while(mode!=='over'&&frames++<350000){
+ deviceMode='${device}';innerWidth=deviceMode==='desktop'?1440:390;innerHeight=deviceMode==='desktop'?900:844;resize();sessionType='free';reset(false);name='ทดสอบระบบ';$('storyNext').onclick();let frames=0,rests=0,stories=1;const damage=[],hit=collision;collision=reason=>{const old=lives;hit(reason);if(lives<old)damage.push({reason,d:playerD()})};
+ while(mode!=='over'&&frames++<120000){
  if(mode==='story'){stories++;$('storyNext').onclick();continue}if(mode==='route'){rests++;$(rests%2?'highway':'community').onclick();$('depart').onclick();continue}
  if(mode==='countdown'){update(.016);continue}if(mode!=='play')throw Error('unexpected mode '+mode);
  const pd=playerD(),r=road(pd);let target=laneX(pd,'same',0),br=false;
- if(trip.station){const gap=trip.station.d-pd;if(gap<220){target=240;br=gap<25}}
- else{
  const e=events.find(e=>e.state!=='done'&&e.d-pd> -100&&e.d-pd<420);
- if(e){const gap=e.d-pd;if(movingKind(e)&&gap<250)br=true;if(['door','cone','pothole'].includes(e.kind)&&gap<300)target=r.m-20}
- for(const c of cars)if(c.side==='same'&&c.d-pd>0&&c.d-pd<180&&Math.abs(c.x-target)<60)br=true;
- if(ambulance){target=ambulance.offset< -40?r.m-12:r.left+30}
- }
+ if(e){const gap=e.d-pd;if(movingKind(e)&&gap<250&&(e.kind==='signal'||e.timer>0||gap<=movementDistance()+2))br=true;if(['door','cone','pothole'].includes(e.kind)&&gap<300)target=medianAt(pd)?r.m-25:r.m-3}
+ if(trip.station&&trip.station.d-pd<1500){const gap=trip.station.d-pd;target=gap<600?240:r.m-20;if(gap<25)br=true}
+ if(ambulance)target=ambulance.offset< -40?(r.lanes===4?laneX(pd,'same',1):r.m-8):r.left+16;
+ for(const c of cars){const ahead=c.d-pd,cr=road(c.d),future=trip.station&&trip.station.d-c.d<600?240:cr.m+(target-r.m)*cr.width/r.width;if(c.side==='same'&&ahead>0&&ahead<260&&Math.abs(c.x-(ahead<80?x:future))<44)br=true;}
  input.brake=br;input.left=x>target+2;input.right=x<target-2;input.accel=false;update(.016);
  }
- return {score:score(),frames,rests,stories,lives,crashes:stats.crashes,completed:trip.completed,mode,time,pd:playerD(),speed,ambulance:ambulance&&{d:ambulance.d,x:ambulance.x,t:ambulance.t},actors:events.filter(e=>e.state!=='done').slice(0,2),cars:cars.slice(0,2)};})()`);
+ collision=hit;return {damage,score:score(),frames,rests,stories,lives,crashes:stats.crashes,completed:trip.completed,mode,time,pd:playerD(),x,station:trip.station,road:road(playerD()),speed,ambulance:ambulance&&{d:ambulance.d,x:ambulance.x,t:ambulance.t},actors:events.filter(e=>e.state!=='done').slice(0,2),cars:cars.slice(0,2)};})()`);
  console.log(result);assert.equal(result.mode,'over');assert.equal(result.score,9000);assert.equal(result.rests,5);assert.equal(result.stories,8);assert.equal(result.completed,true);
 });
 const scoringPath=path.resolve(root,'../../online/supabase/functions/game-api/scoring.ts');
