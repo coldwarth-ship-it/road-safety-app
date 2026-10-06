@@ -285,7 +285,7 @@ async function bootstrapCloud(){if(!CLOUD_CONFIG)return;try{await getCloud();if(
 if(typeof window.addEventListener==='function')window.addEventListener('online',()=>syncOutbox());
 
 $('game').addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea'))e.preventDefault()});
-</script><script src="story-trip.js?v=7"></script><script src="safety.js?v=7"></script><script>
+</script><script src="story-trip.js?v=8"></script><script src="safety.js?v=7"></script><script>
 loadProfile();resize();menu();bootstrapCloud();function loop(t){let dt=Math.min(.06,(t-last)/1000);last=t;while(dt>0){const step=Math.min(dt,.016);update(step);dt-=step}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 // Local test hook: no network, personal data or telemetry.
 </script></body></html>
