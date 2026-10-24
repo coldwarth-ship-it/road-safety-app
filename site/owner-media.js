@@ -160,25 +160,15 @@
     });
   }
   async function login(event){
-    event.preventDefault();const button=$('ownerSendCode');button.disabled=true;
+    event.preventDefault();const button=$('ownerSignIn');button.disabled=true;
     try{
-      if(cfg.readOnly)throw Error('ตัวอย่างในเครื่องยังไม่ส่งรหัสเข้าระบบจริง');
       const email=$('ownerEmail').value.trim();
-      const {error}=await cloud().auth.signInWithOtp({email,options:{shouldCreateUser:false}});
-      if(error)throw Error('ส่งรหัสไม่ได้ กรุณาตรวจอีเมลหรือการตั้งค่าเข้าสู่ระบบ');
-      $('ownerCodeForm').hidden=false;status('ตรวจอีเมลและกรอกรหัสยืนยัน หากบัญชีนี้ได้รับอนุญาต');
-    }catch(e){status(e.message,true);}finally{button.disabled=false;}
-  }
-  async function verify(event){
-    event.preventDefault();const button=$('ownerVerifyCode');button.disabled=true;
-    try{
-      if(cfg.readOnly)throw Error('ตัวอย่างในเครื่องยังไม่เข้าสู่ระบบจริง');
-      const {error}=await cloud().auth.verifyOtp({email:$('ownerEmail').value.trim(),token:$('ownerCode').value.trim(),type:'email'});
-      if(error)throw Error('รหัสไม่ถูกต้องหรือหมดอายุ กรุณาขอรหัสใหม่');
-      $('ownerCode').value='';
+      const {error}=await cloud().auth.signInWithPassword({email,password:$('ownerPassword').value});
+      $('ownerPassword').value='';
+      if(error)throw Error('เข้าสู่ระบบไม่ได้ กรุณาตรวจอีเมล รหัสผ่าน และการยืนยันอีเมล');
       if(!await checkOwner()){await cloud().auth.signOut();throw Error('บัญชีนี้ยังไม่ได้รับสิทธิ์เจ้าของ');}
       status('เข้าสู่ระบบเจ้าของแล้ว');await loadOwner();
-    }catch(e){status(e.message,true);}finally{button.disabled=false;}
+    }catch(e){$('ownerPassword').value='';status(e.message,true);}finally{button.disabled=false;}
   }
   async function openOwner(){
     $('ownerEntry').showModal();status('');
@@ -206,9 +196,8 @@
     const dialog=node('dialog');dialog.id='ownerEntry';dialog.className='owner-dialog';
     dialog.innerHTML=`<header class="owner-header"><div><h2>จัดการเว็บของเรา</h2><small id="ownerEmailLabel"></small></div><button type="button" class="btn btn-secondary" id="ownerClose">ปิด</button></header>
       <p id="ownerStatus" class="owner-status" role="status" aria-live="polite"></p>
-      <div id="ownerLogin" class="owner-login"><h3>เข้าสู่ระบบเจ้าของ</h3><p class="owner-note">ใช้บัญชีเจ้าของที่ได้รับอนุญาต รหัสยืนยันจะส่งทางอีเมล</p>
-      <form id="ownerEmailForm"><label>อีเมล<input id="ownerEmail" type="email" autocomplete="email" required></label><button id="ownerSendCode" class="btn btn-primary">ขอรหัสยืนยัน</button></form>
-      <form id="ownerCodeForm" hidden><label>รหัสจากอีเมล<input id="ownerCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,8}" required></label><button id="ownerVerifyCode" class="btn btn-primary">ยืนยันเข้าสู่ระบบ</button></form></div>
+      <div id="ownerLogin" class="owner-login"><h3>เข้าสู่ระบบเจ้าของ</h3><p class="owner-note">ใช้บัญชีเจ้าของเว็บไซต์ที่ยืนยันอีเมลแล้ว</p>
+      <form id="ownerEmailForm"><label>อีเมล<input id="ownerEmail" name="email" type="email" autocomplete="username" required></label><label>รหัสผ่าน<input id="ownerPassword" name="password" type="password" autocomplete="current-password" required></label><button id="ownerSignIn" class="btn btn-primary">เข้าสู่ระบบ</button></form></div>
       <div id="ownerWorkspace" hidden><div class="owner-toolbar"><button id="ownerAddIncident" class="btn btn-primary">เพิ่มอุบัติเหตุจริง</button><button id="ownerReload" class="btn btn-secondary">โหลดรายการใหม่</button><label>หมวด<select id="ownerCategoryFilter"><option value="media">สื่อความปลอดภัย</option><option value="comic">การ์ตูน</option></select></label><label><input type="checkbox" id="ownerTrash">ดูถังพัก</label></div>
       <div class="owner-layout"><form id="ownerEditor" class="owner-panel"><h3>เพิ่มสื่อ / การ์ตูน</h3><label>ชื่อเรื่อง<input id="ownerTitle" maxlength="160" required></label><label>หมวด<select id="ownerType"><option value="media">สื่อความปลอดภัย</option><option value="comic">การ์ตูน</option></select></label><label>ภาพ 1–30 ภาพ<input id="ownerImages" type="file" accept="image/png,image/jpeg,image/webp" multiple required></label><p class="owner-note">PNG / JPG / WebP ไม่เกิน 10 MB ต่อภาพ ปรับลำดับหน้าก่อนเพิ่มได้</p><ol id="ownerFiles" class="owner-page-list"></ol><button class="btn btn-primary">เพิ่มรายการ</button></form><section id="ownerList" class="owner-list"></section></div></div>
       <button id="ownerLogout" type="button" class="btn btn-secondary" hidden>ออกจากระบบ</button>`;
@@ -216,7 +205,7 @@
     const confirm=node('dialog');confirm.id='ownerConfirm';confirm.className='owner-dialog';confirm.innerHTML='<p id="ownerConfirmTitle"></p><p class="owner-note">รายการจะหายจากคลังสาธารณะและกู้คืนได้ ลิงก์ภาพที่แชร์ไว้ก่อนหน้ายังเปิดได้ตามการตั้งค่าเดิม</p><button id="ownerConfirmCancel" class="btn btn-secondary">เก็บไว้</button> <button id="ownerConfirmMove" class="btn btn-primary">ย้ายไปถังพัก</button>';document.body.append(confirm);
     const rename=node('dialog');rename.id='ownerRename';rename.className='owner-dialog';rename.innerHTML='<form id="ownerRenameForm"><h3>แก้ชื่อเรื่อง</h3><input id="ownerRenameId" type="hidden"><label>ชื่อเรื่อง<input id="ownerRenameTitle" maxlength="160" required></label><button class="btn btn-primary">บันทึก</button> <button type="button" id="ownerRenameCancel" class="btn btn-secondary">ยกเลิก</button></form>';document.body.append(rename);
     $('ownerClose').onclick=()=>{if(!busy)dialog.close();};dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
-    $('ownerEmailForm').onsubmit=login;$('ownerCodeForm').onsubmit=verify;$('ownerEditor').onsubmit=upload;
+    $('ownerEmailForm').onsubmit=login;$('ownerEditor').onsubmit=upload;
     $('ownerImages').onchange=()=>{try{const selection=[...$('ownerImages').files];core.validateFiles(selection);files=selection;renderFiles();status('ตรวจลำดับภาพก่อนเพิ่มรายการ');}catch(e){files=[];$('ownerImages').value='';renderFiles();status(e.message,true);}};
     $('ownerTrash').onchange=renderOwner;$('ownerCategoryFilter').onchange=renderOwner;
     $('ownerReload').onclick=()=>run(async()=>{await requireOwner();status('โหลดข้อมูลล่าสุดแล้ว');});
