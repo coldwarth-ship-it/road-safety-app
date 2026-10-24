@@ -3,11 +3,12 @@
 <meta charset="UTF-8">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบความปลอดภัยบนท้องถนน - ประเทศไทย</title>
+<title>Road Safety Thailand • จุดเสี่ยงและสื่อความปลอดภัย</title>
 
 <!-- ===== PWA ===== -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#D84315">
+
+<meta name="theme-color" content="#fffdf9">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -895,6 +896,7 @@ body.incident-map-active .topbar-right .btn-primary{display:none}
 #zdChatButton[hidden]{display:none}
 </style>
 
+
 <script>
 window.IS_GAS = (typeof google !== 'undefined' && !!google.script);
 
@@ -918,7 +920,7 @@ function apiGet(sheetName) {
 }
 
 function apiPost(payload) {
-  if (['localhost', '127.0.0.1'].includes(location.hostname) || location.protocol === 'file:') {
+  if (['localhost', '127.0.0.1', 'terminal.local'].includes(location.hostname) || location.protocol === 'file:') {
     return Promise.reject(new Error('โหมดทดสอบในเครื่อง: ปิดการส่งข้อมูลจริง'));
   }
   return new Promise((resolve, reject) => {
@@ -944,13 +946,37 @@ function apiPost(payload) {
   });
 }
 </script>
+<style>/* Presentation-only theme on the existing application. */
+:root,body.light-theme{--bg:#FFFDF9;--bg2:#fff;--bg3:#fff5ee;--bg4:#fbe8e2;--text:#4A403A;--text2:#786c65;--text3:#887b73;--border:#f0e6df;--border2:#e9d9cf;--primary:#b65e67;--primary-dark:#a04e59;--primary-light:#b65e67;--accent:#e7b275;--radius:24px;--radius-sm:16px;--shadow:0 12px 35px #b58c7516}
+body{background:var(--bg);color:var(--text)}
+body:not(.light-theme){--bg:#28252b;--bg2:#343039;--bg3:#403841;--bg4:#4b4049;--text:#fff5ed;--text2:#e1d0c9;--text3:#c3aba5;--border:#54454e;--border2:#69535e;--primary:#f1b2b9;--primary-dark:#e598a4;--primary-light:#f1b2b9}
+.sidebar{width:260px;background:var(--bg2);padding:8px 10px;overflow-y:auto;box-shadow:8px 0 35px #b58c7506}.logo-area{padding:20px 14px}.logo-icon{background:#e4f2ff;border:1px solid #d3e7f6;border-radius:20px;width:54px;height:54px;box-shadow:inset 0 3px 4px #fff,0 5px 0 #d0dce842}.logo-title{font-size:15px}.logo-sub{font-size:10px;color:var(--text2)}.nav-section{padding:8px 0 0}.nav-label{font-size:10px;padding-left:15px;margin-bottom:5px}.nav-item{border-radius:16px;min-height:43px;padding:11px 14px;font-size:13px;transition:all .3s cubic-bezier(.34,1.56,.64,1)}.nav-item:hover{transform:translateX(4px);background:var(--bg3)}.nav-item.active{background:#fde8e9;color:#8d4e59}.nav-icon{filter:saturate(.75)}.nav-badge{background:#f8d8db;color:#88525d}.sidebar-footer{padding:10px 0}.gs-status{font-size:11px;background:var(--bg3)}
+.topbar,body.light-theme .topbar{background:var(--bg)!important;height:78px;padding:0 30px;border-bottom:1px solid var(--border);backdrop-filter:blur(16px)}.page-title{font-size:18px}.content{padding:25px 30px 80px}.btn{min-height:43px;border-radius:999px;padding:10px 17px;transition:all .3s cubic-bezier(.34,1.56,.64,1);font-weight:600;box-shadow:0 4px 10px #a8787010}.btn:hover{transform:translateY(-3px) scale(1.035)}.btn-primary{background:#f6c7ca;color:#72424b;box-shadow:inset 0 2px 3px #fff8,0 5px 0 #e4b4b740}.btn-primary:hover{background:#f1b9c0}.btn-secondary{background:var(--bg2);border:1px solid var(--border2);color:var(--text)}.btn-success{background:#d6ecdf;color:#3d6b57}
+.stat-grid{gap:15px}.stat-card{border-radius:24px;border:1px solid var(--border);padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .3s}.stat-card:hover{transform:translateY(-4px)}.stat-card:nth-child(1){background:#fce9e9}.stat-card:nth-child(2){background:#e7f1fa}.stat-card:nth-child(3){background:#fff0db}.stat-card:nth-child(4){background:#e6f1e9}.stat-card .stat-label,.stat-card .stat-change{color:#796b64}.stat-card .stat-value{color:#4a403a;font-size:34px}.stat-card:after{content:'✿';position:absolute;right:18px;top:18px;font-size:29px;opacity:.13;color:#805d4c}.stat-label{font-size:12px}.card{border-radius:24px;box-shadow:var(--shadow);padding:23px}.card-title{font-size:15px}.card-sub{color:var(--text2)}.grid-2{gap:20px}.badge{border-radius:999px;padding:5px 10px}.badge-danger{background:#fbe3e5;color:#a34c5d}.badge-warning{background:#fff0cd;color:#8f692f}.badge-success{background:#e2f1e5;color:#466c4b}.modal{border-radius:28px;box-shadow:0 24px 85px #705b5538}.modal-overlay{background:#4a403a70;backdrop-filter:blur(5px)}input,textarea,select{border-radius:15px!important}.community-dialog{border-radius:28px;box-shadow:0 24px 85px #705b5538}.community-dialog input,.community-dialog textarea{padding:13px}.incident-popup{color:var(--text)}.incident-panel{border-radius:22px;box-shadow:0 8px 35px #4a403a20;max-height:55dvh}.leaflet-popup-content-wrapper{border-radius:22px!important}.leaflet-container{border-radius:22px}.incident-map-active #incidentMap{border-radius:0}.incident-map-active .topbar{height:64px}#roadChatLaunch{background:#d7e9fa;color:#39566c;border:1px solid #c9deee;bottom:24px;min-height:48px}table{font-size:13px}thead{background:var(--bg3)}.empty-state{color:var(--text2)}.form-group label{color:var(--text2)}
+.preview-ribbon{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg3);border:1px dashed var(--border2);padding:10px 16px;border-radius:16px;margin-bottom:20px;color:var(--text2);font-size:11px;line-height:1.7}.preview-ribbon button{background:none;color:var(--primary);font-size:11px;text-decoration:underline;white-space:nowrap}.kawaii-hero{background:#fbeddf;color:#4a403a;position:relative;overflow:hidden;min-height:230px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;border:1px solid #f0ddcd;border-radius:28px;padding:30px 36px;box-shadow:0 9px 28px #e3bc9e18}.kawaii-hero h1{font-size:30px;line-height:1.5;margin:8px 0 10px;font-weight:700}.kawaii-hero p{font-size:13px;line-height:1.9;color:#837064}.hero-eyebrow{font-size:10px;letter-spacing:2px;color:#a27766}.kawaii-doodle{width:220px;flex-shrink:0}.hero-foot{display:flex;gap:9px;flex-wrap:wrap;margin-top:19px}.hero-foot .btn{font-size:12px}.hero-slogan{font-size:10px!important;margin-top:12px!important}.preview-device{background:#fffdf9;color:#4a403a;border:1px solid #efddd3}.device-welcome{position:fixed;inset:0;background:#fffdf9;z-index:15000;overflow:auto;display:grid;place-items:center;padding:30px}.welcome-inner{max-width:760px;text-align:center}.welcome-inner>p{color:#8f7b6f;font-size:14px;line-height:1.9}.welcome-inner h1{font-size:40px;line-height:1.5;color:#4a403a;margin:12px 0}.welcome-inner h1 span{color:#be7d88}.device-choices{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:30px}.device-choice{padding:28px;background:#fde7e8;border:1px solid #f0d4d5;border-radius:28px;box-shadow:inset 0 3px 5px #fff9,0 8px 0 #eed3d52e,0 15px 40px #ac7f7410;color:#664c49;text-align:left}.device-choice:nth-child(2){background:#e5f1ee;border-color:#d2e5de}.device-choice b{display:block;font-size:20px;margin:18px 0 7px}.device-choice small{font-size:12px;color:#85766d;line-height:1.8}.welcome-note{font-size:11px!important;margin-top:28px!important}.doodle-logo{font-size:52px}.bottom-kawaii{display:none;position:fixed;bottom:0;left:0;right:0;z-index:2100;background:var(--bg2);border-top:1px solid var(--border);padding:8px 8px max(10px,env(safe-area-inset-bottom));justify-content:space-around;box-shadow:0 -8px 30px #b58c7510}.bottom-kawaii button{background:transparent;color:var(--text2);font-size:10px;min-height:48px;min-width:58px;border-radius:15px}.bottom-kawaii button span{display:block;font-size:19px;margin-bottom:4px}.bottom-kawaii button:hover{background:var(--bg3)}.preview-mobile .sidebar{transform:translateX(-100%)}.preview-mobile .sidebar.mobile-open{transform:translateX(0)}.preview-mobile .main{margin-left:0;max-width:480px;margin:auto}.preview-mobile .bottom-kawaii{display:flex;max-width:480px;margin:auto}.preview-mobile .hamburger{display:flex}.preview-mobile .stat-grid{grid-template-columns:1fr 1fr}.preview-mobile .grid-2{grid-template-columns:1fr}.preview-mobile .kawaii-hero{padding:25px;min-height:250px}.preview-mobile .kawaii-hero h1{font-size:25px}.preview-mobile .kawaii-doodle{position:absolute;right:-18px;bottom:5px;width:130px;opacity:.4}.preview-mobile .kawaii-hero>div{position:relative;z-index:1}.preview-mobile .topbar{padding:0 15px}.preview-mobile .topbar-right>.btn{font-size:11px;padding:7px 11px}.preview-mobile .topbar-right>.btn-primary{display:none}.preview-mobile .content{padding:18px 15px 110px}.preview-mobile #roadChatLaunch{bottom:88px}.preview-mobile .page-title{font-size:15px}.preview-mobile .topbar-right{gap:5px}.preview-mobile .card{padding:19px}.preview-mobile.incident-map-active #page-incidentmap{height:calc(100dvh - 145px)}
+@media(max-width:900px){.bottom-kawaii{display:flex}#roadChatLaunch{bottom:88px}.topbar{padding:0 15px!important;height:70px}.topbar-right{gap:5px}.topbar-right .btn{font-size:11px;padding:8px 10px}.topbar-right>.btn-primary{display:none}.content{padding:18px 16px 110px}.kawaii-hero{padding:25px}.kawaii-hero h1{font-size:25px}.kawaii-doodle{width:145px}.page-title{font-size:15px}}
+@media(max-width:540px){.kawaii-hero{min-height:260px;padding:24px}.kawaii-doodle{position:absolute;right:-20px;bottom:7px;width:145px;opacity:.4}.kawaii-hero>div{position:relative;z-index:1}.hero-foot{max-width:260px}.stat-grid{gap:10px}.stat-card{padding:18px}.stat-value{font-size:29px!important}.stat-change{font-size:10px}.welcome-inner h1{font-size:30px}.device-choices{gap:12px}.device-choice{padding:23px 18px}.device-choice b{font-size:18px}.device-welcome{padding:25px}.preview-ribbon{font-size:10px}.topbar-right .btn[onclick='syncData()']{font-size:0}.topbar-right .btn[onclick='syncData()']:after{content:'↻';font-size:18px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+<style>.visible{visibility:visible}.collapse{visibility:collapse}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.flex-shrink{flex-shrink:1}.border-collapse{border-collapse:collapse}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.resize{resize:both}.flex-wrap{flex-wrap:wrap}.rounded-full{border-radius:9999px}.border{border-width:1px}.uppercase{text-transform:uppercase}.underline{text-decoration-line:underline}.outline{outline-style:solid}.blur{--tw-blur:blur(8px)}.blur,.invert{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.invert{--tw-invert:invert(100%)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-filter{-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem}.hover\:-translate-y-1:hover,.hover\:scale-105:hover{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:scale-105:hover{--tw-scale-x:1.05;--tw-scale-y:1.05}</style><style>.bottom-kawaii button,.preview-ribbon button{border:0}.preview-mobile .sidebar:not(.open):not(.mobile-open){visibility:hidden}.preview-mobile .sidebar.open,.preview-mobile .sidebar.mobile-open{visibility:visible;transform:translateX(0)}</style><style>.sharky-friend{position:fixed;bottom:20px;left:275px;z-index:850;display:flex;align-items:end;gap:8px;pointer-events:none}.sharky-friend img{width:75px;height:105px;object-fit:contain;filter:drop-shadow(0 7px 5px #83716b24);animation:sharkyBob 3.5s ease-in-out infinite;transform-origin:50% 90%}.sharky-speech{pointer-events:auto;max-width:180px;border:1px solid #e6d6ce;border-radius:18px 18px 18px 3px;background:var(--bg2);color:var(--text);font:12px inherit;padding:11px 13px;box-shadow:0 6px 18px #9c7e7020;text-align:left;line-height:1.7}.sharky-hide{pointer-events:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:100%;color:var(--text2);width:23px;height:23px;font-size:12px;align-self:start}.sharky-friend.mini .sharky-speech{display:none}.kawaii-doodle.sharky-main{height:195px;object-fit:contain;animation:sharkyBob 4s ease-in-out infinite;filter:drop-shadow(0 10px 8px #a8857320)}
+@keyframes sharkyBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+.media-intro{padding:28px;background:#e8f2fc;border:1px solid #d6e5f2;border-radius:27px;color:#4a403a;margin-bottom:22px}.media-intro h1{font-size:25px;margin:6px 0 12px}.media-intro p{line-height:1.8;font-size:13px;color:#796d66}.media-toolbar{position:sticky;top:78px;z-index:30;display:flex;gap:8px;padding:12px 0;margin-bottom:18px;background:var(--bg)}.media-tab{padding:12px 24px;min-height:46px;border-radius:999px;border:1px solid var(--border2);background:var(--bg2);color:var(--text);font:inherit;cursor:pointer}.media-tab[aria-selected=true]{background:#f7d7dc;border-color:#e8bdc5;color:#794650;font-weight:600}.media-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.media-card{margin:0;border:1px solid var(--border);border-radius:23px;padding:13px;background:var(--bg2);box-shadow:var(--shadow)}.media-card button{display:block;border:0;background:transparent;width:100%;cursor:zoom-in;color:var(--text);text-align:left}.media-card img{width:100%;height:290px;object-fit:contain;border-radius:15px;background:#f4f0e9;display:block}.media-card figcaption{font-size:13px;font-weight:600;line-height:1.7;margin:13px 3px 5px}.media-card small{font-size:10px;color:var(--text2);margin:0 3px}.media-empty{padding:40px;border:1px dashed var(--border2);border-radius:20px;color:var(--text2);line-height:1.9}.reader{width:min(960px,96vw);max-height:92dvh;background:var(--bg2);border:1px solid var(--border2);border-radius:24px;color:var(--text);padding:16px;margin:auto;box-shadow:0 20px 80px #0003}.reader::backdrop{background:#29222bbd;backdrop-filter:blur(6px)}.reader-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.reader-head h2{font-size:16px;margin:0}.reader button{border:1px solid var(--border2);border-radius:999px;background:var(--bg3);padding:10px 15px;min-height:42px;color:var(--text)}.reader img{display:block;width:100%;max-height:70dvh;object-fit:contain}.reader-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px;gap:10px}.media-hint{font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:20px}.preview-mobile .media-grid{grid-template-columns:1fr}.preview-mobile .media-toolbar{top:78px}.preview-mobile .sharky-friend{left:max(10px,calc(50% - 230px));bottom:86px}.preview-mobile .sharky-friend img{width:56px;height:78px}.preview-mobile .sharky-speech{max-width:145px;font-size:10px;padding:8px 10px}
+@media(max-width:1000px){.media-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.sharky-friend{left:10px;bottom:85px}.sharky-friend img{width:58px;height:80px}.sharky-speech{font-size:10px;max-width:145px}.media-toolbar{top:70px}}
+@media(max-width:550px){.media-grid{grid-template-columns:1fr}.media-card img{height:auto;max-height:560px}.media-intro{padding:23px}.media-intro h1{font-size:22px}.media-toolbar{justify-content:center}.media-tab{flex:1}.sharky-friend .sharky-speech{display:none}.sharky-friend{bottom:85px}.kawaii-doodle.sharky-main{height:160px}}
+@media(prefers-reduced-motion:reduce){.sharky-friend img,.kawaii-doodle.sharky-main{animation:none}}
+</style><style>
+/* Respect intrinsic aspect ratio. Never crop or letterbox mixed media. */
+.media-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}.media-card{display:inline-block;width:100%;break-inside:avoid;margin:0 0 20px;padding:0;overflow:hidden}.media-card button{padding:0}.media-card img{width:100%;height:auto!important;max-height:none!important;object-fit:initial;background:transparent;border-radius:0}.media-card figcaption{margin:0;padding:14px 16px 5px}.media-card small{display:block;margin:0;padding:0 16px 15px}.reader{width:fit-content;max-width:96vw;overflow:auto}.reader img{width:100%;height:auto;max-height:none;object-fit:initial;background:transparent}.reader-head h2{line-height:1.6;font-size:14px}.reader-head button{flex-shrink:0}.reader-foot button{font-size:11px}.reader-foot button:disabled{opacity:.35;cursor:default}.sharky-friend img{height:115px;width:80px;object-fit:contain}.preview-mobile .media-grid{columns:1}.owner-entry-dialog{width:min(440px,94vw);border:1px solid var(--border2);border-radius:25px;background:var(--bg2);color:var(--text);padding:24px;margin:auto;line-height:1.8}.owner-entry-dialog::backdrop{background:#29222b99}.owner-entry-dialog p{font-size:13px;color:var(--text2)}
+@media(max-width:1000px){.media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.media-grid{grid-template-columns:1fr}.reader{padding:10px}.sharky-friend img{width:62px;height:94px}}@media(prefers-reduced-motion:reduce){.sharky-friend img{animation:none}}
+</style><link rel="stylesheet" href="site/owner.css">
 </head>
 <body>
 <script>
-if (location.protocol === 'file:') {
+if (false) {
   window.addEventListener('DOMContentLoaded', () => {
     const note=document.createElement('div');
-    note.textContent='กรุณาเปิดผ่าน START-PREVIEW.cmd ในชุดไฟล์ทดสอบ เพื่อให้แผนที่ส่งที่อยู่เว็บต้นทางได้';
+    note.textContent='กรุณาเปิดผ่านเว็บไซต์เพื่อใช้งานแผนที่และข้อมูลล่าสุด';
     note.style.cssText='position:fixed;bottom:0;left:0;right:0;z-index:10000;padding:16px;background:#7c2d12;color:white;text-align:center';
     document.body.appendChild(note);
   });
@@ -985,7 +1011,7 @@ if (location.protocol === 'file:') {
 
   <div class="nav-section">
     <div class="nav-label">ระบบภัยพิบัติ</div>
-    <a class="nav-item" href="disaster/index.html" style="text-decoration:none" id="disasterLink">
+    <a class="nav-item" href="disaster/index.html" style="text-decoration:none" id="disasterLink" target="_blank" rel="noopener noreferrer">
       <span class="nav-icon" aria-hidden="true">🌊</span> น้ำท่วม / แผ่นดินไหว
       <span aria-hidden="true" style="margin-left:auto">→</span>
     </a>
@@ -993,7 +1019,7 @@ if (location.protocol === 'file:') {
 
   <div class="nav-section">
     <div class="nav-label">เกมฝึกขับปลอดภัย</div>
-    <a class="nav-item" href="game/index.html" style="text-decoration:none" id="gameLink">
+    <a class="nav-item" href="game/index.html" style="text-decoration:none" id="gameLink" target="_blank" rel="noopener noreferrer">
       <span class="nav-icon" aria-hidden="true">🏍️</span> ขับปลอดภัยกับพี่ชาร์คกี้
       <span aria-hidden="true" style="margin-left:auto">→</span>
     </a>
@@ -1026,7 +1052,7 @@ if (location.protocol === 'file:') {
     </button>
   </div>
 
-  <div class="sidebar-footer">
+  <div class="nav-section"><div class="nav-label">อ่านกับพี่ชาร์คกี้</div><button class="nav-item" onclick="showPage('sharkymedia')"><span class="nav-icon">📚</span> สื่อและการ์ตูนพี่ชาร์คกี้</button></div><div class="nav-section"><div class="nav-label">สำหรับเจ้าของ</div><button class="nav-item" onclick="document.getElementById('ownerEntry').showModal()"><span class="nav-icon">🔐</span> เข้าสู่ระบบเจ้าของ</button></div><div class="sidebar-footer">
     <div class="gs-status">
       <div class="gs-dot" id="gsDot"></div>
       <span id="gsStatusText">ยังไม่ได้เชื่อมต่อ Google Sheet</span>
@@ -1052,7 +1078,7 @@ if (location.protocol === 'file:') {
     </div>
   </header>
 
-  <div class="content">
+  <div class="content"><div class="preview-ribbon"><span>ความปลอดภัยในการขับขี่เริ่มต้นจากตัวเรา</span><button onclick="chooseAgain()">เลือกมือถือ / คอม</button></div>
 
 <div class="section" id="page-incidentmap">
   <div id="incidentMap" aria-label="แผนที่จุดเสี่ยงและอุบัติเหตุจริง"></div>
@@ -1060,7 +1086,7 @@ if (location.protocol === 'file:') {
     <summary>🗂️ ชั้นข้อมูล</summary>
     <label><input type="checkbox" id="incidentZonesToggle" checked onchange="renderIncidentMap()"> รายงานจุดเสี่ยง <span id="incidentZoneCount">0</span> จุด</label>
     <label><input type="checkbox" id="incidentEventsToggle" checked onchange="renderIncidentMap()"> อุบัติเหตุจริง <span id="incidentEventCount">0</span> ครั้ง</label>
-    <button class="btn btn-primary" onclick="openIncidentEntry()">➕ บันทึกอุบัติเหตุจริง</button>
+
     <p id="incidentStatus" role="status">ยังไม่ได้โหลดข้อมูลอุบัติเหตุ</p>
     <button class="btn btn-secondary btn-sm" onclick="loadIncidentEvents()">🔄 โหลดอุบัติเหตุใหม่</button>
     <button class="btn btn-secondary btn-sm" onclick="fitIncidentMap()">ดูทุกจุดที่เปิดอยู่</button>
@@ -1070,8 +1096,9 @@ if (location.protocol === 'file:') {
   </details>
 </div>
 
-    <!-- ===== DASHBOARD ===== -->
-    <div class="section active" id="page-dashboard">
+    <section class="section" id="page-sharkymedia"><div class="media-intro"><span class="hero-eyebrow">SHARKY’S LITTLE LIBRARY</span><h1>อ่านเพลิน ๆ ปลอดภัยทุกเส้นทาง ♡</h1><p>เลือกสื่อหรือการ์ตูนด้านล่างได้เลยครับ<br>กดรูปเพื่ออ่านเต็มจอ และเลื่อนดูเรื่องถัดไปได้</p></div><div class="media-toolbar" role="tablist" aria-label="ประเภทสื่อ"><button class="media-tab" role="tab" data-category="media" aria-selected="true" onclick="renderSharkyMedia('media')">🖼️ สื่อความปลอดภัย</button><button class="media-tab" role="tab" data-category="comic" aria-selected="false" onclick="renderSharkyMedia('comic')">📖 การ์ตูน</button></div><p class="media-hint" id="mediaCount"></p><div class="media-grid" id="sharkyMediaGrid"></div></section><!-- ===== DASHBOARD ===== -->
+    <div class="section active" id="page-dashboard"><section class="kawaii-hero"><div><div class="hero-eyebrow">A LITTLE CARE • EVERY JOURNEY</div><h1>รู้จุดเสี่ยงก่อนออกวิ่ง<br>กลับบ้านพร้อมรอยยิ้ม ♡</h1><p>ข้อมูลถนน อุบัติเหตุ และความปลอดภัย<br>รวมไว้ให้เช็กง่าย ในทุกการเดินทาง</p><div class="hero-foot"><button class="btn btn-primary rounded-full transition-all duration-300 hover:-translate-y-1 hover:scale-105" onclick="showPage('incidentmap')">🗺️ เปิดแผนที่จุดเสี่ยง</button><button class="btn btn-secondary rounded-full" onclick="showPage('report')">＋ แจ้งจุดเสี่ยง</button></div><p class="hero-slogan">ความปลอดภัยในการขับขี่เริ่มต้นจากตัวเรา</p></div>
+<img class="kawaii-doodle sharky-main" src="assets/site/15f546fe13a66951.webp" alt="พี่ชาร์คกี้"></section>
       <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-label">จุดเสี่ยงทั้งหมด</div>
@@ -1729,14 +1756,14 @@ window.addEventListener('appinstalled', () => {
 
 // ===== THEME (LIGHT/DARK) =====
 function initTheme() {
-  const saved = localStorage.getItem('theme') || 'dark';
+  const saved = localStorage.getItem('kawaii-preview-theme') || 'light';
   if (saved === 'light') document.body.classList.add('light-theme');
   updateThemeUI();
 }
 function toggleTheme() {
   document.body.classList.toggle('light-theme');
   const isLight = document.body.classList.contains('light-theme');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  localStorage.setItem('kawaii-preview-theme', isLight ? 'light' : 'dark');
   updateThemeUI();
 }
 function updateThemeUI() {
@@ -2770,7 +2797,7 @@ function openIncidentEntry(){ensureIncidentMap();entryPoints=incidentPointChoice
 function chooseIncidentPoint(value){if(value==='')return;const p=entryPoints[Number(value)];if(!p)return;['pointId','name','province','district','lat','lng'].forEach(key=>document.getElementById('entry'+key[0].toUpperCase()+key.slice(1)).value=p[key]);}
 function pickIncidentCoordinate(){entryPicking=true;closeCommunityDialog('incidentEntryDialog');showToast('คลิกบนแผนที่เพื่อเลือกจุดเกิดเหตุ','info');}
 function setupIncidentPicking(){incidentMap.on('click',e=>{if(!entryPicking)return;entryPicking=false;document.getElementById('entryLat').value=e.latlng.lat.toFixed(6);document.getElementById('entryLng').value=e.latlng.lng.toFixed(6);if(entryPickMarker)entryPickMarker.remove();entryPickMarker=L.marker(e.latlng).addTo(incidentMap);document.getElementById('incidentEntryDialog').showModal();});}
-async function submitIncidentEntry(event){event.preventDefault();const form=event.target,status=document.getElementById('entryStatus'),button=document.getElementById('entrySubmit');if(button.disabled)return;const data=Object.fromEntries(new FormData(form));if(communityBadWords([data.name,data.detail,data.cause,data.prevention].join(' '))){status.textContent='กรุณาแก้ไขคำไม่สุภาพก่อนส่ง';return;}button.disabled=true;status.textContent='กำลังส่ง…';try{const result=await apiPost({action:'submit_rider_incident',requestId:entryRequestId,...data});if(result.status!=='ok'||result.dataset!=='rider_incident_submission')throw Error(result.message||'ระบบยังไม่พร้อมรับบันทึก');status.textContent='บันทึกสำเร็จ รหัสเหตุ '+result.id+' • รอตรวจสอบก่อนเผยแพร่';form.reset();entryRequestId=communityRequestId();if(entryPickMarker){entryPickMarker.remove();entryPickMarker=null;}}catch(error){status.textContent='ยังยืนยันการบันทึกไม่ได้: '+error.message+' สามารถกดส่งซ้ำได้โดยไม่สร้างเหตุซ้ำ';}finally{button.disabled=false;}}
+async function submitIncidentEntry(event){event.preventDefault();document.getElementById('entryStatus').textContent='กรุณาเข้าสู่ระบบเจ้าของก่อนบันทึก';}
 function addPointChatButton(host,room,label){const button=document.createElement('button');button.className='btn btn-secondary btn-sm';button.textContent='💬 คุยสถานการณ์จุดนี้';button.onclick=()=>openRoadChat(room,label);host.appendChild(button);}
 function pointChatRoom(pointId,lat,lng){return pointId?'point:'+pointId:'coord:'+Number(lat)+','+Number(lng);}
 let roadSupabase=null,roadChatChannel=null;
@@ -2813,6 +2840,18 @@ async function sendRoadChat(event){
 document.addEventListener('DOMContentLoaded',()=>document.getElementById('roadChatDialog').addEventListener('close',disconnectRoadChat));
 
 </script>
+<section class="device-welcome" id="deviceWelcome"><div class="welcome-inner"><div class="doodle-logo">🛵 ☁️</div><div class="hero-eyebrow">ROAD SAFETY THAILAND</div><h1>ทุกเส้นทางมีความหมาย<br><span>เริ่มด้วยความปลอดภัย ♡</span></h1><p>รู้จุดเสี่ยง อ่านสื่อ และเตรียมพร้อมก่อนออกเดินทาง<br>เลือกหน้าจอที่สะดวก แล้วลองสำรวจกันครับ</p><div class="device-choices"><button class="device-choice transition-all duration-300 hover:-translate-y-1 hover:scale-105" onclick="chooseDevice('mobile')"><span style="font-size:32px">📱</span><b>โทรศัพท์มือถือ</b><small>ปุ่มใหญ่ เมนูด้านล่าง<br>พกความปลอดภัยไปทุกที่ ↗</small></button><button class="device-choice transition-all duration-300 hover:-translate-y-1 hover:scale-105" onclick="chooseDevice('desktop')"><span style="font-size:32px">💻</span><b>คอมพิวเตอร์</b><small>มองข้อมูลได้เต็มตา<br>เมนูครบเหมือนเดิม ↗</small></button></div><p class="welcome-note">อ่านข้อมูลถนนและสื่อความปลอดภัยได้ทุกวัน<br>ผู้ใช้ทั่วไปแจ้งจุดเสี่ยงได้ • จัดการสื่อและเพิ่มอุบัติเหตุเฉพาะเจ้าของ</p></div></section><nav class="bottom-kawaii" aria-label="เมนูมือถือ"><button onclick="showPage('dashboard')"><span>🏡</span>ภาพรวม</button><button onclick="showPage('incidentmap')"><span>🗺️</span>แผนที่</button><button onclick="showPage('report')"><span>📍</span>แจ้งจุดเสี่ยง</button><button onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar').classList.toggle('mobile-open')"><span>☰</span>เมนูทั้งหมด</button></nav><script>
+const originalPreviewShowPage=showPage;showPage=function(name){originalPreviewShowPage(name);document.getElementById('sidebar').classList.remove('mobile-open');};
+function chooseDevice(mode){document.body.classList.toggle('preview-mobile',mode==='mobile');document.getElementById('deviceWelcome').style.display='none';window.dispatchEvent(new Event('resize'));}
+function chooseAgain(){document.getElementById('deviceWelcome').style.display='grid';}
+</script><dialog id="sharkyReader" class="reader"><div class="reader-head"><h2 id="sharkyReaderTitle"></h2><button onclick="document.getElementById('sharkyReader').close()" aria-label="ปิดตัวอ่าน">✕ ปิด</button></div><img id="sharkyReaderImage" alt=""><div class="reader-foot"><button id="sharkyPrevious" onclick="sharkyReaderMove(-1)">← ก่อนหน้า</button><span id="sharkyReaderPage"></span><button id="sharkyNext" onclick="sharkyReaderMove(1)">ถัดไป →</button></div></dialog><div class="sharky-friend" id="sharkyFriend"><button class="sharky-speech" onclick="showPage('sharkymedia')">อ่านสื่อกับผมไหมครับ? 📖<br><b>เปิดคลังสื่อพี่ชาร์คกี้ →</b></button><img src="assets/site/15f546fe13a66951.webp" alt="พี่ชาร์คกี้ขยับทักทาย"><button class="sharky-hide" onclick="toggleSharky()" aria-label="ย่อหรือขยายข้อความพี่ชาร์คกี้">−</button></div><script> pageTitles.sharkymedia="สื่อและการ์ตูนพี่ชาร์คกี้";</script><script>
+function toggleSharky(){const friend=document.getElementById('sharkyFriend');friend.classList.toggle('mini');friend.querySelector('.sharky-hide').textContent=friend.classList.contains('mini')?'+':'−';}
+document.addEventListener('keydown',e=>{if(!document.getElementById('sharkyReader').open)return;if(e.key==='ArrowRight')sharkyReaderMove(1);if(e.key==='ArrowLeft')sharkyReaderMove(-1)});
+document.addEventListener('DOMContentLoaded',()=>loadStats());
+</script><script>
+function fitSharkyReader(){const image=document.getElementById('sharkyReaderImage');if(!image.naturalWidth)return;const padding=window.innerWidth<550?20:32;const maxWidth=Math.min(960,window.innerWidth*.96)-padding;const maxHeight=Math.max(180,window.innerHeight-190);const scale=Math.min(1,maxWidth/image.naturalWidth,maxHeight/image.naturalHeight);document.getElementById('sharkyReader').style.width=(Math.ceil(image.naturalWidth*scale)+padding)+'px';}
+document.getElementById('sharkyReaderImage').addEventListener('load',fitSharkyReader);window.addEventListener('resize',fitSharkyReader);
+</script><script src="site/owner-config.js"></script><script src="site/media-core.js"></script><script src="site/owner-media.js"></script>
 </body>
 </html>
 
