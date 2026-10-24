@@ -193,7 +193,7 @@
       if(window.communityBadWords?.([data.name,data.detail,data.cause,data.prevention].join(' ')))throw Error('กรุณาแก้ไขคำไม่สุภาพก่อนส่ง');
       message.textContent='กำลังบันทึก…';
       const {data:auth,error}=await cloud().auth.getSession();if(error||!auth.session)throw Error('กรุณาเข้าสู่ระบบใหม่');
-      const result=await apiPost({action:'submit_rider_incident',requestId:entryRequestId,accessToken:auth.session.access_token,...data});
+      const result=await apiPost({action:'submit_rider_incident',requestId:entryRequestId,ownerToken:auth.session.access_token,...data});
       if(result.status!=='ok'||result.dataset!=='rider_incident_submission')throw Error(result.message||'ยังยืนยันการบันทึกไม่ได้');
       message.textContent='บันทึกแล้ว รหัส '+result.id+' • รอตรวจสอบก่อนเผยแพร่';
       form.reset();entryRequestId=crypto.randomUUID();

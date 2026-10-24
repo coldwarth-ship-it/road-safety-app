@@ -44,9 +44,15 @@
 4. ทดสอบเพิ่มสื่อ หลายหน้า จัดลำดับ ถังพัก กู้คืน และเพิ่มอุบัติเหตุเจ้าของครบวงจร
 5. Merge/deploy UI หลังผ่านทั้งหมด และทดสอบ service worker/เครื่องที่มี cache รุ่นเดิม
 
-## การติดขัดของช่องทาง Apps Script
+## ตรวจ Apps Script จริงเพิ่มเติม 24 ตุลาคม 2569
 
-การเปิด https://script.google.com/home ถูก browser automatic approval review ปฏิเสธ เนื่องจากปลายทางพาไป developers.google.com ซึ่งอยู่นอกขอบเขต origin ที่อนุมัติไว้ ยังไม่ได้ลองเส้นทางเลี่ยงหรือเปลี่ยน Apps Script หลังถูกปฏิเสธ ต้องได้รับอนุมัติช่องทางที่ถูกต้องก่อนตรวจต่อ
+- เข้าบัญชี coldwarth สำเร็จ และเปิดโครงการ Road safety ได้
+- Script ID: 12LymWh4TQQqf6-kXfuOgFB-3ioucnd7mo5hKR_8zC4VxDbn2ii7fQKFB
+- endpoint ถนนเดิมตรงกับ deployment รุ่น 17 วันที่ 23 ตุลาคม 2569 ชื่อ Owner-only rider incidents; verified Supabase owner
+- โค้ดจริง submitRiderIncident_ เรียก roadRequireOwner_(p.ownerToken) ก่อนแตะข้อมูล; gate เรียก RPC is_road_owner จริง และปฏิเสธเมื่อไม่คืน true
+- แก้ client ให้ส่ง ownerToken ตรง backend รุ่นเดิมแล้ว โค้ด backend ที่เตรียมไว้ใน repo ใช้ชื่อเดียวกัน
+- ยังไม่ได้แก้หรือ deploy Apps Script จริง เก็บสำเนา source ก่อนแก้แล้ว
+- การเข้าสู่ Supabase dashboard ผ่าน GitHub และการเปิดหน้าตรวจยืนยันใหม่ timeout ทั้งสองครั้ง จึงยังยืนยัน session/บัญชีเจ้าของล่าสุดไม่ได้
 
 ## รุ่นสำรองและย้อนกลับ
 

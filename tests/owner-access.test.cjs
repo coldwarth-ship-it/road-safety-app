@@ -53,7 +53,7 @@ test('authorized incident submission is pending, escapes spreadsheet formulas an
   })};
   const context={SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet})},roadRequireOwner_:()=>{authChecks++;return 'owner';}};
   vm.createContext(context);vm.runInContext(fs.readFileSync('apps-script/RoadCommunity.gs','utf8'),context);
-  const request={accessToken:'signed.jwt.token',requestId:'12345678-1234-1234-1234-123456789abc',name:'=IMPORTXML("example")',province:'ชลบุรี',district:'เมือง',lat:13,lng:101,level:'Level 2',detail:'ลื่นเสียหลัก',cause:'ถนนลื่น',prevention:'ลดความเร็ว'};
+  const request={ownerToken:'signed.jwt.token',requestId:'12345678-1234-1234-1234-123456789abc',name:'=IMPORTXML("example")',province:'ชลบุรี',district:'เมือง',lat:13,lng:101,level:'Level 2',detail:'ลื่นเสียหลัก',cause:'ถนนลื่น',prevention:'ลดความเร็ว'};
   const first=context.submitRiderIncident_(request),retry=context.submitRiderIncident_(request);
   assert.equal(first.id,retry.id);assert.equal(rows.length,2);assert.equal(authChecks,2);
   assert.equal(rows[1][11],'รอตรวจสอบ');assert.equal(rows[1][2][0],"'");

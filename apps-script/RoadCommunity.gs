@@ -14,7 +14,7 @@ function roadCommunityRequest_(value){var id=String(value||'');if(!/^[a-f0-9-]{3
 function roadCommunityRoom_(value){var room=roadCommunityText_(value,160,true);if(room!=='general'&&!/^point:.+|^coord:-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(room))throw Error('ห้องแชทไม่ถูกต้อง');return room;}
 function handleRoadCommunity_(p){if(!p||['submit_rider_incident','send_road_chat'].indexOf(p.action)<0)return null;var lock=LockService.getScriptLock();if(!lock.tryLock(10000))return {status:'error',message:'มีผู้ใช้งานพร้อมกัน กรุณาลองอีกครั้ง'};try{return p.action==='submit_rider_incident'?submitRiderIncident_(p):sendRoadChat_(p);}catch(e){return {status:'error',message:e.message};}finally{lock.releaseLock();}}
 function submitRiderIncident_(p){
- roadRequireOwner_(p.accessToken);
+ roadRequireOwner_(p.ownerToken);
  var requestId=roadCommunityRequest_(p.requestId);if(p.website)throw Error('ไม่สามารถรับคำขอนี้');
  var name=roadCommunityText_(p.name,120,true),province=roadCommunityText_(p.province,60,true),district=roadCommunityText_(p.district,60,false),pointId=roadCommunityText_(p.pointId,80,false);
  var detail=roadCommunityText_(p.detail,1000,true),cause=roadCommunityText_(p.cause,600,true),prevention=roadCommunityText_(p.prevention,600,true);
