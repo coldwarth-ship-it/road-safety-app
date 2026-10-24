@@ -38,12 +38,11 @@
     if(cfg.readOnly)throw Error('ตัวอย่างในเครื่องปิดการบันทึกข้อมูลจริง');
     if(!await checkOwner())throw Error('กรุณาเข้าสู่ระบบด้วยบัญชีเจ้าของ');
   }
-  async function signedUrl(path){
-    if(!core.imagePath(path))throw Error('ตำแหน่งภาพไม่ถูกต้อง');
-    const cached=signed.get(path);if(cached&&cached.until>Date.now())return cached.url;
-    const {data,error}=await cloud().storage.from(cfg.bucket).createSignedUrl(path,60);
-    if(error)throw Error('โหลดรูปไม่ได้ กรุณาลองใหม่');
-    signed.set(path,{url:data.signedUrl,until:Date.now()+45000});return data.signedUrl;
+  async function signedUrl(image){
+    const value=typeof image==='string'?image:image?.path;
+    if(core.trustedImageUrl(value,cfg.url,cfg.bucket))return value;
+    if(!core.imagePath(value))throw Error('ตำแหน่งภาพไม่ถูกต้อง');
+    return cloud().storage.from(cfg.bucket).getPublicUrl(value).data.publicUrl;
   }
   async function loadPublic(requestedCategory=category){
     category=core.category(requestedCategory);const generation=++loadGeneration;
@@ -51,7 +50,7 @@
     const host=$('sharkyMediaGrid');if(!host)return;host.replaceChildren(node('p','กำลังโหลดสื่อ…','media-empty'));
     $('mediaCount').textContent='กำลังโหลด';
     try{
-      const {data,error}=await cloud().from(cfg.table).select('id,title,category,images,sort_order,updated_at').eq('category',category).is('deleted_at',null).order('sort_order').order('id').limit(1000);
+      const {data,error}=await cloud().from(cfg.table).select('id,title,category,images,sort_order,updated_at').eq('category',category).eq('published',true).is('deleted_at',null).order('sort_order').order('id').limit(1000);
       if(error)throw Error('ยังโหลดคลังสื่อไม่ได้ กรุณาลองใหม่ภายหลัง');
       if(generation!==loadGeneration)return;
       currentMedia=data||[];$('mediaCount').textContent=currentMedia.length+' รายการ';host.replaceChildren();
@@ -60,7 +59,7 @@
         const card=node('figure',undefined,'media-card'),button=node('button'),img=node('img'),caption=node('figcaption',item.title);
         button.type='button';button.setAttribute('aria-label','อ่าน '+item.title);button.onclick=()=>openReader(index,0);
         img.alt=item.title;img.loading='lazy';button.append(img);card.append(button,caption);host.append(card);
-        signedUrl(item.images[0].path).then(url=>{if(generation===loadGeneration)img.src=url;}).catch(()=>{caption.append(node('p','รูปยังโหลดไม่ได้ กดเปิดเพื่อลองใหม่'));});
+        signedUrl(item.images[0]).then(url=>{if(generation===loadGeneration)img.src=url;}).catch(()=>{caption.append(node('p','รูปยังโหลดไม่ได้ กดเปิดเพื่อลองใหม่'));});
       });
     }catch(e){
       if(generation!==loadGeneration)return;currentMedia=[];$('mediaCount').textContent='ยังโหลดข้อมูลไม่ได้';
@@ -76,7 +75,7 @@
     $('sharkyPrevious').disabled=index===0&&page===0;
     $('sharkyNext').disabled=index===currentMedia.length-1&&page===item.images.length-1;
     if(!dialog.open)dialog.showModal();
-    try{const url=await signedUrl(item.images[page].path);if(readerItem===index&&readerPage===page){img.src=url;img.alt=item.title+' หน้า '+(page+1);}}
+    try{const url=await signedUrl(item.images[page]);if(readerItem===index&&readerPage===page){img.src=url;img.alt=item.title+' หน้า '+(page+1);}}
     catch(e){img.alt=e.message;}
   }
   function readerMove(delta){
@@ -96,7 +95,7 @@
     if(!list.length){host.append(node('p',trash?'ไม่มีรายการในถังพัก':'ยังไม่มีสื่อในหมวดนี้','owner-empty'));return;}
     list.forEach((item,index)=>{
       const card=node('article',undefined,'owner-card'),body=node('div',undefined,'owner-card-content'),img=node('img');img.alt=item.title;
-      signedUrl(item.images[0].path).then(url=>img.src=url).catch(()=>{});
+      signedUrl(item.images[0]).then(url=>img.src=url).catch(()=>{});
       body.append(node('h3',item.title),node('p',(item.category==='comic'?'การ์ตูน':'สื่อความปลอดภัย')+' • '+item.images.length+' ภาพ'));
       const actions=node('div',undefined,'owner-card-actions');
       if(!trash){
@@ -117,13 +116,13 @@
   }
   async function update(item,patch){
     await requireOwner();
-    const {data,error}=await cloud().from(cfg.table).update(patch).eq('id',item.id).eq('updated_at',item.updated_at).select('id');
+    const {data,error}=await cloud().from(cfg.table).update({...patch,updated_at:new Date().toISOString()}).eq('id',item.id).eq('updated_at',item.updated_at).select('id');
     if(error)throw error;if(!data?.length)throw Error('รายการถูกแก้ไขจากอีกหน้าจอ กรุณาโหลดใหม่');
     signed.clear();status(patch.deleted_at?'ย้ายเข้าถังพักแล้ว':patch.deleted_at===null?'กู้คืนแล้ว':'บันทึกแล้ว');
   }
   async function reorder(list,from,to){
     await requireOwner();const order=core.move(list,from,to);
-    const {error}=await cloud().rpc('road_media_reorder',{p_category:list[from].category,p_ids:order.map(m=>m.id)});
+    const {error}=await cloud().rpc(cfg.reorderRpc,{p_category:list[from].category,p_ids:order.map(m=>m.id)});
     if(error)throw Error('บันทึกลำดับไม่ได้ รายการอาจเปลี่ยนไป กรุณาโหลดใหม่');status('บันทึกลำดับแล้ว');
   }
   async function run(action){
@@ -152,10 +151,10 @@
         status('กำลังอัปโหลดภาพ '+(i+1)+' / '+files.length);
         const {error}=await c.storage.from(cfg.bucket).upload(path,file,{contentType:file.type,upsert:false,cacheControl:'60'});
         if(error)throw Error('อัปโหลดไม่สำเร็จ ยังไม่เผยแพร่รายการนี้ กรุณาลองใหม่');
-        images.push({path});
+        images.push(c.storage.from(cfg.bucket).getPublicUrl(path).data.publicUrl);
       }
       const sort=items.filter(m=>m.category===kind).reduce((n,m)=>Math.max(n,m.sort_order+1),0);
-      const {error}=await c.from(cfg.table).insert({id,title,category:kind,images,sort_order:sort,created_by:session.user.id});
+      const {error}=await c.from(cfg.table).insert({id,title,category:kind,images,sort_order:sort,published:true});
       if(error)throw Error('ยังบันทึกรายการไม่ได้ ภาพที่อัปโหลดยังไม่เปิดให้สาธารณะอ่าน');
       $('ownerEditor').reset();files=[];renderFiles();status('เพิ่มรายการแล้ว ผู้ใช้ทั่วไปเปิดอ่านได้');
     });
@@ -214,7 +213,7 @@
       <div class="owner-layout"><form id="ownerEditor" class="owner-panel"><h3>เพิ่มสื่อ / การ์ตูน</h3><label>ชื่อเรื่อง<input id="ownerTitle" maxlength="160" required></label><label>หมวด<select id="ownerType"><option value="media">สื่อความปลอดภัย</option><option value="comic">การ์ตูน</option></select></label><label>ภาพ 1–30 ภาพ<input id="ownerImages" type="file" accept="image/png,image/jpeg,image/webp" multiple required></label><p class="owner-note">PNG / JPG / WebP ไม่เกิน 10 MB ต่อภาพ ปรับลำดับหน้าก่อนเพิ่มได้</p><ol id="ownerFiles" class="owner-page-list"></ol><button class="btn btn-primary">เพิ่มรายการ</button></form><section id="ownerList" class="owner-list"></section></div></div>
       <button id="ownerLogout" type="button" class="btn btn-secondary" hidden>ออกจากระบบ</button>`;
     document.body.append(dialog);
-    const confirm=node('dialog');confirm.id='ownerConfirm';confirm.className='owner-dialog';confirm.innerHTML='<p id="ownerConfirmTitle"></p><p class="owner-note">รายการจะหายจากคลังสาธารณะและกู้คืนได้ ภาพที่เปิดอยู่แล้วอาจดูได้อีกไม่เกิน 60 วินาที</p><button id="ownerConfirmCancel" class="btn btn-secondary">เก็บไว้</button> <button id="ownerConfirmMove" class="btn btn-primary">ย้ายไปถังพัก</button>';document.body.append(confirm);
+    const confirm=node('dialog');confirm.id='ownerConfirm';confirm.className='owner-dialog';confirm.innerHTML='<p id="ownerConfirmTitle"></p><p class="owner-note">รายการจะหายจากคลังสาธารณะและกู้คืนได้ ลิงก์ภาพที่แชร์ไว้ก่อนหน้ายังเปิดได้ตามการตั้งค่าเดิม</p><button id="ownerConfirmCancel" class="btn btn-secondary">เก็บไว้</button> <button id="ownerConfirmMove" class="btn btn-primary">ย้ายไปถังพัก</button>';document.body.append(confirm);
     const rename=node('dialog');rename.id='ownerRename';rename.className='owner-dialog';rename.innerHTML='<form id="ownerRenameForm"><h3>แก้ชื่อเรื่อง</h3><input id="ownerRenameId" type="hidden"><label>ชื่อเรื่อง<input id="ownerRenameTitle" maxlength="160" required></label><button class="btn btn-primary">บันทึก</button> <button type="button" id="ownerRenameCancel" class="btn btn-secondary">ยกเลิก</button></form>';document.body.append(rename);
     $('ownerClose').onclick=()=>{if(!busy)dialog.close();};dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
     $('ownerEmailForm').onsubmit=login;$('ownerCodeForm').onsubmit=verify;$('ownerEditor').onsubmit=upload;

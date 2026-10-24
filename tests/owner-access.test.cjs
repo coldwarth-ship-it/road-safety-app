@@ -15,6 +15,14 @@ test('order moves preserve each item; trash stays out of public data',()=>{
   assert.equal(core.imagePath('https://attacker.invalid/a.png'),false);
   assert.equal(core.imagePath('../../anything.png'),false);
 });
+test('existing comic and storage URLs work while external or credential-bearing URLs are rejected',()=>{
+  const project='https://selohymkkwvldhtohtbm.supabase.co',bucket='sharky-media';
+  assert(core.trustedImageUrl('https://coldwarth-ship-it.github.io/road-safety-app/game/assets/story-01.webp',project,bucket));
+  assert(core.trustedImageUrl(project+'/storage/v1/object/public/'+bucket+'/image.webp',project,bucket));
+  for(const url of ['javascript:alert(1)','https://attacker.invalid/image.png','https://coldwarth-ship-it.github.io/other/image.png','https://u:p@coldwarth-ship-it.github.io/road-safety-app/a.png',project+'/storage/v1/object/public/chat-images/private.png']){
+    assert.equal(core.trustedImageUrl(url,project,bucket),false);
+  }
+});
 function authHarness({identity=200,anonymous=false,permission='true',permissionStatus=200,configured=true}={}){
   const calls=[];
   const context={PropertiesService:{getScriptProperties:()=>({getProperty:n=>configured?(n==='ROAD_SUPABASE_URL'?'https://selohymkkwvldhtohtbm.supabase.co':'public-key'):null})},

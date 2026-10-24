@@ -25,11 +25,20 @@
   function imagePath(value) {
     return typeof value==='string' && /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9]{2}-[0-9a-f-]{36}\.(png|jpg|webp)$/.test(value);
   }
+  function trustedImageUrl(value,project,bucket) {
+    if(typeof value!=='string')return false;
+    try {
+      const u=new URL(value),p=new URL(project);
+      if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)return false;
+      return (u.origin==='https://coldwarth-ship-it.github.io' && u.pathname.startsWith('/road-safety-app/')) ||
+        (u.origin===p.origin && u.pathname.startsWith('/storage/v1/object/public/'+bucket+'/'));
+    }catch(e){return false;}
+  }
   function move(items, from, to) {
     if (!Number.isInteger(from)||from<0||from>=items.length) throw Error('ไม่พบรายการ');
     to=Math.max(0,Math.min(items.length-1,Number.isFinite(Number(to))?Math.trunc(Number(to)):from));
     const result=items.slice();result.splice(to,0,result.splice(from,1)[0]);return result;
   }
   function publicItems(items) {return items.filter(item=>!item.deleted_at).sort((a,b)=>a.sort_order-b.sort_order || String(a.id).localeCompare(String(b.id)));}
-  return Object.freeze({TYPES,validateFiles,title,category,imagePath,move,publicItems});
+  return Object.freeze({TYPES,validateFiles,title,category,imagePath,trustedImageUrl,move,publicItems});
 });
