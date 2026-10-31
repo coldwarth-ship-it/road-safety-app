@@ -970,6 +970,7 @@ body:not(.light-theme){--bg:#28252b;--bg2:#343039;--bg3:#403841;--bg4:#4b4049;--
 .media-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start}.media-card{display:inline-block;width:100%;break-inside:avoid;margin:0 0 20px;padding:0;overflow:hidden}.media-card button{padding:0}.media-card img{width:100%;height:auto!important;max-height:none!important;object-fit:initial;background:transparent;border-radius:0}.media-card figcaption{margin:0;padding:14px 16px 5px}.media-card small{display:block;margin:0;padding:0 16px 15px}.reader{width:fit-content;max-width:96vw;overflow:auto}.reader img{width:100%;height:auto;max-height:none;object-fit:initial;background:transparent}.reader-head h2{line-height:1.6;font-size:14px}.reader-head button{flex-shrink:0}.reader-foot button{font-size:11px}.reader-foot button:disabled{opacity:.35;cursor:default}.sharky-friend img{height:115px;width:80px;object-fit:contain}.preview-mobile .media-grid{columns:1}.owner-entry-dialog{width:min(440px,94vw);border:1px solid var(--border2);border-radius:25px;background:var(--bg2);color:var(--text);padding:24px;margin:auto;line-height:1.8}.owner-entry-dialog::backdrop{background:#29222b99}.owner-entry-dialog p{font-size:13px;color:var(--text2)}
 @media(max-width:1000px){.media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:550px){.media-grid{grid-template-columns:1fr}.reader{padding:10px}.sharky-friend img{width:62px;height:94px}}@media(prefers-reduced-motion:reduce){.sharky-friend img{animation:none}}
 </style><link rel="stylesheet" href="site/owner.css">
+<link rel="stylesheet" href="site/mobile-usability.css">
 </head>
 <body>
 <script>
@@ -1052,7 +1053,7 @@ if (false) {
     </button>
   </div>
 
-  <div class="nav-section"><div class="nav-label">อ่านกับพี่ชาร์คกี้</div><button class="nav-item" onclick="showPage('sharkymedia')"><span class="nav-icon">📚</span> สื่อและการ์ตูนพี่ชาร์คกี้</button></div><div class="nav-section"><div class="nav-label">สำหรับเจ้าของ</div><button class="nav-item" onclick="document.getElementById('ownerEntry').showModal()"><span class="nav-icon">🔐</span> เข้าสู่ระบบเจ้าของ</button></div><div class="sidebar-footer">
+  <div class="nav-section"><div class="nav-label">อ่านกับพี่ชาร์คกี้</div><button id="restoreSharky" class="nav-item" type="button" onclick="restoreSharky()" hidden>🦈 แสดงพี่ชาร์คกี้อีกครั้ง</button><button class="nav-item" onclick="showPage('sharkymedia')"><span class="nav-icon">📚</span> สื่อและการ์ตูนพี่ชาร์คกี้</button></div><div class="nav-section"><div class="nav-label">สำหรับเจ้าของ</div><button class="nav-item" onclick="document.getElementById('ownerEntry').showModal()"><span class="nav-icon">🔐</span> เข้าสู่ระบบเจ้าของ</button></div><div class="sidebar-footer">
     <div class="gs-status">
       <div class="gs-dot" id="gsDot"></div>
       <span id="gsStatusText">ยังไม่ได้เชื่อมต่อ Google Sheet</span>
@@ -1082,6 +1083,7 @@ if (false) {
 
 <div class="section" id="page-incidentmap">
   <div id="incidentMap" aria-label="แผนที่จุดเสี่ยงและอุบัติเหตุจริง"></div>
+  <div class="incident-location-controls"><button id="incidentLocateBtn" class="btn btn-secondary btn-sm" onclick="locateIncidentPosition()" type="button" aria-describedby="incidentLocationStatus">📍 ตำแหน่งของฉัน</button><p id="incidentLocationStatus" role="status" hidden></p></div>
   <details class="incident-panel" id="incidentLayerPanel" open>
     <summary>🗂️ ชั้นข้อมูล</summary>
     <label><input type="checkbox" id="incidentZonesToggle" checked onchange="renderIncidentMap()"> รายงานจุดเสี่ยง <span id="incidentZoneCount">0</span> จุด</label>
@@ -1091,8 +1093,8 @@ if (false) {
     <button class="btn btn-secondary btn-sm" onclick="loadIncidentEvents()">🔄 โหลดอุบัติเหตุใหม่</button>
     <button class="btn btn-secondary btn-sm" onclick="fitIncidentMap()">ดูทุกจุดที่เปิดอยู่</button>
     <details style="margin-top:12px"><summary>สีระดับการบาดเจ็บ</summary><div id="incidentLegend"></div></details>
-    <p style="margin-top:12px">หมุดกลม = อุบัติเหตุจริง ตัวเลข = จำนวนครั้ง<br>สี = ระดับสูงสุดของจุดนั้น<br>หมุดหยดน้ำ = รายงานจุดเสี่ยง</p>
-    <p>จุดอุบัติเหตุรวมด้วยรหัสจุดเดียวกัน หรือพิกัดตรงกันเมื่อไม่มีรหัส ไม่รวมจุดใกล้กันโดยอัตโนมัติ</p>
+    <details class="incident-map-help"><summary>คำอธิบายหมุด</summary><p>หมุดกลม = อุบัติเหตุจริง ตัวเลข = จำนวนครั้ง<br>สี = ระดับสูงสุดของจุดนั้น<br>หมุดหยดน้ำ = รายงานจุดเสี่ยง</p>
+    <p>จุดอุบัติเหตุรวมด้วยรหัสจุดเดียวกัน หรือพิกัดตรงกันเมื่อไม่มีรหัส ไม่รวมจุดใกล้กันโดยอัตโนมัติ</p></details>
   </details>
 </div>
 
@@ -2627,7 +2629,7 @@ async function loadIncidentEvents() {
 let incidentPanelInitialized = false;
 function openIncidentMap() {
   if (!incidentPanelInitialized) {
-    document.getElementById('incidentLayerPanel').open = !window.matchMedia('(max-width:600px)').matches;
+    document.getElementById('incidentLayerPanel').open = !(window.matchMedia('(max-width:900px)').matches || document.body.classList.contains('preview-mobile'));
     incidentPanelInitialized = true;
   }
   ensureIncidentMap(); renderIncidentMap();
@@ -2725,14 +2727,14 @@ document.addEventListener('DOMContentLoaded',()=>document.getElementById('roadCh
 const originalPreviewShowPage=showPage;showPage=function(name){originalPreviewShowPage(name);document.getElementById('sidebar').classList.remove('mobile-open');};
 function chooseDevice(mode){document.body.classList.toggle('preview-mobile',mode==='mobile');document.getElementById('deviceWelcome').style.display='none';window.dispatchEvent(new Event('resize'));}
 function chooseAgain(){document.getElementById('deviceWelcome').style.display='grid';}
-</script><dialog id="sharkyReader" class="reader"><div class="reader-head"><h2 id="sharkyReaderTitle"></h2><button onclick="document.getElementById('sharkyReader').close()" aria-label="ปิดตัวอ่าน">✕ ปิด</button></div><img id="sharkyReaderImage" alt=""><div class="reader-foot"><button id="sharkyPrevious" onclick="sharkyReaderMove(-1)">← ก่อนหน้า</button><span id="sharkyReaderPage"></span><button id="sharkyNext" onclick="sharkyReaderMove(1)">ถัดไป →</button></div></dialog><div class="sharky-friend" id="sharkyFriend"><button class="sharky-speech" onclick="showPage('sharkymedia')">อ่านสื่อกับผมไหมครับ? 📖<br><b>เปิดคลังสื่อพี่ชาร์คกี้ →</b></button><img src="assets/site/15f546fe13a66951.webp" alt="พี่ชาร์คกี้ขยับทักทาย"><button class="sharky-hide" onclick="toggleSharky()" aria-label="ย่อหรือขยายข้อความพี่ชาร์คกี้">−</button></div><script> pageTitles.sharkymedia="สื่อและการ์ตูนพี่ชาร์คกี้";</script><script>
+</script><dialog id="sharkyReader" class="reader"><div class="reader-head"><h2 id="sharkyReaderTitle"></h2><button onclick="document.getElementById('sharkyReader').close()" aria-label="ปิดตัวอ่าน">✕ ปิด</button></div><img id="sharkyReaderImage" alt=""><div class="reader-foot"><button id="sharkyPrevious" onclick="sharkyReaderMove(-1)">← ก่อนหน้า</button><span id="sharkyReaderPage"></span><button id="sharkyNext" onclick="sharkyReaderMove(1)">ถัดไป →</button></div></dialog><div class="sharky-friend" id="sharkyFriend"><button class="sharky-speech" onclick="showPage('sharkymedia')">อ่านสื่อกับผมไหมครับ? 📖<br><b>เปิดคลังสื่อพี่ชาร์คกี้ →</b></button><img src="assets/site/15f546fe13a66951.webp" alt="พี่ชาร์คกี้ขยับทักทาย"><button class="sharky-hide" onclick="closeSharky()" aria-label="ปิดพี่ชาร์คกี้" title="ปิดพี่ชาร์คกี้">✕</button></div><script> pageTitles.sharkymedia="สื่อและการ์ตูนพี่ชาร์คกี้";</script><script>
 function toggleSharky(){const friend=document.getElementById('sharkyFriend');friend.classList.toggle('mini');friend.querySelector('.sharky-hide').textContent=friend.classList.contains('mini')?'+':'−';}
 document.addEventListener('keydown',e=>{if(!document.getElementById('sharkyReader').open)return;if(e.key==='ArrowRight')sharkyReaderMove(1);if(e.key==='ArrowLeft')sharkyReaderMove(-1)});
 document.addEventListener('DOMContentLoaded',()=>loadStats());
 </script><script>
 function fitSharkyReader(){const image=document.getElementById('sharkyReaderImage');if(!image.naturalWidth)return;const padding=window.innerWidth<550?20:32;const maxWidth=Math.min(960,window.innerWidth*.96)-padding;const maxHeight=Math.max(180,window.innerHeight-190);const scale=Math.min(1,maxWidth/image.naturalWidth,maxHeight/image.naturalHeight);document.getElementById('sharkyReader').style.width=(Math.ceil(image.naturalWidth*scale)+padding)+'px';}
 document.getElementById('sharkyReaderImage').addEventListener('load',fitSharkyReader);window.addEventListener('resize',fitSharkyReader);
-</script><script src="site/official-stats.js"></script><script src="site/owner-config.js"></script><script src="site/media-core.js"></script><script src="site/owner-media.js"></script>
+</script><script src="site/mobile-usability.js"></script><script src="site/official-stats.js"></script><script src="site/owner-config.js"></script><script src="site/media-core.js"></script><script src="site/owner-media.js"></script>
 </body>
 </html>
 

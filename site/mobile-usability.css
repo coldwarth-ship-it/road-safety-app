@@ -1,0 +1,61 @@
+:root{--app-topbar-height:78px;--app-bottom-nav-height:0px}
+.sharky-friend[hidden],#restoreSharky[hidden]{display:none!important}
+.sharky-hide{width:32px;height:32px;min-width:32px;cursor:pointer;font-size:17px;display:grid;place-items:center}
+body.incident-map-active .preview-ribbon{display:none}
+body.incident-map-active #page-incidentmap{height:calc(100dvh - var(--app-topbar-height) - var(--app-bottom-nav-height))!important;min-height:180px}
+.incident-location-controls{position:absolute;top:12px;left:54px;z-index:850;max-width:calc(100% - 70px);pointer-events:none}
+.incident-location-controls .btn{pointer-events:auto;min-height:44px;box-shadow:0 2px 8px #0002;background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
+#incidentLocationStatus{max-width:250px;margin:5px 0 0;padding:6px 9px;border-radius:8px;background:var(--bg2);color:var(--text2);box-shadow:0 2px 6px #0002;font-size:11px;line-height:1.5}
+.incident-panel{max-height:calc(100% - 24px)}
+:is(body.mobile-layout,body.preview-mobile) .topbar{height:52px!important;padding:0 10px!important;gap:5px}
+:is(body.mobile-layout,body.preview-mobile) .page-title{font-size:13px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:is(body.mobile-layout,body.preview-mobile) .topbar>div:first-child{min-width:0;gap:7px!important}
+:is(body.mobile-layout,body.preview-mobile) .topbar-right{gap:4px;flex-shrink:0}
+:is(body.mobile-layout,body.preview-mobile) .topbar-right .btn{min-height:36px;padding:6px 9px;font-size:11px}
+:is(body.mobile-layout,body.preview-mobile) .topbar-right .btn[onclick='syncData()']{font-size:0}
+:is(body.mobile-layout,body.preview-mobile) .topbar-right .btn[onclick='syncData()']:after{content:'↻';font-size:18px}
+:is(body.mobile-layout,body.preview-mobile) .content{padding:10px 10px 80px}
+:is(body.mobile-layout,body.preview-mobile) .preview-ribbon{padding:5px 9px;margin-bottom:10px;gap:6px;border-radius:10px;font-size:10px;line-height:1.4}
+:is(body.mobile-layout,body.preview-mobile) .preview-ribbon button{font-size:10px;padding:5px 0;min-height:30px}
+:is(body.mobile-layout,body.preview-mobile) .kawaii-hero{min-height:170px;padding:15px 16px;margin-bottom:12px;border-radius:18px;gap:8px}
+:is(body.mobile-layout,body.preview-mobile) .kawaii-hero h1{font-size:20px;line-height:1.35;margin:5px 0 8px}
+:is(body.mobile-layout,body.preview-mobile) .kawaii-hero p{font-size:11px;line-height:1.5;margin:7px 0}
+:is(body.mobile-layout,body.preview-mobile) .hero-eyebrow{font-size:9px;letter-spacing:.04em}
+:is(body.mobile-layout,body.preview-mobile) .hero-foot{gap:6px;margin-top:10px}
+:is(body.mobile-layout,body.preview-mobile) .hero-foot .btn{min-height:38px;font-size:11px;padding:7px 10px}
+:is(body.mobile-layout,body.preview-mobile) .kawaii-doodle.sharky-main{width:100px;height:125px}
+:is(body.mobile-layout,body.preview-mobile) .stat-grid{gap:8px;margin-bottom:12px}
+:is(body.mobile-layout,body.preview-mobile) .stat-card{padding:12px;border-radius:16px}
+:is(body.mobile-layout,body.preview-mobile) .stat-card .stat-value{font-size:26px!important}
+:is(body.mobile-layout,body.preview-mobile) .stat-card .stat-label{font-size:11px;margin-bottom:6px}
+:is(body.mobile-layout,body.preview-mobile) .stat-card .stat-change{font-size:10px;line-height:1.5}
+:is(body.mobile-layout,body.preview-mobile) .card{padding:14px;border-radius:16px}
+:is(body.mobile-layout,body.preview-mobile) .card-header{margin-bottom:10px}
+:is(body.mobile-layout,body.preview-mobile) .card-title{font-size:13px}
+:is(body.mobile-layout,body.preview-mobile) .card-sub{font-size:10px}
+:is(body.mobile-layout,body.preview-mobile) .media-intro{padding:14px 16px;border-radius:16px;margin-bottom:10px}
+:is(body.mobile-layout,body.preview-mobile) .media-intro h1{font-size:18px;margin:4px 0 7px;line-height:1.4}
+:is(body.mobile-layout,body.preview-mobile) .media-intro p{font-size:11px;line-height:1.55;margin:5px 0}
+:is(body.mobile-layout,body.preview-mobile) .media-toolbar{top:52px;gap:6px;padding:6px 0;margin-bottom:8px}
+:is(body.mobile-layout,body.preview-mobile) .media-tab{min-height:40px;padding:7px 11px;font-size:12px}
+:is(body.mobile-layout,body.preview-mobile) .media-hint{font-size:10px;margin:5px 0 9px}
+:is(body.mobile-layout,body.preview-mobile) .bottom-kawaii{padding:3px 6px calc(3px + env(safe-area-inset-bottom));min-height:54px}
+:is(body.mobile-layout,body.preview-mobile) .bottom-kawaii button{min-height:44px;padding:3px 8px;font-size:10px}
+:is(body.mobile-layout,body.preview-mobile) .bottom-kawaii button span{font-size:17px;margin-bottom:1px}
+:is(body.mobile-layout,body.preview-mobile) #roadChatLaunch{bottom:calc(var(--app-bottom-nav-height) + 10px);padding:7px 10px;min-height:38px;font-size:11px;right:10px}
+:is(body.mobile-layout,body.preview-mobile) .sharky-friend{left:10px;bottom:calc(var(--app-bottom-nav-height) + 10px)}
+:is(body.mobile-layout,body.preview-mobile) .sharky-friend img{width:48px;height:70px}
+:is(body.mobile-layout,body.preview-mobile) .sharky-speech{display:none}
+:is(body.mobile-layout,body.preview-mobile) .sharky-hide{width:32px;height:32px}
+:is(body.mobile-layout,body.preview-mobile) .nav-item{min-height:40px;padding:8px 12px;font-size:12px}
+:is(body.mobile-layout,body.preview-mobile) .incident-panel{top:8px;right:8px;width:220px;padding:8px;max-height:min(45dvh,calc(100% - 18px))}
+:is(body.mobile-layout,body.preview-mobile) .incident-panel:not([open]){width:fit-content;padding:4px 8px}
+:is(body.mobile-layout,body.preview-mobile) .incident-panel summary{font-size:12px;min-height:32px;display:list-item;line-height:1.6}
+:is(body.mobile-layout,body.preview-mobile) .incident-panel label{min-height:36px;margin:2px 0;font-size:11px}
+:is(body.mobile-layout,body.preview-mobile) .incident-panel .btn{min-height:36px;font-size:11px;padding:6px 9px}
+:is(body.mobile-layout,body.preview-mobile) .incident-location-controls{top:8px;left:50px}
+:is(body.mobile-layout,body.preview-mobile) #incidentLocateBtn{font-size:11px;padding:6px 10px}
+:is(body.mobile-layout,body.preview-mobile) #incidentLocationStatus{max-width:200px;font-size:10px}
+@media(max-width:360px){.mobile-layout .page-title{max-width:145px}.mobile-layout #lastSyncTime{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mobile-layout .incident-panel:not([open]){max-width:104px}.mobile-layout #incidentLocateBtn{padding:6px 8px;font-size:10px}}
+body.incident-map-active .content{padding:0!important}
+body.preview-mobile .media-grid{grid-template-columns:1fr}
