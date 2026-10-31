@@ -1,10 +1,10 @@
 // Road Safety East — update this version when releasing a new app shell.
-const VERSION = '2026-10-23-owner-media-1';
+const VERSION = '2026-10-31-official-stats-1';
 const SCOPE = self.registration.scope;
 const PREFIX = 'road-safety-east:' + encodeURIComponent(SCOPE) + ':';
 const CACHE_NAME = PREFIX + VERSION;
 const HOME = new URL('index.html', SCOPE).href;
-const ASSETS = ['index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'site/owner.css', 'site/owner-config.js', 'site/media-core.js', 'site/owner-media.js', 'assets/site/15f546fe13a66951.webp']
+const ASSETS = ['index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'site/owner.css', 'site/official-stats.js', 'site/owner-config.js', 'site/media-core.js', 'site/owner-media.js', 'assets/site/15f546fe13a66951.webp']
   .map(path => new URL(path, SCOPE).href);
 
 self.addEventListener('install', event => {

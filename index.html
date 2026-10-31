@@ -1106,9 +1106,9 @@ if (false) {
           <div class="stat-change up" id="statZonesChange">ดึงข้อมูลจาก Google Sheet</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">อุบัติเหตุรวมตามข้อมูลในชีต</div>
+          <div class="stat-label">อุบัติเหตุกรมทางหลวงทั่วประเทศ</div>
           <div class="stat-value" id="totalAccidents">—</div>
-          <div class="stat-change up">ตามข้อมูลในชีตสถิติ</div>
+          <div class="stat-change" id="dashboardAccidentSource">กำลังโหลดข้อมูลทางการ…</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">รายงานรอตรวจสอบ</div>
@@ -1116,12 +1116,13 @@ if (false) {
           <div class="stat-change">รายงานทั้งหมดที่ยังรอตรวจสอบ</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">จังหวัดที่มีข้อมูล</div>
+          <div class="stat-label">จังหวัดที่มีข้อมูลจุดเสี่ยง</div>
           <div class="stat-value" id="provinceDataCount">—</div>
           <div class="stat-change down">รองรับการแจ้งครบ 77 จังหวัด</div>
         </div>
       </div>
 
+      <p id="officialHomeStatus" style="font-size:12px;color:var(--text2)">กำลังโหลดสถิติกรมทางหลวง…</p>
       <div class="grid-2" style="margin-bottom:24px">
         <div class="card">
           <div class="card-header">
@@ -1394,14 +1395,18 @@ if (false) {
     <!-- ===== ACCIDENTS ===== -->
     <div class="section" id="page-accidents">
       <div class="api-note">
-        📡 ข้อมูลสถิติอุบัติเหตุ — ดึงจาก Google Sheet "สถิติ" แบบ Real-time
-        <button class="btn btn-secondary btn-sm" onclick="loadStats()" style="margin-left:10px">🔄 โหลดใหม่</button>
+        📡 สถิติทางการ TRAMS / กรมทางหลวง • ตรวจต้นทางอัตโนมัติทุกวัน
+        <button class="btn btn-secondary btn-sm" onclick="loadStats()" style="margin-left:10px">🔄 โหลดผลล่าสุด</button>
       </div>
 
-      <!-- ✅ DYNAMIC STAT CARDS — ดึงจาก Sheet "สถิติ" -->
+      <p id="officialLoadStatus" role="status">กำลังโหลดข้อมูลทางการ…</p>
+      <p id="officialMetadata" style="font-size:12px;line-height:1.8"></p>
+      <p id="officialFreshness" style="font-size:12px;color:var(--text2)"></p>
+      <p style="font-size:12px">เฉพาะโครงข่ายกรมทางหลวง ไม่ครอบคลุมทุกถนนและไม่ใช่สถิติเฉพาะไรเดอร์</p>
+      <div class="filter-row"><label for="officialProvince">เลือกจังหวัด</label><select id="officialProvince"><option value="">ทุกจังหวัด</option></select><a class="map-link" href="https://datagov.mot.go.th/dataset/roadaccident" target="_blank" rel="noopener noreferrer">ดูแหล่งข้อมูลทางการ ↗</a></div>
       <div class="stat-grid" style="margin-bottom:20px">
         <div class="stat-card">
-          <div class="stat-label">อุบัติเหตุรวมตามข้อมูลในชีต</div>
+          <div class="stat-label">ระเบียนอุบัติเหตุกรมทางหลวง</div>
           <div class="stat-value risk-high" id="statTotalAccidents">—</div>
           <div class="stat-change up" id="statAccidentsChange">กำลังโหลด...</div>
         </div>
@@ -1416,19 +1421,19 @@ if (false) {
           <div class="stat-change" id="statInjuredChange">กำลังโหลด...</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">รถจักรยานยนต์ (สัดส่วนเฉลี่ย)</div>
+          <div class="stat-label">สัดส่วนเหตุที่มีรถจักรยานยนต์</div>
           <div class="stat-value" id="statAvgRatio">—</div>
-          <div class="stat-change" id="statRatioChange">ของอุบัติเหตุทั้งหมด</div>
+          <div class="stat-change" id="statRatioChange">ของระเบียนเหตุในชุดที่เลือก</div>
         </div>
       </div>
 
       <div class="grid-2" style="margin-bottom:20px">
         <div class="card">
-          <!-- ✅ DYNAMIC TABLE — ดึงจาก Sheet "สถิติ" -->
+          <!-- Official province records -->
           <div class="card-header">
             <div>
               <div class="card-title">สถิติรายจังหวัดที่มีข้อมูล</div>
-              <div class="card-sub" id="statsYearLabel">จาก Google Sheet "สถิติ"</div>
+              <div class="card-sub" id="statsYearLabel">ข้อมูลทางการกรมทางหลวง</div>
             </div>
           </div>
           <div class="table-wrap">
@@ -1440,7 +1445,7 @@ if (false) {
                   <th>เสียชีวิต</th>
                   <th>บาดเจ็บสาหัส</th>
                   <th>สัดส่วน จยย.</th>
-                  <th>แหล่งข้อมูล</th>
+                  <th>เหตุล่าสุดที่พบ</th>
                 </tr>
               </thead>
               <tbody id="statsTableBody">
@@ -1448,7 +1453,7 @@ if (false) {
                   <td colspan="6" style="text-align:center;padding:40px;color:var(--text3)">
                     <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
                       <span style="font-size:24px">⏳</span>
-                      <span>กำลังโหลดข้อมูลจาก Google Sheet...</span>
+                      <span>กำลังโหลดข้อมูลทางการ...</span>
                     </div>
                   </td>
                 </tr>
@@ -1458,16 +1463,9 @@ if (false) {
         </div>
 
         <div class="card">
-          <div class="card-header"><div class="card-title">สาเหตุหลักอุบัติเหตุ</div></div>
-          <div style="margin-top:4px">
-            <div class="risk-bar-container"><div class="risk-bar-label">ขับเร็วเกิน</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:82%;background:#F85149"></div></div><div class="risk-bar-val">82%</div></div>
-            <div class="risk-bar-container"><div class="risk-bar-label">เมาแล้วขับ</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:41%;background:#E3B341"></div></div><div class="risk-bar-val">41%</div></div>
-            <div class="risk-bar-container"><div class="risk-bar-label">ตัดหน้ากระชั้น</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:35%;background:#E3B341"></div></div><div class="risk-bar-val">35%</div></div>
-            <div class="risk-bar-container"><div class="risk-bar-label">ไม่สวมหมวก</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:28%;background:#58A6FF"></div></div><div class="risk-bar-val">28%</div></div>
-            <div class="risk-bar-container"><div class="risk-bar-label">ถนนไม่ดี</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:19%;background:#56D364"></div></div><div class="risk-bar-val">19%</div></div>
-            <div class="risk-bar-container"><div class="risk-bar-label">หลับใน</div><div class="risk-bar-track"><div class="risk-bar-fill" style="width:14%;background:#56D364"></div></div><div class="risk-bar-val">14%</div></div>
-          </div>
-          <div style="margin-top:16px;font-size:11px;color:var(--text3)" id="statsCauseSource">ที่มา: กรมทางหลวง / สรจ. / รายงานอุบัติเหตุทางถนน</div>
+          <div class="card-header"><div class="card-title">มูลเหตุสันนิษฐานที่พบบ่อย</div></div>
+          <div id="statsCauses">กำลังโหลดข้อมูลทางการ…</div>
+          <p style="font-size:11px;color:var(--text3)" id="statsCauseSource">ที่มา: กระทรวงคมนาคม / TRAMS / กรมทางหลวง</p>
         </div>
       </div>
     </div>
@@ -1583,8 +1581,7 @@ if (false) {
         <div class="config-area">
           <strong>Sheet 1: "จุดเสี่ยง"</strong><br>
           คอลัมน์: timestamp | จังหวัด | อำเภอ | ชื่อจุด | ประเภท | ละติจูด | ลองจิจูด | ระดับความเสี่ยง | รายละเอียด | รูปภาพ | ผู้แจ้ง | สถานะ<br><br>
-          <strong>Sheet 2: "สถิติ"</strong><br>
-          คอลัมน์: stat_id | ปี พ.ศ. | จังหวัด | อุบัติเหตุรวม | ผู้เสียชีวิต | บาดเจ็บสาหัส | สัดส่วน จยย. (%) | แหล่งข้อมูล | หมายเหตุ
+          <strong>สถิติกรมทางหลวง</strong><br>นำเข้าจากข้อมูลทางการ TRAMS อัตโนมัติ ไม่ต้องกรอกชีทสถิติเอง
         </div>
       </div>
     </div>
@@ -1907,8 +1904,13 @@ async function loadZones() {
       } catch(_) {}
     } else throw new Error((json && json.message) || 'API error');
   } catch(e) {
-    console.error('loadZones error:',e); zonesData = [];
-    renderZonesTable([]); renderRecentZones([]); updateDashboardStats([]);
+    console.error('loadZones error:',e);
+    if (!zonesData.length) {
+      document.getElementById('totalZones').textContent = '—';
+      document.getElementById('provinceDataCount').textContent = '—';
+      document.getElementById('recentZonesList').textContent = 'ยังโหลดข้อมูลจุดเสี่ยงไม่ได้';
+    }
+    document.getElementById('statZonesChange').textContent = zonesData.length ? 'โหลดใหม่ไม่สำเร็จ แสดงข้อมูลครั้งก่อน' : 'โหลดข้อมูลไม่สำเร็จ';
     showToast('⚠️ ดึงข้อมูลจุดเสี่ยงไม่ได้: ' + (e.message || e),'error');
   }
 }
@@ -1923,7 +1925,7 @@ function updateLastSyncTime() {
   if (!el) return;
   const now = new Date();
   const timeStr = now.toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit', hour12:false });
-  el.textContent = '🕐 อัปเดตล่าสุด ' + timeStr + ' น.';
+  el.textContent = '🕐 ดึงข้อมูลจุดเสี่ยงล่าสุด ' + timeStr + ' น.';
   el.title = now.toLocaleString('th-TH', { timeZone:'Asia/Bangkok' });
 }
 
@@ -2112,128 +2114,7 @@ function riskBadge(r) {
 }
 
 // ===== LOAD STATS (จาก Sheet "สถิติ") — หัวใจของการแก้ไข =====
-async function loadStats() {
-  const tbody = document.getElementById('statsTableBody');
-  if (!tbody) return;
-
-  // แสดง loading skeleton
-  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text3)">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-      <span style="width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--primary-light);border-radius:50%;animation:rptSpin 0.7s linear infinite;display:inline-block"></span>
-      <span style="font-size:13px">กำลังดึงข้อมูลจาก Google Sheet...</span>
-    </div>
-  </td></tr>`;
-
-  // Reset stat cards
-  ['statTotalAccidents','statTotalDeaths','statTotalInjured','statAvgRatio'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.textContent = '...';
-  });
-
-  try {
-    const json = await apiGet('stats');
-
-    if (!json || json.status !== 'ok' || !Array.isArray(json.data)) {
-      throw new Error((json && json.message) || 'ไม่ได้รับข้อมูลจาก API');
-    }
-
-    // กรองแถวที่มีข้อมูลจังหวัด
-    const rows = json.data.filter(r => r['จังหวัด'] && String(r['จังหวัด']).trim() !== '');
-
-    if (!rows.length) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3)">
-        <div class="empty-state"><div class="ei">📊</div>
-        <div class="et">ยังไม่มีข้อมูลใน Sheet "สถิติ"<br><span style="font-size:11px;margin-top:4px;display:block">ตรวจสอบโครงสร้างคอลัมน์ใน Sheet</span></div></div>
-      </td></tr>`;
-      ['statTotalAccidents','statTotalDeaths','statTotalInjured','statAvgRatio'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.textContent = '—';
-      });
-      return;
-    }
-
-    // คำนวณ totals
-    let totalAcc = 0, totalDeath = 0, totalInjured = 0, ratioSum = 0, ratioCount = 0;
-    let years = new Set();
-
-    rows.forEach(r => {
-      totalAcc     += parseInt(r['อุบัติเหตุรวม'])    || 0;
-      totalDeath   += parseInt(r['ผู้เสียชีวิต'])      || 0;
-      totalInjured += parseInt(r['บาดเจ็บสาหัส'])      || 0;
-      const ratio = parseFloat(r['สัดส่วน จยย. (%)']);
-      if (!isNaN(ratio)) { ratioSum += ratio; ratioCount++; }
-      if (r['ปี พ.ศ.']) years.add(String(r['ปี พ.ศ.']).trim());
-    });
-
-    // อัปเดต stat cards
-    document.getElementById('statTotalAccidents').textContent = totalAcc.toLocaleString();
-    document.getElementById('statTotalDeaths').textContent    = totalDeath.toLocaleString();
-    document.getElementById('statTotalInjured').textContent   = totalInjured.toLocaleString();
-    document.getElementById('statAvgRatio').textContent       = ratioCount ? Math.round(ratioSum / ratioCount) + '%' : '—';
-
-    // อัปเดต dashboard stat card ด้วย
-    document.getElementById('totalAccidents').textContent = totalAcc.toLocaleString();
-    updateLastSyncTime();
-
-    // อัปเดต label ปี
-    const yearLabel = document.getElementById('statsYearLabel');
-    if (yearLabel && years.size) yearLabel.textContent = 'ข้อมูลปี พ.ศ. ' + [...years].sort().join(', ');
-
-    // อัปเดต source
-    const sources = [...new Set(rows.map(r => r['แหล่งข้อมูล']).filter(Boolean))];
-    const causeSource = document.getElementById('statsCauseSource');
-    if (causeSource && sources.length) causeSource.textContent = 'ที่มา: ' + sources.join(', ');
-
-    // เรียงตาม อุบัติเหตุรวม มากสุดก่อน
-    rows.sort((a, b) => (parseInt(b['อุบัติเหตุรวม'])||0) - (parseInt(a['อุบัติเหตุรวม'])||0));
-
-    // คำนวณ max เพื่อทำ mini bar
-    const maxAcc = Math.max(...rows.map(r => parseInt(r['อุบัติเหตุรวม'])||0), 1);
-
-    // render ตาราง
-    tbody.innerHTML = rows.map((r, i) => {
-      const acc     = parseInt(r['อุบัติเหตุรวม'])    || 0;
-      const death   = parseInt(r['ผู้เสียชีวิต'])      || 0;
-      const injured = parseInt(r['บาดเจ็บสาหัส'])      || 0;
-      const ratio   = parseFloat(r['สัดส่วน จยย. (%)']);
-      const source  = r['แหล่งข้อมูล'] || '—';
-      const barW    = Math.round((acc / maxAcc) * 100);
-
-      // Badge ระดับตามตัวเลขอุบัติเหตุ
-      let levelBadge = '';
-      if (i === 0) levelBadge = '<span class="badge badge-danger">สูงมาก</span>';
-      else if (i === 1) levelBadge = '<span class="badge badge-danger">สูง</span>';
-      else if (acc >= 700) levelBadge = '<span class="badge badge-warning">ปานกลาง</span>';
-      else levelBadge = '<span class="badge badge-success">ต่ำ</span>';
-
-      return `<tr>
-        <td style="color:var(--text);font-weight:500">${r['จังหวัด']||'—'}</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-weight:600;color:var(--text)">${acc.toLocaleString()}</span>
-            <div style="flex:1;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;min-width:40px">
-              <div style="width:${barW}%;height:100%;background:var(--primary);border-radius:2px"></div>
-            </div>
-          </div>
-        </td>
-        <td style="color:#F85149;font-weight:600">${death.toLocaleString()}</td>
-        <td style="color:#E3B341">${injured.toLocaleString()}</td>
-        <td><span style="font-family:monospace;color:#58A6FF">${isNaN(ratio)?'—':ratio.toFixed(1)+'%'}</span></td>
-        <td><span style="font-size:11px;color:var(--text3)">${source}</span></td>
-      </tr>`;
-    }).join('');
-
-  } catch(e) {
-    console.error('loadStats error:', e);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px">
-      <div style="color:#F85149;font-size:13px;margin-bottom:8px">❌ ดึงข้อมูลไม่สำเร็จ</div>
-      <div style="color:var(--text3);font-size:12px">${e.message || e}</div>
-      <button onclick="loadStats()" class="btn btn-secondary btn-sm" style="margin-top:12px">🔄 ลองใหม่</button>
-    </td></tr>`;
-    ['statTotalAccidents','statTotalDeaths','statTotalInjured','statAvgRatio'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.textContent = '—';
-    });
-    showToast('⚠️ ดึงข้อมูลสถิติไม่ได้: ' + (e.message||e), 'error');
-  }
-}
+async function loadStats() { return window.RoadOfficialStats.load(); }
 
 // ===== DASHBOARD MAP =====
 let dashMap = null, dashMarkers = [], dashUserMarker = null;
@@ -2851,7 +2732,7 @@ document.addEventListener('DOMContentLoaded',()=>loadStats());
 </script><script>
 function fitSharkyReader(){const image=document.getElementById('sharkyReaderImage');if(!image.naturalWidth)return;const padding=window.innerWidth<550?20:32;const maxWidth=Math.min(960,window.innerWidth*.96)-padding;const maxHeight=Math.max(180,window.innerHeight-190);const scale=Math.min(1,maxWidth/image.naturalWidth,maxHeight/image.naturalHeight);document.getElementById('sharkyReader').style.width=(Math.ceil(image.naturalWidth*scale)+padding)+'px';}
 document.getElementById('sharkyReaderImage').addEventListener('load',fitSharkyReader);window.addEventListener('resize',fitSharkyReader);
-</script><script src="site/owner-config.js"></script><script src="site/media-core.js"></script><script src="site/owner-media.js"></script>
+</script><script src="site/official-stats.js"></script><script src="site/owner-config.js"></script><script src="site/media-core.js"></script><script src="site/owner-media.js"></script>
 </body>
 </html>
 
