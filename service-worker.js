@@ -1,5 +1,5 @@
 // Road Safety East — update this version when releasing a new app shell.
-const VERSION = '2026-10-31-official-stats-1';
+const VERSION = '2026-10-31-same-tab-navigation-1';
 const SCOPE = self.registration.scope;
 const PREFIX = 'road-safety-east:' + encodeURIComponent(SCOPE) + ':';
 const CACHE_NAME = PREFIX + VERSION;
