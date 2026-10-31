@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "year": 2026,
+  "agency": "กรมทางหลวง",
+  "sourceUrl": "https://datagov.mot.go.th/dataset/roadaccident",
+  "resourceId": "4625b7aa-99a4-4dfb-9a0f-6402814d0f2c",
+  "downloadUrl": "https://datagov.mot.go.th/dataset/7e077ffd-dc4f-4dc6-a71c-0813726f3c12/resource/4625b7aa-99a4-4dfb-9a0f-6402814d0f2c/download/accident2026.csv",
+  "resourceModifiedAt": "2026-10-12T06:43:00.454119",
+  "fetchedAt": "2026-10-31T04:39:00.752558+00:00",
+  "sha256": "31225d0a1c9e7e76e3129de662fdc57034e485a0f2d9ebf80ce1a0bca862549d",
+  "sourceEventRange": {
+    "from": "2026-01-01",
+    "to": "2026-10-12"
+  },
+  "selectedEventRange": {
+    "from": "2026-01-01",
+    "to": "2026-10-11"
+  },
+  "quality": {
+    "sourceRecords": 17454,
+    "blankRowsSkipped": 3979,
+    "exactDuplicateRows": 21,
+    "selectedExactDuplicateRows": 0,
+    "missingProvinceRows": 1,
+    "duplicatesPolicy": "Keep source records; no unique incident ID is provided in this CSV."
+  },
+  "provinces": [
+    {
+      "province": "ชลบุรี",
+      "records": 1000,
+      "deaths": 50,
+      "seriousInjuries": 48,
+      "injuries": 589,
+      "motorcycleRecords": 98,
+      "motorcyclePercent": 9.8,
+      "latestEventDate": "2026-10-11"
+    },
+    {
+      "province": "ระยอง",
+      "records": 165,
+      "deaths": 8,
+      "seriousInjuries": 12,
+      "injuries": 102,
+      "motorcycleRecords": 19,
+      "motorcyclePercent": 11.52,
+      "latestEventDate": "2026-10-10"
+    },
+    {
+      "province": "จันทบุรี",
+      "records": 268,
+      "deaths": 61,
+      "seriousInjuries": 73,
+      "injuries": 250,
+      "motorcycleRecords": 62,
+      "motorcyclePercent": 23.13,
+      "latestEventDate": "2026-10-08"
+    },
+    {
+      "province": "ตราด",
+      "records": 78,
+      "deaths": 10,
+      "seriousInjuries": 2,
+      "injuries": 75,
+      "motorcycleRecords": 15,
+      "motorcyclePercent": 19.23,
+      "latestEventDate": "2026-10-08"
+    }
+  ],
+  "totals": {
+    "records": 1511,
+    "deaths": 129,
+    "seriousInjuries": 135,
+    "injuries": 1016,
+    "motorcycleRecords": 194
+  }
+}
