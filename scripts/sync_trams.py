@@ -1,6 +1,5 @@
 """Import public MOT TRAMS CSV; publish aggregates only, never individual records."""
 import argparse
-import collections
 import csv
 import datetime as dt
 import hashlib
@@ -14,7 +13,10 @@ import urllib.request
 
 CATALOG = 'https://datagov.mot.go.th/api/3/action/package_show?id=roadaccident'
 SOURCE = 'https://datagov.mot.go.th/dataset/roadaccident'
-PROVINCES = ('ชลบุรี', 'ระยอง', 'จันทบุรี', 'ตราด')
+PROVINCES = tuple(item['name'] for item in json.loads(
+    (Path(__file__).resolve().parents[1] / 'disaster/thailand-data.json').read_text(encoding='utf-8')))
+if len(set(PROVINCES)) != 77:
+    raise ValueError('Expected 77 distinct provinces in the reference list')
 METRICS = {'deaths': 'จำนวนผู้เสียชีวิต', 'seriousInjuries': 'จำนวนผู้บาดเจ็บสาหัส', 'injuries': 'รวมจำนวนผู้บาดเจ็บ'}
 REQUIRED = {'ปีที่เกิดเหตุ', 'วันที่เกิดเหตุ', 'หน่วยงาน', 'จังหวัด', 'รถจักรยานยนต์', *METRICS.values()}
 
@@ -59,23 +61,25 @@ def aggregate(raw, year, resource, fetched_at):
         rows.append((row, date.isoformat()))
     if not rows:
         raise ValueError('Empty source; previous snapshot is preserved')
-    selected = [(r, d) for r, d in rows if r['หน่วยงาน'].strip() == 'กรมทางหลวง' and r['จังหวัด'].strip() in PROVINCES]
+    selected = [(r, d) for r, d in rows if r['หน่วยงาน'].strip() == 'กรมทางหลวง']
     if not selected:
         raise ValueError('No matching DOH records; previous snapshot is preserved')
-    result = []
-    for province in PROVINCES:
-        matching = [(r, d) for r, d in selected if r['จังหวัด'].strip() == province]
-        values = {'province': province, 'records': len(matching)}
+    def summarize(province, matching):
+        values = {'province': province, 'hasRecords': bool(matching), 'records': len(matching)}
         for metric, column in METRICS.items():
             values[metric] = sum(count(r[column]) for r, _ in matching)
         values['motorcycleRecords'] = sum(count(r['รถจักรยานยนต์']) > 0 for r, _ in matching)
         values['motorcyclePercent'] = round(values['motorcycleRecords'] / len(matching) * 100, 2) if matching else None
         values['latestEventDate'] = max((d for _, d in matching), default=None)
-        result.append(values)
+        return values
+    result = [summarize(province, [(r, d) for r, d in selected if r['จังหวัด'].strip() == province])
+              for province in PROVINCES]
+    unattributed = summarize('ไม่ระบุจังหวัด / จังหวัดไม่ตรงรายการ',
+                            [(r, d) for r, d in selected if r['จังหวัด'].strip() not in PROVINCES])
     def duplicates(items):
         return len(items) - len({tuple(sorted(r.items())) for r, _ in items})
     return {
-        'schemaVersion': 1, 'year': year, 'agency': 'กรมทางหลวง', 'sourceUrl': SOURCE,
+        'schemaVersion': 2, 'year': year, 'agency': 'กรมทางหลวง', 'sourceUrl': SOURCE,
         'resourceId': resource['id'], 'downloadUrl': resource['url'],
         'resourceModifiedAt': resource.get('last_modified'), 'fetchedAt': fetched_at,
         'sha256': hashlib.sha256(raw).hexdigest(),
@@ -84,9 +88,11 @@ def aggregate(raw, year, resource, fetched_at):
         'quality': {'sourceRecords': len(rows), 'blankRowsSkipped': blank_rows,
                     'exactDuplicateRows': duplicates(rows), 'selectedExactDuplicateRows': duplicates(selected),
                     'missingProvinceRows': sum(not r['จังหวัด'].strip() for r, _ in rows),
+                    'selectedUnattributedRows': unattributed['records'],
+                    'provincesWithRecords': sum(p['hasRecords'] for p in result),
                     'duplicatesPolicy': 'Keep source records; no unique incident ID is provided in this CSV.'},
-        'provinces': result,
-        'totals': {key: sum(r[key] for r in result) for key in ('records', *METRICS, 'motorcycleRecords')},
+        'provinces': result, 'unattributed': unattributed,
+        'totals': {key: sum(r[key] for r in result) + unattributed[key] for key in ('records', *METRICS, 'motorcycleRecords')},
     }
 
 

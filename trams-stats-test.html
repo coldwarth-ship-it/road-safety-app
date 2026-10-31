@@ -9,7 +9,7 @@
 </head>
 <body><main>
 <a href="index.html">← กลับเว็บจุดเสี่ยง</a>
-<header><span class="badge">หน้าทดลอง • ข้อมูลจริงจากไฟล์ทางการ</span><h1>สถิติอุบัติเหตุกรมทางหลวง</h1><p>ชลบุรี · ระยอง · จันทบุรี · ตราด</p><p>เฉพาะเหตุบนโครงข่ายกรมทางหลวงที่บันทึกใน TRAMS ไม่ครอบคลุมทุกถนน และไม่ใช่สถิติเฉพาะไรเดอร์</p></header>
+<header><span class="badge">หน้าทดลอง • ข้อมูลจริงจากไฟล์ทางการ</span><h1>สถิติอุบัติเหตุกรมทางหลวง</h1><p>ครอบคลุม 77 จังหวัดทั่วประเทศ</p><p>เฉพาะเหตุบนโครงข่ายกรมทางหลวงที่บันทึกใน TRAMS ไม่ครอบคลุมทุกถนน และไม่ใช่สถิติเฉพาะไรเดอร์</p></header>
 <div class="notice"><b>ข้อมูลเผยแพร่เป็นรอบ ไม่ใช่รายงานสด</b><br>หน้านี้ใช้ผลนำเข้าทดลองจากไฟล์ทางการ ยังไม่ได้เปิดการนำเข้าตามเวลาอัตโนมัติ และยังไม่ได้แทนที่สถิติจากชีทในหน้าหลัก</div>
 <button id="reload" type="button">โหลดผลนำเข้าทดลองอีกครั้ง</button>
 <a class="button" href="https://datagov.mot.go.th/dataset/roadaccident" target="_blank" rel="noopener noreferrer">ตรวจต้นทางกระทรวงคมนาคม ↗</a>
@@ -17,31 +17,50 @@
 <div id="content" hidden>
 <section><h2>ช่วงข้อมูลและความใหม่</h2><dl id="metadata"></dl></section>
 <div class="cards">
-<div class="card"><div class="label">ระเบียนอุบัติเหตุ • ครั้งตามต้นทาง</div><div class="value" id="records">—</div><small>รวม 4 จังหวัด</small></div>
+<div class="card"><div class="label">ระเบียนอุบัติเหตุ • ครั้งตามต้นทาง</div><div class="value" id="records">—</div><small id="scopeLabel">รวมประเทศ</small></div>
 <div class="card"><div class="label">ผู้เสียชีวิต • คน</div><div class="value" id="deaths">—</div><small>ตามระเบียนที่นำเข้า</small></div>
 <div class="card"><div class="label">ผู้บาดเจ็บสาหัส • คน</div><div class="value" id="seriousInjuries">—</div><small>เป็นส่วนหนึ่งของผู้บาดเจ็บรวม</small></div>
 <div class="card"><div class="label">ผู้บาดเจ็บรวม • คน</div><div class="value" id="injuries">—</div><small>สาหัสและเล็กน้อย</small></div>
 </div>
-<section><h2>สถิติรายจังหวัด</h2><div class="table-wrap"><table><thead><tr><th scope="col">จังหวัด</th><th scope="col">ระเบียนเหตุ</th><th scope="col">เสียชีวิต</th><th scope="col">บาดเจ็บสาหัส</th><th scope="col">บาดเจ็บรวม</th><th scope="col">เหตุที่มี จยย.</th><th scope="col">สัดส่วนเหตุที่มี จยย.</th><th scope="col">เหตุล่าสุดที่พบ</th></tr></thead><tbody id="rows"></tbody></table></div><p class="label">สัดส่วนเหตุที่มี จยย. = จำนวนระเบียนที่มีรถจักรยานยนต์อย่างน้อย 1 คัน ÷ ระเบียนเหตุทั้งหมดของจังหวัด × 100 ไม่ใช่สัดส่วนผู้เสียชีวิต และไม่ใช่จำนวนรถ</p></section>
+<section><h2>สถิติรายจังหวัด</h2><label for="provinceFilter">เลือกจังหวัด </label><select id="provinceFilter" style="font:inherit;max-width:100%;padding:10px;border:1px solid #b9ccde;border-radius:10px;margin:0 0 16px"><option value="">ทุกจังหวัด</option></select><p id="filterSummary" class="label" aria-live="polite"></p><div class="table-wrap"><table><thead><tr><th scope="col">จังหวัด</th><th scope="col">ระเบียนเหตุ</th><th scope="col">เสียชีวิต</th><th scope="col">บาดเจ็บสาหัส</th><th scope="col">บาดเจ็บรวม</th><th scope="col">เหตุที่มี จยย.</th><th scope="col">สัดส่วนเหตุที่มี จยย.</th><th scope="col">เหตุล่าสุดที่พบ</th><th scope="col">สถานะข้อมูล</th></tr></thead><tbody id="rows"></tbody></table></div><p class="label">สัดส่วนเหตุที่มี จยย. = จำนวนระเบียนที่มีรถจักรยานยนต์อย่างน้อย 1 คัน ÷ ระเบียนเหตุทั้งหมดของจังหวัด × 100 ไม่ใช่สัดส่วนผู้เสียชีวิต และไม่ใช่จำนวนรถ</p></section>
 <section><h2>ผลตรวจคุณภาพการนำเข้า</h2><dl id="quality"></dl><p class="label">คงระเบียนซ้ำตามต้นทาง เนื่องจากไฟล์ไม่มีรหัสเหตุเฉพาะที่ใช้ยืนยันการซ้ำได้ ตัวเลขอาจถูกแก้ย้อนหลังโดยหน่วยงาน</p></section>
 </div>
 <footer>แหล่งข้อมูล: กระทรวงคมนาคม / ระบบ TRAMS กรองหน่วยงาน “กรมทางหลวง”<br>หน้านี้เผยแพร่เฉพาะยอดสรุป ไม่มีข้อมูลรายบุคคล</footer>
 </main><script>
 'use strict';
-let loaded=false;
+let loaded=false, snapshot=null;
 const $=id=>document.getElementById(id);
 const integer=n=>Number.isInteger(n)&&n>=0;
 const format=n=>n.toLocaleString('th-TH');
 function date(value,time=false){if(!value)return 'ไม่ระบุ';const v=time?new Date(value):new Date(value+'T00:00:00+07:00');if(Number.isNaN(v.getTime()))throw Error('วันที่ในผลนำเข้าไม่ถูกต้อง');return new Intl.DateTimeFormat('th-TH',{dateStyle:'medium',...(time?{timeStyle:'short'}:{}),timeZone:'Asia/Bangkok'}).format(v);}
 function list(host,items){host.replaceChildren();for(const [label,value] of items){const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=label;dd.textContent=value;host.append(dt,dd);}}
-function validate(data){const keys=['records','deaths','seriousInjuries','injuries','motorcycleRecords'];if(data.schemaVersion!==1||data.agency!=='กรมทางหลวง'||!Array.isArray(data.provinces)||data.provinces.length!==4)throw Error('รูปแบบผลนำเข้าไม่ตรงตามที่กำหนด');if(new Set(data.provinces.map(r=>r.province)).size!==4)throw Error('จังหวัดซ้ำ');for(const key of keys){if(!integer(data.totals[key])||data.provinces.some(r=>!integer(r[key]))||data.provinces.reduce((n,r)=>n+r[key],0)!==data.totals[key])throw Error('ยอดรวมไม่ตรงกับรายจังหวัด');}}
+function validate(data){
+ const keys=['records','deaths','seriousInjuries','injuries','motorcycleRecords'];
+ if(data.schemaVersion!==2||data.agency!=='กรมทางหลวง'||!Array.isArray(data.provinces)||data.provinces.length!==77||!data.unattributed)throw Error('รูปแบบผลนำเข้าไม่ตรงตามที่กำหนด');
+ if(new Set(data.provinces.map(r=>r.province)).size!==77)throw Error('จังหวัดซ้ำ');
+ for(const key of keys){if(!integer(data.totals[key])||[...data.provinces,data.unattributed].some(r=>!integer(r[key]))||data.provinces.reduce((n,r)=>n+r[key],0)+data.unattributed[key]!==data.totals[key])throw Error('ยอดรวมไม่ตรงกับรายจังหวัด');}
+}
+function render(){
+ const d=snapshot;if(!d)return;const selected=$('provinceFilter').value;
+ const records=[...d.provinces,...(d.unattributed.records?[d.unattributed]:[])];
+ const rows=(selected?records.filter(r=>r.province===selected):records).sort((a,b)=>b.records-a.records||a.province.localeCompare(b.province,'th'));
+ const totals=selected?rows[0]:d.totals;
+ for(const key of ['records','deaths','seriousInjuries','injuries'])$(key).textContent=totals&&(!selected||totals.hasRecords)?format(totals[key]):'—';
+ $('scopeLabel').textContent=selected||'รวมประเทศ (รวมระเบียนที่ไม่ระบุจังหวัด)';
+ $('filterSummary').textContent=selected?(rows[0]?.hasRecords?'แสดงข้อมูล '+selected:'ไม่พบระเบียนกรมทางหลวงของ '+selected+' ในไฟล์นี้ ไม่ได้หมายความว่าไม่มีอุบัติเหตุเกิดขึ้น'):'แสดงครบ 77 จังหวัด • พบระเบียน '+d.quality.provincesWithRecords+' จังหวัด'+(d.unattributed.records?' • แยกไม่ระบุจังหวัด '+format(d.unattributed.records)+' ระเบียน':'');
+ const fragment=document.createDocumentFragment();for(const r of rows){const tr=document.createElement('tr');for(const value of [r.province,...['records','deaths','seriousInjuries','injuries','motorcycleRecords'].map(k=>r.hasRecords?format(r[k]):'—'),r.motorcyclePercent===null?'—':r.motorcyclePercent.toFixed(2)+'%',r.latestEventDate?date(r.latestEventDate):'—',r.hasRecords?'มีระเบียนในไฟล์':'ไม่พบระเบียนในไฟล์']){const td=document.createElement('td');td.textContent=value;tr.append(td);}fragment.append(tr);}$('rows').replaceChildren(fragment);
+}
 async function load(){const button=$('reload');button.disabled=true;$('status').textContent='กำลังโหลดผลนำเข้า…';try{const response=await fetch('data/trams-doh-preview.json',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);const d=await response.json();validate(d);
 const modified=d.resourceModifiedAt?d.resourceModifiedAt.slice(0,10):null;
-list($('metadata'),[['ปีข้อมูล','พ.ศ. '+(d.year+543)],['วันที่เกิดเหตุในไฟล์ทั้งหมด',date(d.sourceEventRange.from)+' – '+date(d.sourceEventRange.to)],['วันที่เกิดเหตุใน 4 จังหวัด',date(d.selectedEventRange.from)+' – '+date(d.selectedEventRange.to)],['วันที่ปรับปรุงไฟล์ต้นทาง',date(modified)],['เวลานำเข้าทดลองสำเร็จ',date(d.fetchedAt,true)],['ขอบเขต','กรมทางหลวง • 4 จังหวัดภาคตะวันออก']]);
-for(const key of ['records','deaths','seriousInjuries','injuries'])$(key).textContent=format(d.totals[key]);
-const fragment=document.createDocumentFragment();for(const r of d.provinces){const tr=document.createElement('tr');for(const value of [r.province,...['records','deaths','seriousInjuries','injuries','motorcycleRecords'].map(k=>format(r[k])),r.motorcyclePercent===null?'—':r.motorcyclePercent.toFixed(2)+'%',date(r.latestEventDate)]){const td=document.createElement('td');td.textContent=value;tr.append(td);}fragment.append(tr);}$('rows').replaceChildren(fragment);
-list($('quality'),[['ระเบียนที่มีข้อมูลทั้งไฟล์',format(d.quality.sourceRecords)],['แถวว่างที่ข้าม',format(d.quality.blankRowsSkipped)],['แถวเหมือนกันทุกช่องทั้งไฟล์',format(d.quality.exactDuplicateRows)],['แถวเหมือนกันในชุด 4 จังหวัด',format(d.quality.selectedExactDuplicateRows)],['ระเบียนไม่มีจังหวัดทั้งไฟล์',format(d.quality.missingProvinceRows)]]);
+list($('metadata'),[['ปีข้อมูล','พ.ศ. '+(d.year+543)],['วันที่เกิดเหตุในไฟล์ทั้งหมด',date(d.sourceEventRange.from)+' – '+date(d.sourceEventRange.to)],['วันที่เกิดเหตุกรมทางหลวงทั้งประเทศ',date(d.selectedEventRange.from)+' – '+date(d.selectedEventRange.to)],['วันที่ปรับปรุงไฟล์ต้นทาง',date(modified)],['เวลานำเข้าทดลองสำเร็จ',date(d.fetchedAt,true)],['ขอบเขต','กรมทางหลวง • 77 จังหวัดทั่วประเทศ']]);
+const oldSelection=$('provinceFilter').value;
+const options=[new Option('ทุกจังหวัด',''),...d.provinces.slice().sort((a,b)=>a.province.localeCompare(b.province,'th')).map(r=>new Option(r.province,r.province))];
+if(d.unattributed.records)options.push(new Option(d.unattributed.province,d.unattributed.province));
+$('provinceFilter').replaceChildren(...options);
+if(options.some(o=>o.value===oldSelection))$('provinceFilter').value=oldSelection;
+snapshot=d;render();
+list($('quality'),[['ระเบียนที่มีข้อมูลทั้งไฟล์',format(d.quality.sourceRecords)],['แถวว่างที่ข้าม',format(d.quality.blankRowsSkipped)],['แถวเหมือนกันทุกช่องทั้งไฟล์',format(d.quality.exactDuplicateRows)],['แถวเหมือนกันเฉพาะกรมทางหลวง',format(d.quality.selectedExactDuplicateRows)],['ระเบียนไม่มีจังหวัดทั้งไฟล์',format(d.quality.missingProvinceRows)],['กรมทางหลวงที่ระบุจังหวัดไม่ได้',format(d.quality.selectedUnattributedRows)]]);
 $('content').hidden=false;loaded=true;$('status').textContent='โหลดผลนำเข้าทดลองสำเร็จ • การกดปุ่มนี้ไม่ได้ดึงไฟล์ใหม่จากหน่วยงาน';
 }catch(error){$('status').textContent=(loaded?'โหลดใหม่ไม่สำเร็จ กำลังแสดงผลครั้งก่อน • ':'ยังแสดงสถิติไม่ได้ • ')+error.message;}finally{button.disabled=false;}}
-$('reload').addEventListener('click',load);load();
+$('reload').addEventListener('click',load);$('provinceFilter').addEventListener('change',render);load();
 </script></body></html>

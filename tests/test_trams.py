@@ -30,9 +30,11 @@ class ImportTests(unittest.TestCase):
         raw = sample([{'รถจักรยานยนต์': '2', 'จำนวนผู้เสียชีวิต': '1'}, {'หน่วยงาน': 'กรมทางหลวงชนบท'}, {'จังหวัด': 'กรุงเทพมหานคร'}, {'รถจักรยานยนต์': '0'}])
         raw += (',' * (len(m.REQUIRED)-1) + '\n').encode()
         d = self.run_import(raw)
-        self.assertEqual(d['totals']['records'], 2)
+        self.assertEqual(d['totals']['records'], 3)
         self.assertEqual(d['totals']['deaths'], 1)
-        self.assertEqual(d['provinces'][0]['motorcyclePercent'], 50)
+        self.assertEqual(next(r for r in d['provinces'] if r['province']=='ชลบุรี')['motorcyclePercent'], 50)
+        self.assertEqual(len(d['provinces']), 77)
+        self.assertEqual(next(r for r in d['provinces'] if r['province']=='กรุงเทพมหานคร')['records'], 1)
         self.assertEqual(d['quality']['blankRowsSkipped'], 1)
         self.assertEqual(d['sourceEventRange']['from'], '2026-01-20')
 
@@ -40,6 +42,17 @@ class ImportTests(unittest.TestCase):
         d = self.run_import(sample([{}, {}]))
         self.assertEqual(d['quality']['selectedExactDuplicateRows'], 1)
         self.assertEqual(d['totals']['records'], 2)
+
+    def test_unattributed_reconciles_and_absence_is_explicit(self):
+        d = self.run_import(sample([{'จังหวัด': ''}, {'จังหวัด': 'ชื่อจังหวัดผิด'}, {'จังหวัด': 'บึงกาฬ'}]))
+        self.assertEqual(d['totals']['records'], 3)
+        self.assertEqual(d['unattributed']['records'], 2)
+        self.assertEqual(sum(r['records'] for r in d['provinces']) + d['unattributed']['records'], 3)
+        self.assertEqual(d['quality']['provincesWithRecords'], 1)
+        absent = next(r for r in d['provinces'] if r['province']=='ชลบุรี')
+        self.assertFalse(absent['hasRecords'])
+        self.assertIsNone(absent['motorcyclePercent'])
+        self.assertIsNone(absent['latestEventDate'])
 
     def test_invalid_sources_fail(self):
         for raw in [b'<html>error</html>', sample([{'จำนวนผู้เสียชีวิต': ''}]), sample([{'ปีที่เกิดเหตุ': '2025'}]), sample([{'วันที่เกิดเหตุ': '31/2/2026'}]), sample([{'หน่วยงาน': ''}]), sample([{'จำนวนผู้บาดเจ็บสาหัส': '2', 'รวมจำนวนผู้บาดเจ็บ': '1'}])]:
